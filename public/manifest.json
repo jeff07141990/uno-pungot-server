@@ -1,0 +1,17 @@
+{
+  "short_name": "UNO Pungot",
+  "name": "UNO: The Pungot Edition - Friends Online",
+  "icons": [
+    {
+      "src": "/card-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0B1120",
+  "theme_color": "#0B1120",
+  "display": "standalone",
+  "orientation": "any"
+}

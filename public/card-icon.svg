@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0B1120"/>
+    </radialGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#B91C1C"/>
+    </linearGradient>
+    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bgGlow)"/>
+  <!-- Card Back rotated -->
+  <g transform="translate(180, 256) rotate(-15)">
+    <rect x="-110" y="-160" width="220" height="320" rx="24" fill="url(#yellowGrad)" stroke="#FFFFFF" stroke-width="8"/>
+    <ellipse cx="0" cy="0" rx="75" ry="110" fill="#FFFFFF" transform="rotate(30)"/>
+    <text x="0" y="32" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="95" fill="#D97706" text-anchor="middle" font-style="italic">7</text>
+  </g>
+  <!-- Card Front rotated -->
+  <g transform="translate(320, 260) rotate(15)">
+    <rect x="-110" y="-160" width="220" height="320" rx="24" fill="url(#redGrad)" stroke="#FFFFFF" stroke-width="8" filter="drop-shadow(0 15px 25px rgba(0,0,0,0.5))"/>
+    <ellipse cx="0" cy="0" rx="75" ry="110" fill="#FFFFFF" transform="rotate(-30)"/>
+    <text x="0" y="35" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="70" fill="#EF4444" text-anchor="middle" font-style="italic">UNO</text>
+  </g>
+</svg>

@@ -1,0 +1,50 @@
+{
+  "name": "uno-pungot-edition",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"vite\"",
+    "client": "vite",
+    "server": "tsx server/server.ts",
+    "start": "tsx server/server.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "dev:all": "concurrently -k -p \"[{name}]\" -n \"SERVER,CLIENT\" -c \"cyan.bold,magenta.bold\" \"npm run server\" \"vite\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "canvas-confetti": "^1.9.4",
+    "clsx": "^2.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "firebase": "^11.4.0",
+    "lucide-react": "^0.477.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^3.0.2",
+    "tsx": "^4.19.3",
+    "ws": "^8.18.1"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.9",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/ws": "^8.5.14",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.8"
+  }
+}

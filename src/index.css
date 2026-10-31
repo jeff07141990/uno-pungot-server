@@ -1,0 +1,651 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: #0B1120;
+    color: #F8FAFC;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+/* Reduced motion preference */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Custom keyframes */
+@keyframes floatAndFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 20px) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -40px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -70px) scale(0.9);
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes cardSlam {
+  0% {
+    transform: rotate(-4deg) scale(1.18);
+  }
+  45% {
+    transform: rotate(-2deg) scale(0.95);
+  }
+  100% {
+    transform: rotate(-4deg) scale(1);
+  }
+}
+
+@keyframes tableRipple {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.animate-floatAndFade {
+  animation: floatAndFade 2.2s ease-out forwards;
+}
+
+.animate-slideLeft {
+  animation: slideLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-cardSlam {
+  animation: cardSlam 0.28s cubic-bezier(0.17, 0.89, 0.32, 1.25) forwards;
+}
+
+.animate-tableRipple {
+  animation: tableRipple 0.38s ease-out forwards;
+}
+
+/* ==========================================================================
+   HYPER-REALISTIC 3D RIFFLE SHUFFLE & WATERFALL BRIDGE ANIMATIONS
+   ========================================================================== */
+
+/* Left Base Deck Stack */
+@keyframes realisticShuffleLeft {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+  16% {
+    /* Split apart to left & tilt inward (thumb lifts inner edge) */
+    transform: translate(-52px, -6px) rotate(-18deg) scale(1.02);
+    box-shadow: -8px 16px 25px rgba(0, 0, 0, 0.5);
+  }
+  55% {
+    /* Holding posture while interleaving cards flick out */
+    transform: translate(-44px, -3px) rotate(-15deg) scale(0.97);
+  }
+  74% {
+    /* Pushing together into the center for the bridge arch */
+    transform: translate(-18px, -16px) rotate(-9deg) scale(0.96);
+    box-shadow: 0 24px 35px rgba(0, 0, 0, 0.6);
+  }
+  86% {
+    /* Waterfall cascade down */
+    transform: translate(-5px, -2px) rotate(-2deg) scale(0.99);
+  }
+  93% {
+    /* Squaring up tap lift */
+    transform: translate(0, -7px) rotate(0deg) scale(1);
+  }
+  100% {
+    /* Squared firmly on felt table */
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Right Base Deck Stack */
+@keyframes realisticShuffleRight {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+  16% {
+    /* Split apart to right & tilt inward (thumb lifts inner edge) */
+    transform: translate(52px, -6px) rotate(18deg) scale(1.02);
+    box-shadow: 8px 16px 25px rgba(0, 0, 0, 0.5);
+  }
+  55% {
+    /* Holding posture while interleaving cards flick out */
+    transform: translate(44px, -3px) rotate(15deg) scale(0.97);
+  }
+  74% {
+    /* Pushing together into the center for the bridge arch */
+    transform: translate(18px, -16px) rotate(9deg) scale(0.96);
+    box-shadow: 0 24px 35px rgba(0, 0, 0, 0.6);
+  }
+  86% {
+    /* Waterfall cascade down */
+    transform: translate(5px, -2px) rotate(2deg) scale(0.99);
+  }
+  93% {
+    /* Squaring up tap lift */
+    transform: translate(0, -7px) rotate(0deg) scale(1);
+  }
+  100% {
+    /* Squared firmly on felt table */
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* Interleaving Left Cards (flick off left thumb into zipper weave) */
+@keyframes riffleCardLeft {
+  0% {
+    opacity: 0;
+    transform: translate(-48px, -4px) rotate(-18deg) scale(0.96);
+  }
+  8% {
+    /* Card thumb flick pop */
+    opacity: 1;
+    transform: translate(-34px, -14px) rotate(-12deg) scale(1.06);
+    box-shadow: -4px 18px 24px rgba(0, 0, 0, 0.55);
+  }
+  22% {
+    /* Lands into interleaved center zipper */
+    opacity: 1;
+    transform: translate(-8px, 0px) rotate(-3deg) scale(1);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  }
+  62% {
+    /* Held in interleaved zipper */
+    opacity: 1;
+    transform: translate(-8px, 0px) rotate(-3deg) scale(1);
+  }
+  74% {
+    /* Bridge arch flex upward */
+    opacity: 1;
+    transform: translate(-4px, -20px) rotate(-7deg) scale(1.04);
+    box-shadow: 0 25px 35px rgba(0, 0, 0, 0.65);
+  }
+  86% {
+    /* Waterfall snap down */
+    opacity: 1;
+    transform: translate(-1px, -2px) rotate(-1deg) scale(1);
+  }
+  93% {
+    /* Tap lift */
+    opacity: 1;
+    transform: translate(0, -6px) rotate(0deg);
+  }
+  100% {
+    /* Squared flat */
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+/* Interleaving Right Cards (flick off right thumb into zipper weave) */
+@keyframes riffleCardRight {
+  0% {
+    opacity: 0;
+    transform: translate(48px, -4px) rotate(18deg) scale(0.96);
+  }
+  8% {
+    /* Card thumb flick pop */
+    opacity: 1;
+    transform: translate(34px, -14px) rotate(12deg) scale(1.06);
+    box-shadow: 4px 18px 24px rgba(0, 0, 0, 0.55);
+  }
+  22% {
+    /* Lands into interleaved center zipper on top of left */
+    opacity: 1;
+    transform: translate(8px, 0px) rotate(3deg) scale(1);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  }
+  62% {
+    /* Held in interleaved zipper */
+    opacity: 1;
+    transform: translate(8px, 0px) rotate(3deg) scale(1);
+  }
+  74% {
+    /* Bridge arch flex upward */
+    opacity: 1;
+    transform: translate(4px, -20px) rotate(7deg) scale(1.04);
+    box-shadow: 0 25px 35px rgba(0, 0, 0, 0.65);
+  }
+  86% {
+    /* Waterfall snap down */
+    opacity: 1;
+    transform: translate(1px, -2px) rotate(1deg) scale(1);
+  }
+  93% {
+    /* Tap lift */
+    opacity: 1;
+    transform: translate(0, -6px) rotate(0deg);
+  }
+  100% {
+    /* Squared flat */
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+}
+
+/* Dynamic Felt Table Shadow */
+@keyframes shuffleFeltShadow {
+  0% {
+    transform: translate(0, 48px) scale(1);
+    opacity: 0.45;
+  }
+  18% {
+    transform: translate(0, 48px) scale(1.45, 0.85);
+    opacity: 0.55;
+  }
+  74% {
+    transform: translate(0, 54px) scale(1.15, 0.65);
+    opacity: 0.3;
+  }
+  88% {
+    transform: translate(0, 48px) scale(1.05, 0.95);
+    opacity: 0.55;
+  }
+  100% {
+    transform: translate(0, 48px) scale(1);
+    opacity: 0.45;
+  }
+}
+
+/* Tension Bridge Highlight Glow */
+@keyframes bridgeGlowAnim {
+  0%, 60% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  74% {
+    opacity: 0.75;
+    transform: scale(1.15);
+  }
+  84% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+/* Tap Shockwave Ripple */
+@keyframes riffleTapRipple {
+  0%, 88% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  91% {
+    opacity: 0.9;
+    transform: scale(0.85);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+.animate-riffle-left-stack {
+  animation: realisticShuffleLeft 1.55s cubic-bezier(0.25, 1, 0.4, 1) forwards;
+}
+
+.animate-riffle-right-stack {
+  animation: realisticShuffleRight 1.55s cubic-bezier(0.25, 1, 0.4, 1) forwards;
+}
+
+.animate-riffle-card-left {
+  opacity: 0;
+  animation: riffleCardLeft 1.25s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+}
+
+.animate-riffle-card-right {
+  opacity: 0;
+  animation: riffleCardRight 1.25s cubic-bezier(0.2, 0.85, 0.3, 1) forwards;
+}
+
+.animate-shuffle-shadow {
+  animation: shuffleFeltShadow 1.55s ease-in-out forwards;
+}
+
+.animate-bridge-glow {
+  animation: bridgeGlowAnim 1.55s ease-out forwards;
+}
+
+.animate-riffle-tap-ripple {
+  animation: riffleTapRipple 1.55s ease-out forwards;
+}
+
+/* Legacy aliases */
+.animate-shuffle-left {
+  animation: realisticShuffleLeft 1.55s cubic-bezier(0.25, 1, 0.4, 1) forwards;
+}
+
+.animate-shuffle-right {
+  animation: realisticShuffleRight 1.55s cubic-bezier(0.25, 1, 0.4, 1) forwards;
+}
+
+@keyframes moveDeckToSide {
+  0% {
+    transform: translate(0, 0) scale(1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  }
+  25% {
+    transform: translate(calc(var(--dock-x, -180px) * 0.15), calc(var(--dock-y, -110px) * 0.15 - 16px)) scale(1.08) rotate(-5deg);
+    box-shadow: 0 22px 35px rgba(0, 0, 0, 0.6);
+  }
+  70% {
+    transform: translate(calc(var(--dock-x, -180px) * 0.85), calc(var(--dock-y, -110px) * 0.85 - 6px)) scale(1.02) rotate(-1deg);
+    box-shadow: 0 16px 28px rgba(0, 0, 0, 0.5);
+  }
+  100% {
+    transform: translate(var(--dock-x, -180px), var(--dock-y, -110px)) scale(1) rotate(0deg);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes dealFirstCardAnim {
+  0% {
+    opacity: 0.85;
+    transform: translate(var(--dock-x, -180px), var(--dock-y, -110px)) scale(0.9) rotate(-10deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(calc(var(--dock-x, -180px) * 0.6), calc(var(--dock-y, -110px) * 0.5 - 28px)) scale(1.18) rotate(12deg);
+    box-shadow: 0 25px 40px rgba(0, 0, 0, 0.7);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(calc(var(--dock-x, -180px) * 0.15), -10px) scale(1.05) rotate(-4deg);
+    box-shadow: 0 15px 25px rgba(0, 0, 0, 0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(-2deg);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.animate-move-deck-to-side {
+  animation: moveDeckToSide 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-deal-first-card {
+  animation: dealFirstCardAnim 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes unoCalloutPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 12px) scale(0.2) rotate(-14deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1.35) rotate(6deg);
+  }
+  30% {
+    transform: translate(-50%, -2px) scale(1.05) rotate(-3deg);
+  }
+  45% {
+    transform: translate(-50%, -4px) scale(1.15) rotate(2deg);
+  }
+  60% {
+    transform: translate(-50%, -2px) scale(1) rotate(0deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1.02);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -24px) scale(0.85);
+  }
+}
+
+.animate-unoCallout {
+  animation: unoCalloutPop 2.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes unoAvatarGlow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  20% {
+    transform: scale(1.15) rotate(-3deg);
+    box-shadow: 0 0 25px 8px rgba(239, 68, 68, 0.85);
+  }
+  40% {
+    transform: scale(1.12) rotate(3deg);
+    box-shadow: 0 0 20px 6px rgba(245, 158, 11, 0.85);
+  }
+  60% {
+    transform: scale(1.1) rotate(-1deg);
+    box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.7);
+  }
+  80% {
+    transform: scale(1.04);
+  }
+}
+
+.animate-unoAvatar {
+  animation: unoAvatarGlow 2.4s ease-out forwards;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.8);
+}
+
+/* 3D Uno Buzzer Button */
+.shadow-buzzer {
+  box-shadow: 0 8px 0 #991b1b, 0 14px 20px rgba(0, 0, 0, 0.6);
+}
+
+.shadow-buzzer-base {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+}
+
+/* Green casino felt radial highlight */
+.bg-casino-felt {
+  background: radial-gradient(ellipse at 50% 50%, #46a13d 0%, #2e7328 60%, #1a4a15 100%);
+}
+
+.bg-dark-felt {
+  background: radial-gradient(ellipse at 50% 50%, #2f1554 0%, #1b0b33 60%, #0d041c 100%);
+}
+
+/* Padded table rail cushion */
+.shadow-table-rail {
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.85), 0 25px 60px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes spinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spinSlow 12s linear infinite;
+}
+
+@keyframes spinSlowReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-spin-slow-reverse {
+  animation: spinSlowReverse 12s linear infinite;
+}
+
+/* Warm cozy wood floor room environment */
+.bg-wood-room {
+  background-color: #170e08;
+  background-image: 
+    radial-gradient(ellipse at 50% 45%, rgba(72, 166, 62, 0.18) 0%, rgba(0, 0, 0, 0.75) 75%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0px, rgba(255, 255, 255, 0.015) 2px, transparent 2px, transparent 85px),
+    linear-gradient(to bottom, #140b06, #24140b, #0f0704);
+}
+
+/* 3D Table perspective classes */
+.perspective-stage {
+  perspective: 1100px;
+}
+
+.table-3d-bevel {
+  transform: rotateX(24deg);
+  transform-style: preserve-3d;
+}
+
+.bg-radial-vignette {
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.65) 100%);
+}
+
+@keyframes hammerSmash {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  30% {
+    transform: rotate(-35deg) scale(1.15);
+  }
+  60% {
+    transform: rotate(25deg) scale(1.25);
+  }
+  80% {
+    transform: rotate(-10deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.animate-hammerSmash {
+  animation: hammerSmash 0.8s ease-in-out infinite;
+  transform-origin: bottom right;
+}
+
+/* Energetic Power Card pop-in banner keyframes & glow */
+@keyframes powerCardPop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(-8deg);
+    filter: brightness(2) drop-shadow(0 0 40px rgba(250, 204, 21, 1));
+  }
+  35% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15) rotate(3deg);
+    filter: brightness(1.2) drop-shadow(0 0 30px rgba(250, 204, 21, 0.9));
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+  85% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85) translateY(-30px);
+  }
+}
+
+.animate-powerCardAnnounce {
+  animation: powerCardPop 2.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Turn active glowing avatar halo animation */
+@keyframes turnHaloPulse {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(250, 204, 21, 0.7), inset 0 0 10px rgba(250, 204, 21, 0.4);
+    border-color: #fde047;
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(250, 204, 21, 1), 0 0 50px rgba(245, 158, 11, 0.8), inset 0 0 15px rgba(250, 204, 21, 0.8);
+    border-color: #ffffff;
+  }
+}
+
+.animate-turnHalo {
+  animation: turnHaloPulse 1.4s ease-in-out infinite;
+}
+
+/* Hide scrollbar while preserving layout and overflow behavior */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
