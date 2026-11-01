@@ -431,6 +431,7 @@ export const App: React.FC = () => {
             <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 animate-fadeIn">
               <EmojiReactions
                 activeReactions={activeReactions}
+                showBar={true}
                 onSendReaction={(emoji) => {
                   networkManager.sendReaction(publicState.roomId, userId, emoji);
                   setShowEmojiBar(false);
@@ -439,9 +440,10 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* Floating Reaction animations */}
+          {/* Floating Reaction animations only */}
           <EmojiReactions
             activeReactions={activeReactions}
+            showBar={false}
             onSendReaction={() => {}}
           />
 

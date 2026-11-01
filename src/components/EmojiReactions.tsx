@@ -4,6 +4,7 @@ import { ReactionEvent } from '../engine/types';
 interface EmojiReactionsProps {
   onSendReaction: (emoji: string) => void;
   activeReactions: ReactionEvent[];
+  showBar?: boolean;
 }
 
 const EMOJIS = ['🔥', '😂', '😱', '🎉', '🤡', '💀', '👀', '👍'];
@@ -11,6 +12,7 @@ const EMOJIS = ['🔥', '😂', '😱', '🎉', '🤡', '💀', '👀', '👍'];
 export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
   onSendReaction,
   activeReactions,
+  showBar = false,
 }) => {
   return (
     <>
@@ -29,19 +31,21 @@ export const EmojiReactions: React.FC<EmojiReactionsProps> = ({
         ))}
       </div>
 
-      {/* Quick Emoji Bar */}
-      <div className="flex items-center gap-1 sm:gap-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-800 shadow-xl">
-        {EMOJIS.map((emoji) => (
-          <button
-            key={emoji}
-            onClick={() => onSendReaction(emoji)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-slate-800 hover:scale-125 active:scale-95 transition"
-            title={`Send ${emoji}`}
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
+      {/* Quick Emoji Bar - only visible when showBar is true */}
+      {showBar && (
+        <div className="flex items-center gap-1 sm:gap-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-slate-800 shadow-xl">
+          {EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => onSendReaction(emoji)}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-slate-800 hover:scale-125 active:scale-95 transition"
+              title={`Send ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
     </>
   );
 };

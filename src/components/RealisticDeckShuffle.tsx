@@ -28,10 +28,9 @@ export const RealisticDeckShuffle: React.FC<RealisticDeckShuffleProps> = ({ clas
         {/* 1. LEFT BASE STACK (Thick 3D cut half) */}
         <div className="absolute animate-riffle-left-stack z-10 flex items-center justify-center">
           <div className="relative">
-            {/* 3D Layered Card Edges (Deck thickness) */}
-            <div className="absolute -top-1.5 -left-1.5 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-300 border border-slate-400 shadow-sm" />
-            <div className="absolute -top-1 -left-1 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-white/90 border border-slate-300 shadow-sm" />
-            <div className="absolute -top-0.5 -left-0.5 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-100 border border-slate-300 shadow-sm" />
+            {/* Subtle 3D Card Edge Depth flush under CardView */}
+            <div className="absolute inset-0 translate-x-[-1.5px] translate-y-[2px] rounded-lg sm:rounded-xl bg-slate-300 border border-slate-400 shadow-sm pointer-events-none" />
+            <div className="absolute inset-0 translate-x-[-0.8px] translate-y-[1px] rounded-lg sm:rounded-xl bg-slate-100 border border-slate-300 shadow-sm pointer-events-none" />
             <CardView isBack={true} size="md" className="shadow-2xl" />
           </div>
         </div>
@@ -39,10 +38,9 @@ export const RealisticDeckShuffle: React.FC<RealisticDeckShuffleProps> = ({ clas
         {/* 2. RIGHT BASE STACK (Thick 3D cut half) */}
         <div className="absolute animate-riffle-right-stack z-10 flex items-center justify-center">
           <div className="relative">
-            {/* 3D Layered Card Edges (Deck thickness) */}
-            <div className="absolute -top-1.5 -right-1.5 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-300 border border-slate-400 shadow-sm" />
-            <div className="absolute -top-1 -right-1 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-white/90 border border-slate-300 shadow-sm" />
-            <div className="absolute -top-0.5 -right-0.5 w-16 h-24 sm:w-20 sm:h-28 rounded-xl bg-slate-100 border border-slate-300 shadow-sm" />
+            {/* Subtle 3D Card Edge Depth flush under CardView */}
+            <div className="absolute inset-0 translate-x-[1.5px] translate-y-[2px] rounded-lg sm:rounded-xl bg-slate-300 border border-slate-400 shadow-sm pointer-events-none" />
+            <div className="absolute inset-0 translate-x-[0.8px] translate-y-[1px] rounded-lg sm:rounded-xl bg-slate-100 border border-slate-300 shadow-sm pointer-events-none" />
             <CardView isBack={true} size="md" className="shadow-2xl" />
           </div>
         </div>
