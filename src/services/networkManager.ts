@@ -10,6 +10,7 @@ export interface NetworkCallbacks {
   onError: (msg: string) => void;
   onStatusChange: (status: ConnectionStatus) => void;
   onVoiceSignal: (senderId: string, signal: unknown) => void;
+  onUnoShout: (playerId: string, playerName: string) => void;
 }
 
 class NetworkManager {
@@ -103,6 +104,9 @@ class NetworkManager {
               break;
             case 'VOICE_SIGNAL':
               this.callbacks.onVoiceSignal?.(msg.senderId, msg.signal);
+              break;
+            case 'UNO_SHOUT':
+              this.callbacks.onUnoShout?.(msg.playerId, msg.playerName);
               break;
             case 'ERROR':
               this.callbacks.onError?.(msg.message);

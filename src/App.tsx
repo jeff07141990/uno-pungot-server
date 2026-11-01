@@ -161,6 +161,15 @@ export const App: React.FC = () => {
         }
       },
       onToast: (text, sound) => {
+        // If we are currently in an active game, don't show repetitive turn action toasts
+        // since the top HUD ticker (lastActionText) already displays them cleanly.
+        if (view === 'game') {
+          // Play the sound if provided, but don't show redundant popup toast
+          if (sound && !isMuted) {
+            soundManager.play(sound);
+          }
+          return;
+        }
         showToast(text, sound);
       },
       onChat: (msg) => {
@@ -413,6 +422,7 @@ export const App: React.FC = () => {
             }}
             onToggleEmojiBar={() => setShowEmojiBar(!showEmojiBar)}
             onLeaveMatch={handleLeaveRoom}
+            onDeclareDeadlock={() => networkManager.declareDeadlock(publicState.roomId, userIdRef.current || userId)}
             unreadChatCount={unreadChatCount}
           />
 

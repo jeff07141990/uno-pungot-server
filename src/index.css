@@ -648,4 +648,15 @@
   scrollbar-width: none;
 }
 
+/* Mobile Auto-Fit Landscape Rules for compact screens (height <= 500px) */
+@media (max-height: 520px) {
+  .mobile-compact-h {
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+  }
+}
+
+
 

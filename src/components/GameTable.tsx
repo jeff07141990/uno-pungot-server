@@ -12,6 +12,8 @@ import {
   CheckCircle,
   HelpCircle,
   Settings,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import {
   Card,
@@ -25,6 +27,8 @@ import { RealisticDeckShuffle } from './RealisticDeckShuffle';
 import { ThickStackedDeck } from './ThickStackedDeck';
 import { isCardPlayable } from '../engine/rules';
 import { soundManager } from '../audio/soundManager';
+import { voiceManager } from '../services/voiceManager';
+import { networkManager } from '../services/networkManager';
 
 interface GameTableProps {
   gameState: PublicGameState;
@@ -41,6 +45,7 @@ interface GameTableProps {
   onOpenChat: () => void;
   onToggleEmojiBar: () => void;
   onLeaveMatch: () => void;
+  onDeclareDeadlock?: () => void;
   unreadChatCount: number;
 }
 
@@ -96,6 +101,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   onOpenChat,
   onToggleEmojiBar,
   onLeaveMatch,
+  onDeclareDeadlock,
   unreadChatCount,
 }) => {
   const [selectedWildCard, setSelectedWildCard] = useState<Card | null>(null);
@@ -103,11 +109,57 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [selectedTargetCard, setSelectedTargetCard] = useState<Card | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [secondsRemaining, setSecondsRemaining] = useState<number | null>(null);
+  const [showTopBarMenu, setShowTopBarMenu] = useState(false);
 
   // Active UNO shout callouts over avatars
   const [activeUnoShouts, setActiveUnoShouts] = useState<{ id: string; playerId: string }[]>([]);
   // Tracking player ID being hit with penalty hammer for visual feedback
   const [smackingPlayerId, setSmackingPlayerId] = useState<string | null>(null);
+
+  // Open Mic Voice Chat State
+  const [isVoiceMuted, setIsVoiceMuted] = useState<boolean>(() => voiceManager.getIsMuted());
+  const [isVoiceConnected, setIsVoiceConnected] = useState<boolean>(() => voiceManager.getIsInitialized());
+  const [speakingPlayerIds, setSpeakingPlayerIds] = useState<Set<string>>(new Set());
+
+  // Initialize Voice Chat in Room
+  useEffect(() => {
+    const isOnlineRoom = gameState.roomId && gameState.roomId !== 'bots';
+    if (isOnlineRoom) {
+      voiceManager.init(gameState.roomId, currentUserId);
+    }
+
+    const unsubscribe = voiceManager.subscribe((speaking, muted, connected) => {
+      setSpeakingPlayerIds(speaking);
+      setIsVoiceMuted(muted);
+      setIsVoiceConnected(connected);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [gameState.roomId, currentUserId]);
+
+  // Sync human players for WebRTC mesh connections
+  useEffect(() => {
+    const isOnlineRoom = gameState.roomId && gameState.roomId !== 'bots';
+    if (isOnlineRoom && isVoiceConnected) {
+      const humanPlayerIds = gameState.players
+        .filter((p) => !p.isBot)
+        .map((p) => p.id);
+      voiceManager.syncPlayers(humanPlayerIds);
+    }
+  }, [gameState.players, gameState.roomId, isVoiceConnected]);
+
+  const handleToggleMic = async () => {
+    if (!isVoiceConnected) {
+      const success = await voiceManager.init(gameState.roomId, currentUserId);
+      if (success) {
+        voiceManager.setMuted(false);
+      }
+    } else {
+      voiceManager.toggleMute();
+    }
+  };
 
   // Power card announcement banner state (visual effects only, no voice)
   const [powerAnnouncement, setPowerAnnouncement] = useState<{
@@ -456,10 +508,21 @@ export const GameTable: React.FC<GameTableProps> = ({
       const wasCalled = prevCalledUnoMapRef.current.get(p.id) || false;
       if (p.calledUno && !wasCalled) {
         triggerUnoCallout(p.id);
+        soundManager.play('uno_call');
       }
       prevCalledUnoMapRef.current.set(p.id, p.calledUno);
     });
   }, [players]);
+
+  // Real-time network sync for UNO shouts from any player across devices
+  useEffect(() => {
+    networkManager.setCallbacks({
+      onUnoShout: (shoutingPlayerId) => {
+        triggerUnoCallout(shoutingPlayerId);
+        soundManager.play('uno_call');
+      },
+    });
+  }, []);
 
   // Turn timer countdown and audio tick
   useEffect(() => {
@@ -930,7 +993,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   return (
     <div
-      className={`relative min-h-screen text-white flex flex-col justify-between overflow-hidden select-none transition-colors duration-700 ${
+      className={`relative h-[100dvh] max-h-[100dvh] w-full text-white flex flex-col justify-between overflow-hidden select-none transition-colors duration-700 ${
         isDarkSide
           ? 'bg-gradient-to-b from-[#120824] via-[#0c0418] to-[#180a30]'
           : 'bg-[#080b12]'
@@ -952,94 +1015,102 @@ export const GameTable: React.FC<GameTableProps> = ({
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-transparent to-black/60" />
       </div>
-      {/* Top HUD Bar */}
-      <div className="w-full max-w-6xl mx-auto px-4 py-2 flex items-center justify-between z-30">
-        {/* Top-Left: Golden Stopwatch Timer */}
-        <div className="flex items-center gap-2">
-          <div className="bg-slate-950/85 border-2 border-amber-400/80 text-amber-300 px-3 py-1 rounded-2xl flex items-center gap-1.5 shadow-xl font-mono font-black text-xs sm:text-sm">
-            <span className="text-amber-400">⏱️</span>
-            <span>
-              {secondsRemaining !== null
-                ? `00:${secondsRemaining < 10 ? `0${secondsRemaining}` : secondsRemaining}`
-                : '02:13'}
-            </span>
-          </div>
+      {/* Top HUD Bar - Auto-hidden stats & controls, only EXIT button is always visible */}
+      <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pt-1 sm:pt-1.5 flex items-center justify-between z-30 shrink-0 pointer-events-none">
+        {/* Left Side: Auto-hidden Timer & Variant Info, with quick toggle button */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          {showTopBarMenu ? (
+            <div className="flex items-center gap-1.5 animate-fadeIn">
+              {/* Golden Stopwatch Timer */}
+              <div className="bg-slate-950/85 border border-amber-400/80 text-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xl font-mono font-bold text-[11px] sm:text-xs">
+                <span className="text-amber-400">⏱️</span>
+                <span>
+                  {secondsRemaining !== null
+                    ? `00:${secondsRemaining < 10 ? `0${secondsRemaining}` : secondsRemaining}`
+                    : '02:13'}
+                </span>
+              </div>
 
-          {/* Variant Badge & Room ID */}
-          <div className="hidden sm:flex items-center gap-2 bg-slate-950/85 px-2.5 py-1 rounded-2xl border border-slate-800 shadow-lg">
-            <span className="font-mono text-xs font-black text-amber-400">#{gameState.roomId}</span>
-            <span className="text-slate-600">|</span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${activeVariant.style}`}>
-              <span>{activeVariant.icon}</span>
-              <span>{activeVariant.label}</span>
-            </span>
-          </div>
-        </div>
+              {/* Variant Badge & Room ID */}
+              <div className="hidden sm:flex items-center gap-1.5 bg-slate-950/85 px-2 py-0.5 rounded-full border border-slate-800 shadow-lg text-[10px]">
+                <span className="font-mono font-black text-amber-400">#{gameState.roomId}</span>
+                <span className="text-slate-600">|</span>
+                <span className={`font-bold px-1.5 py-0.2 rounded-full border flex items-center gap-0.5 ${activeVariant.style}`}>
+                  <span>{activeVariant.icon}</span>
+                  <span>{activeVariant.label}</span>
+                </span>
+              </div>
 
-        {/* Center: Live Action Ticker or Turn indicator */}
-        <div className="text-center px-2">
-          {lastActionText ? (
-            <div className="text-[11px] sm:text-xs font-bold text-amber-300 bg-slate-950/85 px-3.5 py-1 rounded-full border border-slate-800 shadow truncate max-w-[200px] sm:max-w-md">
-              {lastActionText}
+              <button
+                onClick={() => setShowTopBarMenu(false)}
+                className="px-2 py-0.5 rounded-full bg-slate-900/90 hover:bg-slate-800 text-[10px] text-slate-300 border border-slate-700 cursor-pointer shadow"
+                title="Itago ang Menu (Hide Menu)"
+              >
+                ✕
+              </button>
             </div>
           ) : (
-            <div
-              className={`text-[11px] sm:text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider ${
-                isYourTurn
-                  ? 'bg-amber-400 text-slate-950 shadow-[0_0_15px_rgba(251,191,36,0.6)] animate-pulse'
-                  : 'bg-slate-900/90 text-slate-300 border border-slate-800'
-              }`}
+            <button
+              onClick={() => setShowTopBarMenu(true)}
+              className="px-2 py-0.5 rounded-full bg-slate-950/60 hover:bg-slate-900/90 text-[10px] text-amber-300/80 hover:text-amber-300 border border-slate-800/80 cursor-pointer shadow-sm transition flex items-center gap-1 backdrop-blur-xs"
+              title="Ipakita ang Timer & Room Info"
             >
-              {isYourTurn ? 'YOUR TURN!' : `${activePlayer?.name || 'Player'}'s Turn`}
-            </div>
+              <span>⏱️</span>
+              <span className="font-mono text-[9px] font-bold">Info</span>
+            </button>
           )}
         </div>
 
-        {/* Top-Right: Sound Toggle, Card Customizer Settings Gear & Exit Match */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onToggleMute}
-            className="p-2 sm:p-2.5 rounded-2xl bg-amber-400/95 hover:bg-amber-300 text-slate-950 shadow-xl active:scale-95 transition cursor-pointer"
-            title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
-          >
-            {isMuted ? <VolumeX className="w-4 h-4 text-red-700" /> : <Volume2 className="w-4 h-4" />}
-          </button>
+        {/* Center top: empty space so view is ultra clean */}
+        <div className="flex-1" />
 
-          {/* Settings & Card Customizer Button */}
-          <button
-            onClick={() => onOpenSettings?.()}
-            className="p-2 sm:p-2.5 rounded-2xl bg-amber-400/95 hover:bg-amber-300 text-slate-950 shadow-xl active:scale-95 transition cursor-pointer flex items-center gap-1"
-            title="Settings at Palitan ang Larawan ng Baraha"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden md:inline text-[10px] font-black">Cards</span>
-          </button>
+        {/* Top-Right: Sound & Settings auto-hidden, ONLY Exit button is displayed */}
+        <div className="flex items-center gap-1.5 pointer-events-auto">
+          {showTopBarMenu && (
+            <div className="flex items-center gap-1.5 animate-fadeIn">
+              <button
+                onClick={onToggleMute}
+                className="p-1.5 sm:p-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-950 shadow active:scale-95 transition cursor-pointer"
+                title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
+              >
+                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-700" /> : <Volume2 className="w-3.5 h-3.5" />}
+              </button>
 
-          {/* Exit Match Button */}
+              <button
+                onClick={() => onOpenSettings?.()}
+                className="p-1.5 sm:p-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-950 shadow active:scale-95 transition cursor-pointer flex items-center gap-1"
+                title="Settings at Palitan ang Larawan ng Baraha"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Exit Match Button (Always visible on top right as requested) */}
           <button
             onClick={() => setShowLeaveConfirm(true)}
-            className="p-2 sm:p-2.5 rounded-2xl bg-red-600/90 hover:bg-red-500 text-white shadow-xl active:scale-95 transition cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-red-600/90 hover:bg-red-500 text-white shadow-xl active:scale-95 transition cursor-pointer border border-red-400/60"
             title="Umalis sa Laro (Leave Match)"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
 
 
-      {/* FULL SCREEN POKER TABLE STAGE */}
-      <div className="relative w-full flex-1 flex items-center justify-center my-1 px-2 sm:px-4 min-h-[440px] sm:min-h-[500px] z-10">
-        {/* CENTER ARENA: Discard Pile, Turn Arrows & Draw Pile directly on felt */}
-        <div className="relative flex items-center justify-center z-10">
-          {/* 3D DRAW PILE (Positioned on the green felt, shifted further to the left side) */}
+      {/* FULL SCREEN POKER TABLE STAGE - Auto-fits within available vertical space */}
+      <div className="relative w-full flex-1 min-h-0 flex items-center justify-center my-0.5 px-2 sm:px-4 z-10 overflow-visible">
+        {/* CENTER ARENA: Discard Pile, Turn Arrows & Draw Pile directly on felt (Lowered into table center) */}
+        <div className="relative flex items-center justify-center z-10 scale-[0.78] sm:scale-90 md:scale-100 translate-y-4 sm:translate-y-5 md:translate-y-6">
+          {/* 3D DRAW PILE (Positioned on the green felt, shifted to the left side and lowered comfortably) */}
           <div
             ref={sideDrawSlotRef}
-            className="absolute -top-12 sm:-top-16 md:-top-20 -left-36 sm:-left-48 md:-left-60 z-20"
+            className="absolute top-4 sm:top-0 md:-top-2 -left-18 sm:-left-32 md:-left-52 z-20"
           >
             {startIntroPhase === 'shuffling' || startIntroPhase === 'moving_to_side' ? (
               // Designated slot outline while deck is in center or moving
-              <div className="w-16 h-28 sm:w-20 sm:h-34 rounded-xl sm:rounded-2xl border-2 border-dashed border-amber-400/40 bg-black/30 backdrop-blur-xs flex flex-col items-center justify-center pointer-events-none shadow-inner">
-                <span className="text-[9px] sm:text-[10px] font-black text-amber-300/60 uppercase tracking-widest text-center px-1">
+              <div className="w-10 aspect-[2/3] sm:w-13 md:w-16 rounded-lg sm:rounded-xl md:rounded-2xl border-2 border-dashed border-amber-400/40 bg-black/30 backdrop-blur-xs flex flex-col items-center justify-center pointer-events-none shadow-inner">
+                <span className="text-[7px] sm:text-[9px] font-black text-amber-300/60 uppercase tracking-widest text-center px-1">
                   Draw Deck
                 </span>
               </div>
@@ -1054,10 +1125,10 @@ export const GameTable: React.FC<GameTableProps> = ({
               />
             )}
           </div>
-                {/* Circular Turn Direction Arrows SVG */}
+                {/* Circular Turn Direction Arrows SVG (Compacted & subtle) */}
                 <div className="absolute pointer-events-none select-none flex items-center justify-center">
                   <svg
-                    className={`w-48 h-48 sm:w-60 sm:h-60 md:w-68 md:h-68 ${
+                    className={`w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 ${
                       direction === 1 ? 'animate-spin-slow' : 'animate-spin-slow-reverse'
                     }`}
                     viewBox="0 0 200 200"
@@ -1067,30 +1138,30 @@ export const GameTable: React.FC<GameTableProps> = ({
                       cy="100"
                       r="80"
                       fill="none"
-                      stroke="rgba(250, 204, 21, 0.15)"
-                      strokeWidth="8"
+                      stroke="rgba(250, 204, 21, 0.12)"
+                      strokeWidth="6"
                     />
                     {/* Glowing Arrow 1 */}
                     <path
                       d="M 100 20 A 80 80 0 0 1 180 100"
                       fill="none"
                       stroke="#facc15"
-                      strokeWidth="8"
+                      strokeWidth="6"
                       strokeLinecap="round"
-                      filter="drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))"
+                      filter="drop-shadow(0 0 4px rgba(250, 204, 21, 0.5))"
                     />
-                    <polygon points="180,100 170,86 190,88" fill="#facc15" />
+                    <polygon points="180,100 172,88 188,90" fill="#facc15" />
 
                     {/* Glowing Arrow 2 */}
                     <path
                       d="M 100 180 A 80 80 0 0 1 20 100"
                       fill="none"
                       stroke="#facc15"
-                      strokeWidth="8"
+                      strokeWidth="6"
                       strokeLinecap="round"
-                      filter="drop-shadow(0 0 6px rgba(250, 204, 21, 0.6))"
+                      filter="drop-shadow(0 0 4px rgba(250, 204, 21, 0.5))"
                     />
-                    <polygon points="20,100 30,114 10,112" fill="#facc15" />
+                    <polygon points="20,100 28,112 12,110" fill="#facc15" />
                   </svg>
 
                   {/* Active Player Pointer Triangle */}
@@ -1098,7 +1169,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     className="absolute pointer-events-none transition-transform duration-500 flex items-center justify-center"
                     style={{ transform: `rotate(${activePointerRotation}deg)` }}
                   >
-                    <div className="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[18px] border-b-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.9)] -translate-y-26 sm:-translate-y-32"></div>
+                    <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[14px] border-b-yellow-300 drop-shadow-[0_0_6px_rgba(253,224,71,0.9)] -translate-y-20 sm:-translate-y-24"></div>
                   </div>
                 </div>
 
@@ -1194,15 +1265,15 @@ export const GameTable: React.FC<GameTableProps> = ({
                   {/* 4. NORMAL DISCARD PILE (Intro completed - ONLY the played/discard cards are in center) */}
                   {startIntroPhase === 'done' && (
                     <>
-                      {/* Stacked previous cards underneath at realistic random angles (enlarged) */}
-                      <div className="absolute w-20 h-30 sm:w-24 sm:h-36 rounded-xl sm:rounded-2xl bg-amber-500/80 border border-white/80 shadow-md transform rotate-[-18deg] translate-x-1 -translate-y-1"></div>
-                      <div className="absolute w-20 h-30 sm:w-24 sm:h-36 rounded-xl sm:rounded-2xl bg-red-600/80 border border-white/80 shadow-md transform rotate-[14deg] -translate-x-1 translate-y-1"></div>
-                      <div className="absolute w-20 h-30 sm:w-24 sm:h-36 rounded-xl sm:rounded-2xl bg-blue-600/80 border border-white/80 shadow-md transform rotate-[-8deg] translate-x-2"></div>
-                      <div className="absolute w-20 h-30 sm:w-24 sm:h-36 rounded-xl sm:rounded-2xl bg-emerald-600/90 border border-white/80 shadow-md transform rotate-[6deg] -translate-y-1"></div>
+                      {/* Stacked previous cards underneath at realistic random angles (exact 2:3 aspect ratio) */}
+                      <div className="absolute w-12 aspect-[2/3] sm:w-15 md:w-18 rounded-lg sm:rounded-xl md:rounded-2xl bg-amber-500/80 border border-white/80 shadow-md transform rotate-[-18deg] translate-x-1 -translate-y-1"></div>
+                      <div className="absolute w-12 aspect-[2/3] sm:w-15 md:w-18 rounded-lg sm:rounded-xl md:rounded-2xl bg-red-600/80 border border-white/80 shadow-md transform rotate-[14deg] -translate-x-1 translate-y-1"></div>
+                      <div className="absolute w-12 aspect-[2/3] sm:w-15 md:w-18 rounded-lg sm:rounded-xl md:rounded-2xl bg-blue-600/80 border border-white/80 shadow-md transform rotate-[-8deg] translate-x-2"></div>
+                      <div className="absolute w-12 aspect-[2/3] sm:w-15 md:w-18 rounded-lg sm:rounded-xl md:rounded-2xl bg-emerald-600/90 border border-white/80 shadow-md transform rotate-[6deg] -translate-y-1"></div>
 
-                      {/* Top active discard with slam animation on landing (enlarged to size lg) */}
+                      {/* Top active discard with slam animation on landing (compacted to size md on mobile, lg on larger screens) */}
                       <div className={`relative z-10 ${isDiscardLanding ? 'animate-cardSlam' : ''}`}>
-                        <CardView card={topDiscard} size="lg" className="rotate-[-2deg] transition-all shadow-2xl" />
+                        <CardView card={topDiscard} size="md" className="rotate-[-2deg] transition-all shadow-xl sm:scale-110 md:scale-125" />
                       </div>
 
                       {/* Pending Penalty Badge (Stacking) */}
@@ -1239,6 +1310,42 @@ export const GameTable: React.FC<GameTableProps> = ({
                           {currentColor}
                         </span>
                       </div>
+
+                      {/* Live Action Ticker directly below the played/discard card */}
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-20 pointer-events-none flex flex-col items-center">
+                        {lastActionText ? (
+                          <div className="text-[9px] sm:text-[10px] font-bold text-amber-300 bg-slate-950/90 px-3 py-0.5 rounded-full border border-amber-400/50 shadow-lg truncate max-w-[200px] sm:max-w-xs animate-fadeIn">
+                            {lastActionText}
+                          </div>
+                        ) : (
+                          <div
+                            className={`text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                              isYourTurn
+                                ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.6)] animate-pulse'
+                                : 'bg-slate-950/80 text-slate-300 border border-slate-800'
+                            }`}
+                          >
+                            {isYourTurn ? 'YOUR TURN!' : `${activePlayer?.name || 'Player'}'s Turn`}
+                          </div>
+                        )}
+
+                        {/* AUTOMATIC DEADLOCK BUTTON: Appears when 2 players remain and neither can play or draw */}
+                        {gameState.isDeadlockAvailable && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              soundManager.play('uno_call');
+                              onDeclareDeadlock?.();
+                            }}
+                            className="pointer-events-auto mt-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-amber-500 to-red-600 hover:from-red-500 hover:to-amber-400 text-white font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_25px_rgba(239,68,68,0.95)] border-2 border-yellow-300 animate-bounce active:scale-95 transition cursor-pointer flex items-center gap-1.5"
+                            title="Ideklarang DEADLOCK (Bilangan ng natitirang baraha)"
+                          >
+                            <span>⚠️</span>
+                            <span>IDEKLARANG DEADLOCK</span>
+                            <span>⚖️</span>
+                          </button>
+                        )}
+                      </div>
                     </>
                   )}
 
@@ -1268,9 +1375,9 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* PLAYERS & CARDS POSITIONED OVER THE YACHT SCENE SIDES */}
         {/* ======================================================== */}
 
-        {/* TOP OPPONENTS ROW (Cleanly centered along the upper dealer arch, without restrictive outer box) */}
+        {/* TOP OPPONENTS ROW (Cleanly positioned higher up along the top dealer arch) */}
         {topOpponentsList.length > 0 && (
-          <div className="absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl flex items-start justify-center gap-4 sm:gap-6 md:gap-8 z-30 pointer-events-none">
+          <div className="absolute top-0.5 sm:top-1 left-1/2 -translate-x-1/2 w-[94%] max-w-5xl flex items-start justify-center gap-1.5 sm:gap-4 md:gap-8 z-30 pointer-events-none">
             {topOpponentsList.map((opp) => {
               const isTurn = activePlayer?.id === opp.id;
               const effectiveCardCount =
@@ -1286,23 +1393,32 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className="pointer-events-auto flex flex-col items-center relative transition-all"
                 >
                   {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2">
                     {/* Avatar Box with Dynamic Expansion & Turn Lightup Halo */}
                     <div className="relative">
                       <div
-                        className={`rounded-2xl flex items-center justify-center shadow-2xl transition-all duration-300 overflow-visible relative ${
+                        className={`rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 overflow-visible relative ${
                           isTurn
-                            ? 'w-13 h-13 sm:w-16 sm:h-16 scale-110 sm:scale-125 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-3 border-yellow-200 animate-turnHalo ring-4 ring-yellow-400/80 shadow-[0_0_30px_rgba(250,204,21,0.95)]'
+                            ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                             : activeUnoShouts.some((s) => s.playerId === opp.id)
-                            ? 'w-10 h-10 sm:w-12 sm:h-12 border-2 animate-unoAvatar ring-4 ring-red-500 border-yellow-300'
+                            ? 'w-8 h-8 sm:w-11 sm:h-11 border-2 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
+                            : speakingPlayerIds.has(opp.id)
+                            ? 'w-8 h-8 sm:w-11 sm:h-11 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.9)] animate-pulse'
                             : !opp.isFinished && opp.cardCount === 1 && !opp.calledUno
-                            ? 'w-10 h-10 sm:w-12 sm:h-12 border-2 border-red-500 ring-2 ring-red-500 animate-pulse bg-red-950/80 shadow-[0_0_15px_rgba(239,68,68,0.9)]'
-                            : 'w-10 h-10 sm:w-12 sm:h-12 border-2 border-slate-700 bg-slate-900/90'
+                            ? 'w-8 h-8 sm:w-11 sm:h-11 border-2 border-red-500 ring-2 ring-red-500 animate-pulse bg-red-950/80 shadow-[0_0_12px_rgba(239,68,68,0.9)]'
+                            : 'w-8 h-8 sm:w-11 sm:h-11 border border-slate-700 bg-slate-900/90'
                         }`}
                       >
-                        <div className="w-full h-full rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center text-xl sm:text-2xl">
+                        <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                           <AvatarDisplay avatar={opp.avatar} />
                         </div>
+
+                        {/* Speaking Mic Badge */}
+                        {speakingPlayerIds.has(opp.id) && (
+                          <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[7px] shadow z-50 animate-bounce">
+                            🎙️
+                          </div>
+                        )}
 
                         {/* Turn Timer Countdown Badge on Avatar Box */}
                         {isTurn && secondsRemaining !== null && (
@@ -1330,24 +1446,27 @@ export const GameTable: React.FC<GameTableProps> = ({
                       )}
                     </div>
 
-                    {/* Horizontal Card Fan with Exact Card Count */}
+                    {/* Compact Fan Style Cards for Top Opponents */}
                     {opp.isFinished ? (
-                      <span className="text-[10px] font-black text-amber-300 bg-slate-900/95 px-2.5 py-1 rounded-xl border border-amber-400/70 shadow-lg">
+                      <span className="text-[9px] sm:text-[10px] font-black text-amber-300 bg-slate-900/95 px-2 py-0.5 rounded-lg border border-amber-400/70 shadow mt-0.5">
                         🏆 DONE
                       </span>
                     ) : effectiveCardCount === 0 ? null : (
-                      <div className="relative flex items-center justify-center overflow-visible py-1 drop-shadow-2xl h-14">
+                      <div className="relative flex items-center justify-center overflow-visible py-0.5 h-8 sm:h-10 max-w-[55px] sm:max-w-[75px]">
                         {canStealFromNext && nextActiveOpponent?.id === opp.id && (
-                          <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-yellow-100 shadow-[0_0_12px_rgba(250,204,21,0.9)] animate-bounce z-40">
-                            👉 Pili ng baraha dito!
+                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8px] sm:text-[9px] px-1.5 py-0.2 rounded-full border border-yellow-100 shadow-[0_0_8px_rgba(250,204,21,0.9)] animate-bounce z-40">
+                            👉 Bunot dito!
                           </div>
                         )}
                         {Array.from({ length: effectiveCardCount }).map((_, i, arr) => {
                           const mid = (arr.length - 1) / 2;
                           const rel = i - mid;
-                          const rot = arr.length > 1 ? rel * Math.min(6, 32 / arr.length) : 0;
-                          const yArch = Math.pow(Math.abs(rel), 1.25) * 1.8;
-                          const overlap = arr.length > 9 ? -34 : arr.length > 6 ? -30 : arr.length > 3 ? -24 : -18;
+                          const rot = arr.length > 1 ? rel * Math.min(2.5, 14 / arr.length) : 0;
+                          const yArch = Math.pow(Math.abs(rel), 1.2) * 0.3;
+                          const cardW = 28; // w-7
+                          const maxFanW = 46;
+                          const neededOverlap = arr.length > 1 ? -Math.min(cardW * 0.9, (arr.length * cardW - maxFanW) / (arr.length - 1)) : 0;
+                          const overlap = arr.length > 1 ? Math.min(-16, neededOverlap) : 0;
                           const isTargetable = canStealFromNext && nextActiveOpponent?.id === opp.id;
 
                           return (
@@ -1355,14 +1474,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                               key={i}
                               id={`opp-card-${opp.id}-${i}`}
                               onClick={isTargetable ? () => handleDraw(i) : undefined}
-                              className={`transform transition-all origin-top ${
+                              className={`transform transition-all origin-top shrink-0 ${
                                 isTargetable
-                                  ? 'cursor-pointer hover:-translate-y-4 hover:scale-110 active:scale-95 ring-2 ring-amber-400/80 rounded-xl shadow-[0_0_15px_rgba(250,204,21,0.8)]'
-                                  : 'hover:-translate-y-2'
+                                  ? 'cursor-pointer hover:-translate-y-2 hover:scale-110 active:scale-95 ring-2 ring-amber-400/80 rounded shadow-[0_0_8px_rgba(250,204,21,0.8)]'
+                                  : 'hover:-translate-y-1'
                               }`}
                               style={{
                                 zIndex: i,
-                                marginLeft: i === 0 ? 0 : `${overlap}px`,
+                                marginLeft: i === 0 ? 0 : `${Math.round(overlap)}px`,
                                 transform: `rotate(${rot}deg) translateY(${yArch}px)`,
                               }}
                               title={isTargetable ? `Piliin ang baraha #${i + 1} ni ${opp.name}` : undefined}
@@ -1370,7 +1489,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                               <CardView
                                 isBack={true}
                                 variant={gameState.variant}
-                                size="sm"
+                                size="xs"
                                 backCountBadge={i === arr.length - 1 ? effectiveCardCount : undefined}
                               />
                             </div>
@@ -1398,7 +1517,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
         {/* WEST (LEFT) SEATS (1 or 2 players vertically on left armchair) */}
         {leftOpponentsList.length > 0 && (
-          <div className="absolute left-2 sm:left-4 md:left-6 lg:left-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 sm:gap-6 z-30">
+          <div className="absolute left-1 sm:left-3 md:left-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 sm:gap-4 z-30">
             {leftOpponentsList.map((opp) => {
               const isTurn = activePlayer?.id === opp.id;
               const effectiveCardCount =
@@ -1417,17 +1536,17 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className="relative">
                     {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
                     <div
-                      className={`rounded-2xl flex items-center justify-center text-2xl shadow-xl border-2 transition-all duration-300 relative ${
+                      className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative ${
                         isTurn
-                          ? 'w-13 h-13 sm:w-16 sm:h-16 scale-110 sm:scale-125 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-3 border-yellow-200 animate-turnHalo ring-4 ring-yellow-400/80 shadow-[0_0_30px_rgba(250,204,21,0.95)]'
+                          ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
-                          ? 'w-11 h-11 sm:w-13 sm:h-13 animate-unoAvatar ring-4 ring-red-500 border-yellow-300'
+                          ? 'w-8 h-8 sm:w-11 sm:h-11 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
                           : !opp.isFinished && opp.cardCount === 1 && !opp.calledUno
-                          ? 'w-11 h-11 sm:w-13 sm:h-13 border-red-500 ring-4 ring-red-500/90 animate-pulse bg-red-950/80 shadow-[0_0_15px_rgba(239,68,68,0.8)]'
-                          : 'w-11 h-11 sm:w-13 sm:h-13 border-slate-700 bg-slate-900/95'
+                          ? 'w-8 h-8 sm:w-11 sm:h-11 border-red-500 ring-2 sm:ring-4 ring-red-500/90 animate-pulse bg-red-950/80 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                          : 'w-8 h-8 sm:w-11 sm:h-11 border-slate-700 bg-slate-900/95'
                       }`}
                     >
-                      <div className="w-full h-full rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center text-xl sm:text-2xl">
+                      <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                         <AvatarDisplay avatar={opp.avatar} />
                       </div>
 
@@ -1467,73 +1586,77 @@ export const GameTable: React.FC<GameTableProps> = ({
                     {opp.name}
                   </span>
 
-                  {/* Left Opponent 2-Layered / 2-Column Compact Card Stack */}
-                  {opp.isFinished ? (
-                    <div className="mt-1 flex flex-col items-center justify-center p-1.5 bg-slate-900/90 border border-amber-400/70 rounded-xl shadow-xl text-center">
-                      <span className="text-sm">🏆</span>
-                      <span className="text-[9px] font-black text-amber-300">DONE</span>
-                    </div>
-                  ) : effectiveCardCount === 0 ? null : (
-                    <div className="relative mt-2 flex items-start justify-center gap-1">
-                      {canStealFromNext && nextActiveOpponent?.id === opp.id && (
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-yellow-100 shadow-[0_0_12px_rgba(250,204,21,0.9)] animate-bounce z-40">
-                          👉 Pili ng baraha dito!
-                        </div>
-                      )}
-                      {/* Split cards into 2 layers / columns (Col 0: even indices, Col 1: odd indices) */}
-                      {[0, 1].map((colIdx) => {
-                        const colCards = Array.from({ length: effectiveCardCount }).filter((_, idx) => idx % 2 === colIdx);
-                        if (colCards.length === 0) return null;
-
-                        return (
-                          <div key={colIdx} className="relative flex flex-col items-center">
-                            {colCards.map((_, rowIdx, colArr) => {
-                              const overallIdx = rowIdx * 2 + colIdx;
-                              const isVeryLastCard = overallIdx === opp.cardCount - 1;
-                              const vOverlap = colArr.length > 5 ? -32 : colArr.length > 3 ? -26 : -20;
-                              const tilt = colIdx === 0 ? 12 : 22;
-                              const isTargetable = canStealFromNext && nextActiveOpponent?.id === opp.id;
-
-                              return (
-                                <div
-                                  key={rowIdx}
-                                  id={`opp-card-${opp.id}-${overallIdx}`}
-                                  onClick={isTargetable ? () => handleDraw(overallIdx) : undefined}
-                                  className={`transform transition-all origin-center shadow-xl ${
-                                    isTargetable
-                                      ? 'cursor-pointer hover:scale-125 active:scale-95 ring-2 ring-amber-400/80 rounded-xl shadow-[0_0_15px_rgba(250,204,21,0.8)]'
-                                      : 'hover:scale-105'
-                                  }`}
-                                  style={{
-                                    zIndex: overallIdx,
-                                    marginTop: rowIdx === 0 ? 0 : `${vOverlap}px`,
-                                    transform: `rotate(${tilt}deg)`,
-                                  }}
-                                  title={isTargetable ? `Piliin ang baraha #${overallIdx + 1} ni ${opp.name}` : undefined}
-                                >
-                                  <CardView
-                                    isBack={true}
-                                    variant={gameState.variant}
-                                    size="xs"
-                                    backCountBadge={isVeryLastCard ? opp.cardCount : undefined}
-                                  />
-                                </div>
-                              );
-                            })}
+                    {/* Compact 3D Diagonal Fan Style Cards for Left Opponents */}
+                    {opp.isFinished ? (
+                      <div className="mt-1 flex flex-col items-center justify-center p-1 bg-slate-900/90 border border-amber-400/70 rounded-lg shadow text-center">
+                        <span className="text-[9px] font-black text-amber-300">🏆 DONE</span>
+                      </div>
+                    ) : effectiveCardCount === 0 ? null : (
+                      <div
+                        className="relative mt-1 flex items-center justify-center overflow-visible py-0.5 h-8 max-w-[50px] sm:max-w-[70px]"
+                        style={{ perspective: '400px' }}
+                      >
+                        {canStealFromNext && nextActiveOpponent?.id === opp.id && (
+                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8px] sm:text-[9px] px-1.5 py-0.2 rounded-full border border-yellow-100 shadow-[0_0_8px_rgba(250,204,21,0.9)] animate-bounce z-40">
+                            👉 Bunot dito!
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        )}
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            transform: 'rotateY(26deg) rotateX(14deg) rotate(-8deg)',
+                            transformStyle: 'preserve-3d',
+                          }}
+                        >
+                          {Array.from({ length: effectiveCardCount }).map((_, i, arr) => {
+                            const mid = (arr.length - 1) / 2;
+                            const rel = i - mid;
+                            const rot = arr.length > 1 ? rel * Math.min(2.5, 12 / arr.length) : 0;
+                            const yArch = Math.pow(Math.abs(rel), 1.2) * 0.3;
+                            const cardW = 28;
+                            const maxFanW = 46;
+                            const neededOverlap = arr.length > 1 ? -Math.min(cardW * 0.88, (arr.length * cardW - maxFanW) / (arr.length - 1)) : 0;
+                            const overlap = arr.length > 1 ? Math.min(-16, neededOverlap) : 0;
+                            const isTargetable = canStealFromNext && nextActiveOpponent?.id === opp.id;
+
+                            return (
+                              <div
+                                key={i}
+                                id={`opp-card-${opp.id}-${i}`}
+                                onClick={isTargetable ? () => handleDraw(i) : undefined}
+                                className={`transform transition-all origin-bottom shrink-0 drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] ${
+                                  isTargetable
+                                    ? 'cursor-pointer hover:-translate-y-2 hover:scale-110 active:scale-95 ring-2 ring-amber-400/80 rounded shadow-[0_0_8px_rgba(250,204,21,0.8)]'
+                                    : 'hover:-translate-y-1'
+                                }`}
+                                style={{
+                                  zIndex: i,
+                                  marginLeft: i === 0 ? 0 : `${Math.round(overlap)}px`,
+                                  transform: `rotate(${rot}deg) translateY(${yArch}px) translateZ(${i * 2}px)`,
+                                }}
+                                title={isTargetable ? `Piliin ang baraha #${i + 1} ni ${opp.name}` : undefined}
+                              >
+                                <CardView
+                                  isBack={true}
+                                  variant={gameState.variant}
+                                  size="xs"
+                                  backCountBadge={i === arr.length - 1 ? effectiveCardCount : undefined}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         )}
 
         {/* EAST (RIGHT) SEATS (1 or 2 players vertically on right armchair) */}
         {rightOpponentsList.length > 0 && (
-          <div className="absolute right-2 sm:right-4 md:right-6 lg:right-10 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4 sm:gap-6 z-30">
+          <div className="absolute right-1 sm:right-3 md:right-6 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 sm:gap-4 z-30">
             {rightOpponentsList.map((opp) => {
               const isTurn = activePlayer?.id === opp.id;
               const effectiveCardCount =
@@ -1552,17 +1675,17 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className="relative">
                     {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
                     <div
-                      className={`rounded-2xl flex items-center justify-center text-2xl shadow-xl border-2 transition-all duration-300 relative ${
+                      className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative ${
                         isTurn
-                          ? 'w-13 h-13 sm:w-16 sm:h-16 scale-110 sm:scale-125 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-3 border-yellow-200 animate-turnHalo ring-4 ring-yellow-400/80 shadow-[0_0_30px_rgba(250,204,21,0.95)]'
+                          ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
-                          ? 'w-11 h-11 sm:w-13 sm:h-13 animate-unoAvatar ring-4 ring-red-500 border-yellow-300'
+                          ? 'w-8 h-8 sm:w-11 sm:h-11 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
                           : !opp.isFinished && opp.cardCount === 1 && !opp.calledUno
-                          ? 'w-11 h-11 sm:w-13 sm:h-13 border-red-500 ring-4 ring-red-500/90 animate-pulse bg-red-950/80 shadow-[0_0_15px_rgba(239,68,68,0.8)]'
-                          : 'w-11 h-11 sm:w-13 sm:h-13 border-slate-700 bg-slate-900/95'
+                          ? 'w-8 h-8 sm:w-11 sm:h-11 border-red-500 ring-2 sm:ring-4 ring-red-500/90 animate-pulse bg-red-950/80 shadow-[0_0_12px_rgba(239,68,68,0.8)]'
+                          : 'w-8 h-8 sm:w-11 sm:h-11 border-slate-700 bg-slate-900/95'
                       }`}
                     >
-                      <div className="w-full h-full rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center text-xl sm:text-2xl">
+                      <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                         <AvatarDisplay avatar={opp.avatar} />
                       </div>
 
@@ -1602,103 +1725,116 @@ export const GameTable: React.FC<GameTableProps> = ({
                     {opp.name}
                   </span>
 
-                  {/* Right Opponent 2-Layered / 2-Column Compact Card Stack */}
-                  {opp.isFinished ? (
-                    <div className="mt-1 flex flex-col items-center justify-center p-1.5 bg-slate-900/90 border border-amber-400/70 rounded-xl shadow-xl text-center">
-                      <span className="text-sm">🏆</span>
-                      <span className="text-[9px] font-black text-amber-300">DONE</span>
-                    </div>
-                  ) : effectiveCardCount === 0 ? null : (
-                    <div className="relative mt-2 flex items-start justify-center gap-1">
-                      {canStealFromNext && nextActiveOpponent?.id === opp.id && (
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full border border-yellow-100 shadow-[0_0_12px_rgba(250,204,21,0.9)] animate-bounce z-40">
-                          👉 Pili ng baraha dito!
-                        </div>
-                      )}
-                      {/* Split cards into 2 layers / columns */}
-                      {[0, 1].map((colIdx) => {
-                        const colCards = Array.from({ length: effectiveCardCount }).filter((_, idx) => idx % 2 === colIdx);
-                        if (colCards.length === 0) return null;
-
-                        return (
-                          <div key={colIdx} className="relative flex flex-col items-center">
-                            {colCards.map((_, rowIdx, colArr) => {
-                              const overallIdx = rowIdx * 2 + colIdx;
-                              const isVeryLastCard = overallIdx === opp.cardCount - 1;
-                              const vOverlap = colArr.length > 5 ? -32 : colArr.length > 3 ? -26 : -20;
-                              const tilt = colIdx === 0 ? -12 : -22;
-                              const isTargetable = canStealFromNext && nextActiveOpponent?.id === opp.id;
-
-                              return (
-                                <div
-                                  key={rowIdx}
-                                  id={`opp-card-${opp.id}-${overallIdx}`}
-                                  onClick={isTargetable ? () => handleDraw(overallIdx) : undefined}
-                                  className={`transform transition-all origin-center shadow-xl ${
-                                    isTargetable
-                                      ? 'cursor-pointer hover:scale-125 active:scale-95 ring-2 ring-amber-400/80 rounded-xl shadow-[0_0_15px_rgba(250,204,21,0.8)]'
-                                      : 'hover:scale-105'
-                                  }`}
-                                  style={{
-                                    zIndex: overallIdx,
-                                    marginTop: rowIdx === 0 ? 0 : `${vOverlap}px`,
-                                    transform: `rotate(${tilt}deg)`,
-                                  }}
-                                  title={isTargetable ? `Piliin ang baraha #${overallIdx + 1} ni ${opp.name}` : undefined}
-                                >
-                                  <CardView
-                                    isBack={true}
-                                    variant={gameState.variant}
-                                    size="xs"
-                                    backCountBadge={isVeryLastCard ? opp.cardCount : undefined}
-                                  />
-                                </div>
-                              );
-                            })}
+                    {/* Compact 3D Diagonal Fan Style Cards for Right Opponents */}
+                    {opp.isFinished ? (
+                      <div className="mt-1 flex flex-col items-center justify-center p-1 bg-slate-900/90 border border-amber-400/70 rounded-lg shadow text-center">
+                        <span className="text-[9px] font-black text-amber-300">🏆 DONE</span>
+                      </div>
+                    ) : effectiveCardCount === 0 ? null : (
+                      <div
+                        className="relative mt-1 flex items-center justify-center overflow-visible py-0.5 h-8 max-w-[50px] sm:max-w-[70px]"
+                        style={{ perspective: '400px' }}
+                      >
+                        {canStealFromNext && nextActiveOpponent?.id === opp.id && (
+                          <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-[8px] sm:text-[9px] px-1.5 py-0.2 rounded-full border border-yellow-100 shadow-[0_0_8px_rgba(250,204,21,0.9)] animate-bounce z-40">
+                            👉 Bunot dito!
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                        )}
+                        <div
+                          className="flex items-center justify-center"
+                          style={{
+                            transform: 'rotateY(-26deg) rotateX(14deg) rotate(8deg)',
+                            transformStyle: 'preserve-3d',
+                          }}
+                        >
+                          {Array.from({ length: effectiveCardCount }).map((_, i, arr) => {
+                            const mid = (arr.length - 1) / 2;
+                            const rel = i - mid;
+                            const rot = arr.length > 1 ? rel * Math.min(2.5, 12 / arr.length) : 0;
+                            const yArch = Math.pow(Math.abs(rel), 1.2) * 0.3;
+                            const cardW = 28;
+                            const maxFanW = 46;
+                            const neededOverlap = arr.length > 1 ? -Math.min(cardW * 0.88, (arr.length * cardW - maxFanW) / (arr.length - 1)) : 0;
+                            const overlap = arr.length > 1 ? Math.min(-16, neededOverlap) : 0;
+                            const isTargetable = canStealFromNext && nextActiveOpponent?.id === opp.id;
+
+                            return (
+                              <div
+                                key={i}
+                                id={`opp-card-${opp.id}-${i}`}
+                                onClick={isTargetable ? () => handleDraw(i) : undefined}
+                                className={`transform transition-all origin-bottom shrink-0 drop-shadow-[2px_4px_6px_rgba(0,0,0,0.6)] ${
+                                  isTargetable
+                                    ? 'cursor-pointer hover:-translate-y-2 hover:scale-110 active:scale-95 ring-2 ring-amber-400/80 rounded shadow-[0_0_8px_rgba(250,204,21,0.8)]'
+                                    : 'hover:-translate-y-1'
+                                }`}
+                                style={{
+                                  zIndex: i,
+                                  marginLeft: i === 0 ? 0 : `${Math.round(overlap)}px`,
+                                  transform: `rotate(${rot}deg) translateY(${yArch}px) translateZ(${i * 2}px)`,
+                                }}
+                                title={isTargetable ? `Piliin ang baraha #${i + 1} ni ${opp.name}` : undefined}
+                              >
+                                <CardView
+                                  isBack={true}
+                                  variant={gameState.variant}
+                                  size="xs"
+                                  backCountBadge={i === arr.length - 1 ? effectiveCardCount : undefined}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>
 
       {/* SOUTH (BOTTOM) AREA: Local Player HUD, Interactive Hand & 3D CALL UNO Buzzer */}
-      <div className="w-full max-w-6xl mx-auto px-4 pb-3 sm:pb-5 z-40">
-        <div className="flex items-end justify-between gap-2 sm:gap-4">
+      <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pb-1 sm:pb-3 z-40 shrink-0">
+        <div className="flex items-end justify-between gap-1 sm:gap-4">
           {/* Bottom-Left: Avatar Box & Yellow Chat Button */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <div className="flex flex-col items-center relative">
               {activeUnoShouts.some((s) => s.playerId === selfPlayer.id) && <UnoCallout isSelf={true} />}
               <div
-                className={`rounded-2xl flex items-center justify-center text-2xl shadow-xl transition-all duration-300 relative ${
+                className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-xl transition-all duration-300 relative ${
                   isYourTurn
-                    ? 'w-14 h-14 sm:w-18 sm:h-18 scale-110 sm:scale-125 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-3 border-yellow-200 animate-turnHalo ring-4 ring-yellow-400/80 shadow-[0_0_30px_rgba(250,204,21,0.95)]'
+                    ? 'w-11 h-11 sm:w-16 sm:h-16 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                     : activeUnoShouts.some((s) => s.playerId === selfPlayer.id)
-                    ? 'w-12 h-12 sm:w-14 sm:h-14 animate-unoAvatar ring-4 ring-red-500 border-2 border-yellow-300'
-                    : 'w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border-2 border-amber-300'
+                    ? 'w-9 h-9 sm:w-12 sm:h-12 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-2 border-yellow-300'
+                    : speakingPlayerIds.has(selfPlayer.id)
+                    ? 'w-9 h-9 sm:w-12 sm:h-12 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.9)] animate-pulse'
+                    : 'w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border border-amber-300'
                 }`}
               >
-                <div className="w-full h-full rounded-xl sm:rounded-2xl overflow-hidden flex items-center justify-center text-2xl sm:text-3xl">
+                <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-lg sm:text-2xl">
                   <AvatarDisplay avatar={selfPlayer.avatar || '🤖'} />
                 </div>
 
+                {/* Speaking Mic Badge */}
+                {speakingPlayerIds.has(selfPlayer.id) && (
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[8px] shadow z-50 animate-bounce">
+                    🎙️
+                  </div>
+                )}
+
                 {/* Turn Timer Countdown Badge on Self Avatar */}
                 {isYourTurn && secondsRemaining !== null && (
-                  <div className="absolute -top-3 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[10px] sm:text-xs px-2 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_12px_rgba(239,68,68,0.9)] flex items-center gap-1 z-50 animate-bounce">
+                  <div className="absolute -top-3 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[9px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
                     <span>⏱️</span>
                     <span>{secondsRemaining}s</span>
                   </div>
                 )}
               </div>
               <span
-                className={`text-[10px] sm:text-xs font-bold mt-1 px-2.5 py-0.5 rounded-full border shadow max-w-[90px] sm:max-w-[120px] truncate text-center transition-all ${
+                className={`text-[9px] sm:text-xs font-bold mt-0.5 px-2 py-0.2 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
                   isYourTurn
-                    ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] scale-105 font-black'
+                    ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.8)] scale-105 font-black'
                     : 'bg-slate-950/90 text-white border-slate-800'
                 }`}
               >
@@ -1710,15 +1846,52 @@ export const GameTable: React.FC<GameTableProps> = ({
             <div className="flex flex-col items-center">
               <button
                 onClick={onOpenChat}
-                className="relative w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition border border-amber-300"
+                className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition border border-amber-300"
                 title="Room Chat"
               >
-                <Smile className="w-5 h-5 text-slate-950" />
-                <span className="text-[8px] font-black leading-none mt-0.5">Chat</span>
+                <Smile className="w-3.5 h-3.5 text-slate-950" />
+                <span className="text-[7px] font-black leading-none mt-0.5">Chat</span>
                 {unreadChatCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-[9px] font-black text-white flex items-center justify-center shadow">
+                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
                     {unreadChatCount}
                   </span>
+                )}
+              </button>
+            </div>
+
+            {/* Circular Open Mic Button */}
+            <div className="flex flex-col items-center">
+              <button
+                onClick={handleToggleMic}
+                className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition border ${
+                  !isVoiceConnected
+                    ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                    : isVoiceMuted
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400'
+                    : speakingPlayerIds.has(currentUserId)
+                    ? 'bg-emerald-500 text-slate-950 border-white ring-4 ring-emerald-400/80 animate-pulse'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400'
+                }`}
+                title={
+                  !isVoiceConnected
+                    ? 'Buksan ang Mikropono (Enable Mic)'
+                    : isVoiceMuted
+                    ? 'Naka-Mute ang Mic (Pindutin para magsalita)'
+                    : 'Bukas ang Mic (Nagsasalita / Live)'
+                }
+              >
+                {isVoiceMuted || !isVoiceConnected ? (
+                  <MicOff className="w-3.5 h-3.5" />
+                ) : (
+                  <Mic className="w-3.5 h-3.5" />
+                )}
+                <span className="text-[7px] font-black leading-none mt-0.5">
+                  {!isVoiceConnected ? 'Mic' : isVoiceMuted ? 'Mute' : 'Live'}
+                </span>
+
+                {/* Pulsing indicator when speaking */}
+                {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-ping" />
                 )}
               </button>
             </div>
@@ -1779,8 +1952,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                     const mid = (total - 1) / 2;
                     const rel = idx - mid;
 
-                    // Dynamic card sizing: keep cards large and prominent ('md'), scaling down only if hand is very large
-                    const cardSize: 'xs' | 'sm' | 'md' = total > 20 ? 'xs' : total > 12 ? 'sm' : 'md';
+                    // Dynamic card sizing: scale dynamically based on screen width and hand count
+                    const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+                    const cardSize: 'xs' | 'sm' | 'md' = isSmallScreen 
+                      ? (total > 12 ? 'xs' : total > 7 ? 'sm' : 'md')
+                      : (total > 20 ? 'xs' : total > 12 ? 'sm' : 'md');
 
                     // Dynamic step angles so cards don't rotate too wildly when count is large
                     const stepAngle = total > 18 ? 0.8 : total > 12 ? 1.4 : total > 7 ? 2.2 : 3.0;
@@ -1788,16 +1964,16 @@ export const GameTable: React.FC<GameTableProps> = ({
                     const archY = Math.pow(Math.abs(rel), 1.2) * (total > 12 ? 0.9 : 1.3);
 
                     // Continuous dynamic overlap margin
-                    const baseWidth = cardSize === 'xs' ? 48 : cardSize === 'sm' ? 72 : 96;
-                    const maxContainerWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth - 220, 800) : 600;
+                    const baseWidth = cardSize === 'xs' ? 36 : cardSize === 'sm' ? 56 : 76;
+                    const maxContainerWidth = typeof window !== 'undefined' ? Math.max(window.innerWidth - 180, 240) : 500;
                     const requiredWidth = total * baseWidth;
                     let overlapMargin = 0;
                     if (idx > 0 && requiredWidth > maxContainerWidth) {
                       const excess = requiredWidth - maxContainerWidth;
                       const neededNegativePerCard = excess / (total - 1);
-                      overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.75);
+                      overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.82);
                     } else if (idx > 0) {
-                      overlapMargin = total > 6 ? -20 : total > 4 ? -12 : -6;
+                      overlapMargin = total > 6 ? -24 : total > 4 ? -16 : -8;
                     }
 
                     return (
@@ -1850,20 +2026,20 @@ export const GameTable: React.FC<GameTableProps> = ({
 
             <div
               onClick={handleCallUnoClick}
-              className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white shadow-buzzer-base p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
+              className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
                 yourHand.length === 1 && !selfPlayer.calledUno
-                  ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_25px_rgba(239,68,68,0.9)]'
+                  ? 'animate-bounce ring-2 sm:ring-4 ring-red-500 shadow-[0_0_20px_rgba(239,68,68,0.9)]'
                   : yourHand.length <= 2
-                  ? 'animate-bounce ring-4 ring-yellow-400'
+                  ? 'animate-bounce ring-2 sm:ring-4 ring-yellow-400'
                   : ''
               }`}
               title="Shout UNO!"
             >
-              <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1.5 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
-                <span className="text-white font-black text-[9px] sm:text-[10px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
+              <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
+                <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
                   CALL
                 </span>
-                <span className="text-yellow-300 font-black italic text-sm sm:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                   UNO
                 </span>
               </div>
@@ -2003,22 +2179,17 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* KEEP OR PLAY POPUP: Compact floating popup directly above player cards so table remains fully visible */}
+      {/* KEEP OR PLAY PROMPT: Borderless floating PNG card + action buttons directly in player's POV center */}
       {gameState.pendingKeepOrPlay && gameState.pendingKeepOrPlay.playerId === currentUserId && (
-        <div className="fixed bottom-36 sm:bottom-44 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fadeIn flex flex-col items-center">
-          <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md border-2 border-amber-400 rounded-3xl p-4 sm:p-5 shadow-[0_0_40px_rgba(250,204,21,0.65)] flex flex-col items-center max-w-xs sm:max-w-sm text-center">
-            {/* Matching Card Preview */}
-            <div className="relative mb-3 flex flex-col items-center">
-              <span className="text-[11px] sm:text-xs font-black text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/30">
-                <span>✨</span> Nabunot na Baraha:
-              </span>
-              <div className="transform hover:scale-105 transition-transform drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]">
-                <CardView card={gameState.pendingKeepOrPlay.drawnCard} size="md" />
-              </div>
+        <div className="fixed bottom-24 sm:bottom-32 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fadeIn flex flex-col items-center">
+          <div className="pointer-events-auto flex flex-col items-center gap-2">
+            {/* Raw PNG Drawn Card with 3D Pop and Soft Glow */}
+            <div className="relative transform hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)] filter hover:drop-shadow-[0_0_20px_rgba(250,204,21,0.9)] animate-bounce-slow">
+              <CardView card={gameState.pendingKeepOrPlay.drawnCard} size="lg" />
             </div>
 
-            {/* Action Buttons: Keep or Play */}
-            <div className="flex items-center gap-2.5 w-full">
+            {/* Floating Action Buttons: Itabi o Ilapag */}
+            <div className="flex items-center gap-3">
               {/* KEEP BUTTON */}
               <button
                 type="button"
@@ -2026,10 +2197,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                   soundManager.play('card_deal');
                   onPassTurn();
                 }}
-                className="flex-1 py-2.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-600 text-slate-200 font-black text-xs uppercase transition shadow cursor-pointer flex flex-col items-center justify-center gap-0.5"
+                className="py-1.5 px-3.5 rounded-full bg-slate-900/90 hover:bg-slate-800 active:scale-90 border border-slate-600 text-slate-200 font-black text-xs uppercase transition shadow-[0_4px_12px_rgba(0,0,0,0.6)] cursor-pointer flex items-center gap-1.5 backdrop-blur-sm"
               >
-                <span>📥 ITABI</span>
-                <span className="text-[9px] text-slate-400 font-normal lowercase">dagdag kamay</span>
+                <span>📥</span>
+                <span>ITABI</span>
               </button>
 
               {/* PLAY BUTTON */}
@@ -2039,10 +2210,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                   const cardToPlay = gameState.pendingKeepOrPlay!.drawnCard;
                   handleCardClick(cardToPlay);
                 }}
-                className="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 active:scale-95 text-slate-950 font-black text-xs uppercase transition shadow-[0_0_20px_rgba(250,204,21,0.7)] cursor-pointer flex flex-col items-center justify-center gap-0.5 border border-yellow-200"
+                className="py-1.5 px-4 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 active:scale-90 text-slate-950 font-black text-xs uppercase transition shadow-[0_0_18px_rgba(250,204,21,0.8)] cursor-pointer flex items-center gap-1.5 border border-yellow-200"
               >
-                <span>🔥 ILAPAG</span>
-                <span className="text-[9px] text-slate-950/80 font-bold lowercase">i-play agad</span>
+                <span>🔥</span>
+                <span>ILAPAG</span>
               </button>
             </div>
           </div>

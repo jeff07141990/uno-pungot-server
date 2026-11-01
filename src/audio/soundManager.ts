@@ -366,6 +366,8 @@ class SoundManager {
     });
   }
 
+  private unoAudioElement: HTMLAudioElement | null = null;
+
   private playUnoCall(ctx: AudioContext) {
     const now = ctx.currentTime;
 
@@ -374,9 +376,9 @@ class SoundManager {
       try {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance('UNO!');
-        utterance.volume = Math.min(1, this.volume * 1.5);
-        utterance.rate = 1.35;
-        utterance.pitch = 1.45;
+        utterance.volume = 1.0;
+        utterance.rate = 1.25;
+        utterance.pitch = 1.35;
         utterance.lang = 'en-US';
 
         const voices = window.speechSynthesis.getVoices();
@@ -399,45 +401,72 @@ class SoundManager {
       }
     }
 
-    // 2. Web Audio Formant Synthesizer shouting "OO-NO!"
-    // Vocal Source Oscillator (modulating pitch from 340Hz -> 480Hz -> 300Hz)
+    // 2. High-Impact Web Audio Formant Vocalizer: Emulates human vocal tract shouting "OO-NO!"
+    // Syllable 1: "OO" (0.00s -> 0.12s)
+    // Syllable 2: "NO!" (0.12s -> 0.45s)
     const vocalOsc = ctx.createOscillator();
     const vocalGain = ctx.createGain();
     vocalOsc.type = 'sawtooth';
 
-    vocalOsc.frequency.setValueAtTime(340, now);
-    vocalOsc.frequency.exponentialRampToValueAtTime(480, now + 0.1);
-    vocalOsc.frequency.exponentialRampToValueAtTime(300, now + 0.38);
+    // Vocal cord pitch curve (sharp attack at 380Hz, soaring to 520Hz, then settling to 340Hz)
+    vocalOsc.frequency.setValueAtTime(380, now);
+    vocalOsc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
+    vocalOsc.frequency.exponentialRampToValueAtTime(320, now + 0.44);
 
-    // Formant 1: Vowel transition from "OO" (320Hz) to "NO/OH" (580Hz)
+    // Formant filter 1: First formant frequency (F1)
     const f1 = ctx.createBiquadFilter();
     f1.type = 'bandpass';
-    f1.Q.value = 6;
-    f1.frequency.setValueAtTime(320, now);
-    f1.frequency.exponentialRampToValueAtTime(580, now + 0.12);
+    f1.Q.value = 5.0;
+    f1.frequency.setValueAtTime(360, now);
+    f1.frequency.exponentialRampToValueAtTime(680, now + 0.14);
+    f1.frequency.exponentialRampToValueAtTime(540, now + 0.44);
 
-    // Formant 2: Vowel transition from "OO" (850Hz) to "NO/OH" (1150Hz)
+    // Formant filter 2: Second formant frequency (F2)
     const f2 = ctx.createBiquadFilter();
     f2.type = 'bandpass';
-    f2.Q.value = 7;
-    f2.frequency.setValueAtTime(850, now);
-    f2.frequency.exponentialRampToValueAtTime(1150, now + 0.12);
+    f2.Q.value = 6.0;
+    f2.frequency.setValueAtTime(900, now);
+    f2.frequency.exponentialRampToValueAtTime(1250, now + 0.14);
+    f2.frequency.exponentialRampToValueAtTime(950, now + 0.44);
 
-    vocalGain.gain.setValueAtTime(0.55 * this.volume, now);
-    vocalGain.gain.setValueAtTime(0.65 * this.volume, now + 0.1);
-    vocalGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+    // Formant filter 3: Third formant (vocal presence & edge)
+    const f3 = ctx.createBiquadFilter();
+    f3.type = 'bandpass';
+    f3.Q.value = 7.0;
+    f3.frequency.setValueAtTime(2600, now);
+
+    vocalGain.gain.setValueAtTime(0.85 * this.volume, now);
+    vocalGain.gain.linearRampToValueAtTime(1.0 * this.volume, now + 0.12);
+    vocalGain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
 
     vocalOsc.connect(f1);
     vocalOsc.connect(f2);
+    vocalOsc.connect(f3);
     f1.connect(vocalGain);
     f2.connect(vocalGain);
+    f3.connect(vocalGain);
     vocalGain.connect(ctx.destination);
 
     vocalOsc.start(now);
-    vocalOsc.stop(now + 0.4);
+    vocalOsc.stop(now + 0.46);
 
-    // 3. Energetic fanfare punch chord (C5, G5, C6)
-    const fanfareNotes = [523.25, 783.99, 1046.5];
+    // 3. Staccato punch hit: Sharp percussive clap to give the shout instant bite
+    const punchOsc = ctx.createOscillator();
+    const punchGain = ctx.createGain();
+    punchOsc.type = 'square';
+    punchOsc.frequency.setValueAtTime(440, now);
+    punchOsc.frequency.exponentialRampToValueAtTime(110, now + 0.08);
+
+    punchGain.gain.setValueAtTime(0.6 * this.volume, now);
+    punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    punchOsc.connect(punchGain);
+    punchGain.connect(ctx.destination);
+    punchOsc.start(now);
+    punchOsc.stop(now + 0.08);
+
+    // 4. Energetic fanfare brass chord (C5, E5, G5, C6)
+    const fanfareNotes = [523.25, 659.25, 783.99, 1046.5];
     fanfareNotes.forEach((freq) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -445,14 +474,14 @@ class SoundManager {
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, now);
 
-      gain.gain.setValueAtTime(0.35 * this.volume, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+      gain.gain.setValueAtTime(0.45 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start(now);
-      osc.stop(now + 0.45);
+      osc.stop(now + 0.48);
     });
   }
 

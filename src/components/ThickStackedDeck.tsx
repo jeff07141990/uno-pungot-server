@@ -43,32 +43,32 @@ export const ThickStackedDeck: React.FC<ThickStackedDeckProps> = ({
       {count === 0 ? (
         <div
           onClick={isInteractive ? () => onClick?.() : undefined}
-          className={`w-16 h-24 sm:w-20 sm:h-28 rounded-xl sm:rounded-2xl border-2 border-dashed border-red-500/60 bg-red-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-2 text-center transition-all ${
+          className={`w-10 aspect-[2/3] sm:w-13 md:w-16 rounded-lg sm:rounded-xl md:rounded-2xl border-2 border-dashed border-red-500/60 bg-red-950/20 backdrop-blur-xs flex flex-col items-center justify-center p-1 sm:p-2 text-center transition-all ${
             isInteractive ? 'cursor-pointer hover:border-amber-400 hover:bg-amber-500/10' : ''
           }`}
         >
-          <span className="text-xl">📭</span>
-          <span className="text-[9px] font-black text-red-400 uppercase tracking-widest mt-1">UBOS NA</span>
-          <span className="text-[8px] text-amber-300 font-bold leading-tight mt-0.5">Bunot sa Next Player</span>
+          <span className="text-sm sm:text-lg">📭</span>
+          <span className="text-[7px] sm:text-[8px] font-black text-red-400 uppercase tracking-widest mt-0.5">UBOS NA</span>
+          <span className="text-[6px] sm:text-[7px] text-amber-300 font-bold leading-tight mt-0.5">Bunot sa Katabi</span>
         </div>
       ) : (
         <>
           {/* 3D Deep Ground Shadow resting on the felt table */}
           <div
-            className="absolute inset-0 w-16 h-24 sm:w-20 sm:h-28 rounded-xl sm:rounded-2xl bg-black/90 blur-md pointer-events-none"
+            className="absolute inset-0 w-9 aspect-[2/3] sm:w-12 md:w-14 rounded-md sm:rounded-lg bg-black/90 blur-md pointer-events-none"
             style={{
-              transform: 'translateY(30px) scale(0.96)',
+              transform: 'translateY(16px) scale(0.96)',
             }}
           />
 
-          {/* 8 Stacked Card Layers - Extruding vertically downward exactly like the reference photo */}
+          {/* 8 Stacked Card Layers - Perfectly flush with the top card */}
           {STACK_TIERS.map((tier) => (
             <div
               key={tier.id}
-              className="absolute inset-0 w-16 h-24 sm:w-20 sm:h-28 rounded-xl sm:rounded-2xl pointer-events-none transition-transform"
+              className="absolute inset-0 w-9 aspect-[2/3] sm:w-12 md:w-14 rounded-md sm:rounded-lg pointer-events-none transition-transform"
               style={{
                 zIndex: tier.z,
-                transform: `translateY(${tier.y}px)`,
+                transform: `translateY(${tier.y * 0.65}px)`,
                 background:
                   'linear-gradient(to right, #808b96 0%, #a6b1bc 3%, #d5dde6 8%, #f1f5f9 22%, #ffffff 50%, #f1f5f9 78%, #d5dde6 92%, #a6b1bc 97%, #808b96 100%)',
                 borderBottom: '1.5px solid #475569',
@@ -90,7 +90,7 @@ export const ThickStackedDeck: React.FC<ThickStackedDeckProps> = ({
                 : ''
             }`}
           >
-            <CardView isBack={true} size="md" variant={variant} className="shadow-lg" />
+            <CardView isBack={true} size="sm" variant={variant} className="shadow-lg" />
 
             {/* Deck Count Badge */}
             <div className="absolute -bottom-2 -right-2 bg-slate-950 text-amber-300 font-mono text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full border border-amber-400/80 shadow-2xl flex items-center gap-1 z-30">

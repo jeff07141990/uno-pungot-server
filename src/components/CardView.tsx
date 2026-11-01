@@ -62,12 +62,12 @@ export const CardView: React.FC<CardViewProps> = ({
     return () => window.removeEventListener('uno_skins_updated', handleUpdate);
   }, []);
 
-  // Size dimensions - increased for clear and prominent cards
+  // Responsive size dimensions - preserving exact 2:3 card aspect ratio (no distortion or squishing)
   const sizeClasses = {
-    xs: 'w-11 h-16 sm:w-12 sm:h-18 rounded-lg text-xs shadow-md',
-    sm: 'w-14 h-22 sm:w-16 sm:h-24 md:w-18 md:h-26 rounded-xl text-sm shadow-lg',
-    md: 'w-20 h-30 sm:w-24 sm:h-36 rounded-2xl text-lg shadow-xl',
-    lg: 'w-24 h-36 sm:w-28 sm:h-42 md:w-32 md:h-48 rounded-2xl text-2xl shadow-2xl',
+    xs: 'w-6 aspect-[2/3] sm:w-7 md:w-9 rounded text-[6px] shadow-xs',
+    sm: 'w-9 aspect-[2/3] sm:w-12 md:w-14 rounded-md sm:rounded-lg text-[9px] sm:text-xs shadow-md',
+    md: 'w-12 aspect-[2/3] sm:w-15 md:w-18 rounded-lg sm:rounded-xl text-xs sm:text-sm md:text-base shadow-lg',
+    lg: 'w-14 aspect-[2/3] sm:w-18 md:w-22 rounded-lg sm:rounded-xl md:rounded-2xl text-sm sm:text-base md:text-xl shadow-xl',
   }[size];
 
   if (isBack || !card) {
@@ -169,10 +169,10 @@ export const CardView: React.FC<CardViewProps> = ({
           <span
             className="font-black italic tracking-tighter select-none"
             style={{
-              fontSize: size === 'lg' ? '4.8rem' : size === 'md' ? '3.4rem' : size === 'sm' ? '2.4rem' : '1.7rem',
+              fontSize: size === 'lg' ? 'clamp(2.4rem, 6vw, 4.4rem)' : size === 'md' ? 'clamp(1.8rem, 4.5vw, 3.2rem)' : size === 'sm' ? 'clamp(1.3rem, 3.2vw, 2.2rem)' : 'clamp(1rem, 2.5vw, 1.5rem)',
               color: '#ffffff',
-              WebkitTextStroke: '2px #000000',
-              textShadow: '3px 4px 0 #000000',
+              WebkitTextStroke: '1.5px #000000',
+              textShadow: '2px 3px 0 #000000',
               transform: 'skewX(-6deg)',
             }}
           >
