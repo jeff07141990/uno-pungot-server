@@ -1344,6 +1344,7 @@ export class RoomManager {
     room.publicState.lastActionText = desc;
     this.broadcastState(roomId);
     this.broadcastToast(roomId, desc, 'uno_call');
+    this.broadcastUnoShout(roomId, player.id, player.name);
     return { success: true };
   }
 
@@ -1674,6 +1675,26 @@ export class RoomManager {
       type: 'TOAST',
       text,
       sound,
+    });
+
+    for (const ws of room.sockets.values()) {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(payload);
+      }
+    }
+  }
+
+  /**
+   * Broadcast dedicated UNO shout event to trigger visual bubble and shout sound for all players.
+   */
+  public broadcastUnoShout(roomId: string, playerId: string, playerName: string) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const payload = JSON.stringify({
+      type: 'UNO_SHOUT',
+      playerId,
+      playerName,
     });
 
     for (const ws of room.sockets.values()) {
