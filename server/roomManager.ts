@@ -612,6 +612,7 @@ export class RoomManager {
     publicState.lastActionText = effectDesc;
 
     this.startTurnTimer(room);
+    this.checkDeadlock(room);
     this.broadcastState(roomId);
     this.broadcastToast(roomId, effectDesc, sound);
 
@@ -1268,6 +1269,7 @@ export class RoomManager {
     );
 
     this.startTurnTimer(room);
+    this.checkDeadlock(room);
     this.broadcastState(roomId);
     this.broadcastToast(roomId, desc, 'card_draw');
 
@@ -1310,6 +1312,7 @@ export class RoomManager {
     publicState.lastActionText = desc;
 
     this.startTurnTimer(room);
+    this.checkDeadlock(room);
     this.broadcastState(roomId);
     this.broadcastToast(roomId, desc, 'card_deal');
 
@@ -1678,5 +1681,135 @@ export class RoomManager {
         ws.send(payload);
       }
     }
+  }
+
+  /**
+   * Check if a 2-player deadlock state is reached:
+   * 1. Only 2 active players left with cards (and draw deck is 0)
+   * 2. Neither player has any playable card matching top discard/active color
+   */
+  public checkDeadlock(room: InternalRoomState): boolean {
+    const { publicState } = room;
+    if (publicState.phase !== 'playing') return false;
+
+    const remainingPlayers = publicState.players.filter(
+      (p) => !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+    );
+
+    // Rule: Must be exactly the 2 remaining players
+    if (remainingPlayers.length !== 2) {
+      publicState.isDeadlockAvailable = false;
+      return false;
+    }
+
+    // Must have no cards left to draw from draw pile
+    if (room.drawPile.length > 0) {
+      publicState.isDeadlockAvailable = false;
+      return false;
+    }
+
+    // Check if player 1 has any playable card
+    const hand1 = room.playerHands.get(remainingPlayers[0].id) || [];
+    const hasPlayable1 = hand1.some((c) =>
+      isCardPlayable(
+        c,
+        publicState.topDiscard,
+        publicState.currentColor,
+        publicState.pendingDrawPenalty,
+        publicState.houseRules.stacking,
+        publicState.variant
+      )
+    );
+
+    // Check if player 2 has any playable card
+    const hand2 = room.playerHands.get(remainingPlayers[1].id) || [];
+    const hasPlayable2 = hand2.some((c) =>
+      isCardPlayable(
+        c,
+        publicState.topDiscard,
+        publicState.currentColor,
+        publicState.pendingDrawPenalty,
+        publicState.houseRules.stacking,
+        publicState.variant
+      )
+    );
+
+    // Deadlock is true if neither player has any playable card!
+    const isDeadlock = !hasPlayable1 && !hasPlayable2;
+    publicState.isDeadlockAvailable = isDeadlock;
+    return isDeadlock;
+  }
+
+  /**
+   * Declare DEADLOCK:
+   * Counts the cards of the 2 remaining players.
+   * Player with FEWEST remaining cards wins!
+   * Player with MORE remaining cards is Ang Pungot (Loser)!
+   */
+  public declareDeadlock(roomId: string, requestedById: string): { success: boolean; message?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room || room.publicState.phase !== 'playing') {
+      return { success: false, message: 'Game is not active.' };
+    }
+
+    const { publicState } = room;
+    const remainingPlayers = publicState.players.filter(
+      (p) => !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+    );
+
+    if (remainingPlayers.length !== 2) {
+      return { success: false, message: 'Deadlock can only be declared when 2 players remain.' };
+    }
+
+    const [p1, p2] = remainingPlayers;
+    const hand1 = room.playerHands.get(p1.id) || [];
+    const hand2 = room.playerHands.get(p2.id) || [];
+
+    // Fewer cards wins!
+    let winnerPlayer = p1;
+    let loserPlayer = p2;
+
+    if (hand2.length < hand1.length) {
+      winnerPlayer = p2;
+      loserPlayer = p1;
+    } else if (hand1.length === hand2.length) {
+      // Tie-breaker: lowest card face points or requester
+      const score1 = calculateHandScore(hand1);
+      const score2 = calculateHandScore(hand2);
+      if (score2 < score1) {
+        winnerPlayer = p2;
+        loserPlayer = p1;
+      }
+    }
+
+    // Set rankings
+    const finishRankWinner = publicState.finishOrder.length + 1;
+    winnerPlayer.isFinished = true;
+    winnerPlayer.finishRank = finishRankWinner;
+    publicState.finishOrder.push(winnerPlayer.id);
+    if (!publicState.winnerId) {
+      publicState.winnerId = winnerPlayer.id;
+    }
+
+    const finishRankLoser = publicState.players.length;
+    loserPlayer.isFinished = true;
+    loserPlayer.finishRank = finishRankLoser;
+    publicState.finishOrder.push(loserPlayer.id);
+    publicState.loserId = loserPlayer.id;
+
+    publicState.phase = 'ended';
+    publicState.endedAt = Date.now();
+    publicState.isDeadlockAvailable = false;
+
+    if (room.timerInterval) clearInterval(room.timerInterval);
+    if (room.botTimeout) clearTimeout(room.botTimeout);
+    if (room.unoTimeout) clearTimeout(room.unoTimeout);
+
+    const desc = `⚠️ DEADLOCK DECLARED! Walang playable cards! Bilangan ng baraha: 🏆 ${winnerPlayer.name} (${hand1.length < hand2.length ? hand1.length : hand2.length} cards) WINS! 💀 ${loserPlayer.name} (${hand1.length < hand2.length ? hand2.length : hand1.length} cards) is ANG PUNGOT!`;
+    publicState.lastActionText = desc;
+
+    this.broadcastState(roomId);
+    this.broadcastToast(roomId, desc, 'game_win');
+    return { success: true };
   }
 }

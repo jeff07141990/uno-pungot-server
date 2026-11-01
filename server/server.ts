@@ -139,6 +139,15 @@ wss.on('connection', (ws: WebSocket) => {
           break;
         }
 
+        case 'DECLARE_DEADLOCK': {
+          const { roomId, playerId } = data;
+          const result = roomManager.declareDeadlock(roomId, playerId);
+          if (!result.success && result.message) {
+            ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
+          }
+          break;
+        }
+
         case 'CHALLENGE_WD4': {
           const { roomId, challengerId, acceptChallenge } = data;
           roomManager.resolveWD4Challenge(roomId, challengerId, acceptChallenge);

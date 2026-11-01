@@ -104,6 +104,7 @@ export interface PublicGameState {
     playerId: string;
     drawnCard: Card;
   } | null;
+  isDeadlockAvailable?: boolean;
   turnDeadline: number | null;
   winnerId: string | null;
   loserId: string | null;
