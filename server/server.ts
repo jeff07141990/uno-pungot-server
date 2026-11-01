@@ -195,6 +195,12 @@ wss.on('connection', (ws: WebSocket) => {
           roomManager.restartGame(roomId, hostId);
           break;
         }
+
+        case 'VOICE_SIGNAL': {
+          const { roomId, senderId, targetId, signal } = data;
+          roomManager.relayVoiceSignal(roomId, senderId, targetId, signal);
+          break;
+        }
       }
     } catch (err) {
       console.error('Socket message parse error:', err);

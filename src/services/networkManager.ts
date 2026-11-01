@@ -9,6 +9,7 @@ export interface NetworkCallbacks {
   onReaction: (event: ReactionEvent) => void;
   onError: (msg: string) => void;
   onStatusChange: (status: ConnectionStatus) => void;
+  onVoiceSignal: (senderId: string, signal: unknown) => void;
 }
 
 class NetworkManager {
@@ -29,13 +30,8 @@ class NetworkManager {
       const url = import.meta.env.VITE_SERVER_URL;
       return url.replace(/^http/, 'ws');
     }
-    let hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
-      hostname = '192.168.1.80';
-    }
-    const port = import.meta.env.VITE_SERVER_PORT || 3001;
-    const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${hostname}:${port}`;
+    // Default to Live Render Server URL
+    return 'wss://uno-pungot-server.onrender.com';
   }
 
   public getHttpApiUrl(): string {
@@ -46,13 +42,8 @@ class NetworkManager {
     if (import.meta.env.VITE_SERVER_URL) {
       return import.meta.env.VITE_SERVER_URL;
     }
-    let hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-    if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
-      hostname = '192.168.1.80';
-    }
-    const port = import.meta.env.VITE_SERVER_PORT || 3001;
-    const protocol = typeof window !== 'undefined' && window.location.protocol === 'https:' ? 'https:' : 'http:';
-    return `${protocol}//${hostname}:${port}`;
+    // Default to Live Render Server URL
+    return 'https://uno-pungot-server.onrender.com';
   }
 
   public setCallbacks(cbs: Partial<NetworkCallbacks>) {
@@ -109,6 +100,9 @@ class NetworkManager {
               break;
             case 'REACTION':
               this.callbacks.onReaction?.(msg.event);
+              break;
+            case 'VOICE_SIGNAL':
+              this.callbacks.onVoiceSignal?.(msg.senderId, msg.signal);
               break;
             case 'ERROR':
               this.callbacks.onError?.(msg.message);
@@ -248,8 +242,16 @@ class NetworkManager {
     this.send({ type: 'SEND_REACTION', roomId, senderId, emoji });
   }
 
+  public declareDeadlock(roomId: string, playerId: string) {
+    this.send({ type: 'DECLARE_DEADLOCK', roomId, playerId });
+  }
+
   public restartGame(roomId: string, hostId: string) {
     this.send({ type: 'RESTART_GAME', roomId, hostId });
+  }
+
+  public sendVoiceSignal(roomId: string, senderId: string, targetId: string, signal: unknown) {
+    this.send({ type: 'VOICE_SIGNAL', roomId, senderId, targetId, signal });
   }
 }
 

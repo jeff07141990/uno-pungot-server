@@ -1812,4 +1812,25 @@ export class RoomManager {
     this.broadcastToast(roomId, desc, 'game_win');
     return { success: true };
   }
+
+  /**
+   * Relay WebRTC audio signaling messages between players in the same room.
+   */
+  public relayVoiceSignal(roomId: string, senderId: string, targetId: string, signal: unknown) {
+    const room = this.rooms.get(roomId);
+    if (!room) return;
+
+    const targetClient = room.sockets.get(targetId);
+    if (targetClient && targetClient.readyState === WebSocket.OPEN) {
+      targetClient.send(
+        JSON.stringify({
+          type: 'VOICE_SIGNAL',
+          senderId,
+          targetId,
+          signal,
+        })
+      );
+    }
+  }
 }
+
