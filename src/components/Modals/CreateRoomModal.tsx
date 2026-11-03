@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Shield, Timer, Layers, Shuffle, Flame, Sparkles, RefreshCw, Zap } from 'lucide-react';
-import { GameVariant, HouseRules } from '../../engine/types';
+import { EntryFeeAmount, GameVariant, HouseRules } from '../../engine/types';
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface CreateRoomModalProps {
     isPrivate: boolean;
     variant: GameVariant;
     houseRules: HouseRules;
+    entryFee: EntryFeeAmount;
   }) => void;
 }
 
@@ -20,6 +21,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 }) => {
   const [roomName, setRoomName] = useState('');
   const [variant, setVariant] = useState<GameVariant>('classic');
+  const [entryFee, setEntryFee] = useState<EntryFeeAmount>(0);
   const [isPrivate, setIsPrivate] = useState(false);
   const [turnTimer, setTurnTimer] = useState<0 | 15 | 30 | 60>(30);
   const [startingHandSize, setStartingHandSize] = useState<number>(7);
@@ -36,6 +38,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       roomName: roomName.trim() || 'Custom Match',
       isPrivate,
       variant,
+      entryFee,
       houseRules: {
         turnTimer,
         startingHandSize,
@@ -141,6 +144,78 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Virtual Coin Entry Fee & Five-Place Prize Pool Selection */}
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-purple-900/20 to-slate-950 border-2 border-amber-400/50 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                <span>💰</span>
+                <span>Entry Fee & Prize Pool (5 Players)</span>
+              </label>
+              {entryFee > 0 && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
+                  Pool: ₱{entryFee * 5}
+                </span>
+              )}
+            </div>
+
+            {/* Entry Fee Buttons */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+              {([0, 100, 200, 300, 400, 500] as EntryFeeAmount[]).map((fee) => (
+                <button
+                  key={fee}
+                  type="button"
+                  onClick={() => setEntryFee(fee)}
+                  className={`py-2 px-1 rounded-xl text-xs font-black transition-all ${
+                    entryFee === fee
+                      ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 shadow-[0_0_12px_rgba(250,204,21,0.6)] scale-105 border-2 border-white'
+                      : 'bg-slate-950/80 text-slate-300 border border-slate-800 hover:border-amber-400/60'
+                  }`}
+                >
+                  {fee === 0 ? 'Free' : `₱${fee}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Prize Pool Breakdown Preview */}
+            {entryFee > 0 ? (
+              <div className="bg-slate-950/80 p-2.5 rounded-xl border border-amber-400/30 text-[10px] space-y-1">
+                <div className="font-bold text-amber-200 flex justify-between border-b border-slate-800 pb-1">
+                  <span>🏆 5-Place Prize Distribution:</span>
+                  <span className="font-black text-yellow-300">Total: ₱{entryFee * 5} (100%)</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1 text-center pt-1 font-semibold text-slate-300">
+                  <div className="p-1 rounded bg-amber-500/20 border border-amber-400/40">
+                    <span className="text-amber-300 block font-black">1st (50%)</span>
+                    <span>₱{Math.floor(entryFee * 5 * 0.5)}</span>
+                  </div>
+                  <div className="p-1 rounded bg-blue-500/20 border border-blue-400/40">
+                    <span className="text-blue-300 block font-black">2nd (25%)</span>
+                    <span>₱{Math.floor(entryFee * 5 * 0.25)}</span>
+                  </div>
+                  <div className="p-1 rounded bg-purple-500/20 border border-purple-400/40">
+                    <span className="text-purple-300 block font-black">3rd (15%)</span>
+                    <span>₱{Math.floor(entryFee * 5 * 0.15)}</span>
+                  </div>
+                  <div className="p-1 rounded bg-emerald-500/20 border border-emerald-400/40">
+                    <span className="text-emerald-300 block font-black">4th (7%)</span>
+                    <span>₱{Math.floor(entryFee * 5 * 0.07)}</span>
+                  </div>
+                  <div className="p-1 rounded bg-rose-500/20 border border-rose-400/40">
+                    <span className="text-rose-300 block font-black">5th (3%)</span>
+                    <span>₱{entryFee * 5 - (Math.floor(entryFee * 5 * 0.5) + Math.floor(entryFee * 5 * 0.25) + Math.floor(entryFee * 5 * 0.15) + Math.floor(entryFee * 5 * 0.07))}</span>
+                  </div>
+                </div>
+                <p className="text-[9px] text-amber-300/80 italic text-center pt-0.5">
+                  *Nangangailangan ng eksaktong 5 players upang masimulan ang match.
+                </p>
+              </div>
+            ) : (
+              <p className="text-[10px] text-slate-400 italic">
+                Casual / Free Match: Walang entry fee. Standard coin victory reward (+₱200) ang ipagkakaloob.
+              </p>
+            )}
           </div>
 
           {/* Universal Defeat Rule Notice */}

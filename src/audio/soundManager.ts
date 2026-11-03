@@ -119,6 +119,15 @@ class SoundManager {
         case 'dare':
           this.playPowerGeneral(ctx);
           break;
+        case 'vs_impact':
+          this.playVsImpact(ctx);
+          break;
+        case 'countdown_tick':
+          this.playCountdownTick(ctx);
+          break;
+        case 'match_start':
+          this.playMatchStart(ctx);
+          break;
       }
     } catch (e) {
       console.warn('Audio playback error', e);
@@ -725,6 +734,92 @@ class SoundManager {
       slapNoise.stop(tapTime + 0.03);
     } catch {
       // Audio fallback
+    }
+  }
+
+  // --- VS MATCH INTRO & COUNTDOWN SOUNDS ---
+
+  // Cinematic heavy VS impact slam
+  private playVsImpact(ctx: AudioContext) {
+    const now = ctx.currentTime;
+    try {
+      // Sub-bass thump
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + 0.55);
+
+      gain.gain.setValueAtTime(0.7 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.6);
+
+      // Metallic cymbal-like impact shimmer
+      const shimmerOsc = ctx.createOscillator();
+      const shimmerGain = ctx.createGain();
+      shimmerOsc.type = 'triangle';
+      shimmerOsc.frequency.setValueAtTime(880, now);
+      shimmerOsc.frequency.exponentialRampToValueAtTime(440, now + 0.35);
+
+      shimmerGain.gain.setValueAtTime(0.3 * this.volume, now);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+      shimmerOsc.connect(shimmerGain);
+      shimmerGain.connect(ctx.destination);
+      shimmerOsc.start(now);
+      shimmerOsc.stop(now + 0.4);
+    } catch {
+      // ignore
+    }
+  }
+
+  // Arcade countdown tick (5, 4, 3, 2, 1)
+  private playCountdownTick(ctx: AudioContext) {
+    const now = ctx.currentTime;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.09);
+
+      gain.gain.setValueAtTime(0.35 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch {
+      // ignore
+    }
+  }
+
+  // High-energy celebratory match START blast
+  private playMatchStart(ctx: AudioContext) {
+    const now = ctx.currentTime;
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+
+        gain.gain.setValueAtTime(0.4 * this.volume, now + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.4);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 0.4);
+      });
+    } catch {
+      // ignore
     }
   }
 }

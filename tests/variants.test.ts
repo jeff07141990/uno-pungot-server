@@ -133,6 +133,45 @@ describe('Uno All Wild Variant', () => {
     // Skips p1 and p2 -> next active player is p3 (index 3)
     expect(room.publicState.activePlayerIndex).toBe(3);
   });
+
+  it('handles Skip 2 in head-to-head 2-player match allowing player to take 2 more consecutive turns', () => {
+    const rm = new RoomManager();
+    const roomId = rm.createRoom('p1', 'Player 1', '🦊', { variant: 'all_wild' });
+    rm.addBot(roomId, 'p1');
+
+    const room = rm.getRoom(roomId)!;
+    rm.startGame(roomId, 'p1');
+
+    room.publicState.activePlayerIndex = 0;
+    room.publicState.direction = 1;
+    const p0 = room.publicState.players[0];
+
+    const skip2Card: Card = { id: 'test_skip2_headtohead', color: 'wild', type: 'skip2' };
+    const card2: Card = { id: 'test_card2', color: 'wild', type: 'wild' };
+    const card3: Card = { id: 'test_card3', color: 'wild', type: 'wild' };
+    room.playerHands.get(p0.id)!.push(skip2Card, card2, card3);
+
+    // 1. Play Skip 2
+    const res1 = rm.playCard(roomId, p0.id, skip2Card.id);
+    expect(res1.success).toBe(true);
+    // Extra turns remaining = 2, turn remains on p0!
+    expect(room.publicState.activePlayerIndex).toBe(0);
+    expect(room.extraTurnsRemaining?.count).toBe(2);
+
+    // 2. Play 1st extra card (Card #2)
+    const res2 = rm.playCard(roomId, p0.id, card2.id);
+    expect(res2.success).toBe(true);
+    // Extra turns remaining = 1, turn STILL remains on p0!
+    expect(room.publicState.activePlayerIndex).toBe(0);
+    expect(room.extraTurnsRemaining?.count).toBe(1);
+
+    // 3. Play 2nd extra card (Card #3)
+    const res3 = rm.playCard(roomId, p0.id, card3.id);
+    expect(res3.success).toBe(true);
+    // Now both extra turns were used, turn advances to p1 (opponent, index 1)!
+    expect(room.extraTurnsRemaining).toBeNull();
+    expect(room.publicState.activePlayerIndex).toBe(1);
+  });
 });
 
 describe('Uno Flip Variant', () => {

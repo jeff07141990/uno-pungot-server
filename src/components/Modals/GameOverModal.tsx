@@ -141,6 +141,37 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             </span>
           </div>
 
+          {/* 5-Place Prize Pool Match Results Banner */}
+          {gameState.entryFee && gameState.entryFee > 0 && gameState.payoutResults && gameState.payoutResults.length > 0 ? (
+            <div className="mt-3 w-full max-w-xl p-3.5 rounded-2xl bg-gradient-to-r from-amber-950/90 via-slate-900/90 to-amber-950/90 border-2 border-amber-400/80 shadow-[0_0_30px_rgba(250,204,21,0.35)] text-center animate-fadeIn">
+              <div className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center justify-center gap-1.5 mb-1">
+                <span>🏆</span>
+                <span>5-Place Prize Pool Distribution (₱{gameState.prizePool?.toLocaleString()} Pool)</span>
+              </div>
+              {(() => {
+                const userPayout = gameState.payoutResults.find((p) => p.playerId === currentUserId);
+                if (userPayout) {
+                  return (
+                    <div className="text-xs sm:text-sm font-black text-amber-200">
+                      Napanalunan Mo: <span className="text-yellow-300 font-mono text-base font-black">+₱{userPayout.prize.toLocaleString()}</span> ({userPayout.rank === 1 ? '1st Place 50%' : userPayout.rank === 2 ? '2nd Place 25%' : userPayout.rank === 3 ? '3rd Place 15%' : userPayout.rank === 4 ? '4th Place 7%' : '5th Place 3%'})!
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          ) : (
+            /* Coin Reward Banner for Winner in Casual Match */
+            isCurrentUserWinner && (
+              <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/25 via-yellow-500/20 to-amber-500/25 border-2 border-amber-400 text-xs sm:text-sm font-black text-amber-300 shadow-[0_0_25px_rgba(250,204,21,0.4)] animate-bounce">
+                <span className="text-lg">💰</span>
+                <span>
+                  NAPANALUNAN: +₱200 Virtual Peso Coins! {gameState.activeCoinBoosters?.includes(currentUserId) ? '(2x Booster Active: ₱400!)' : ''}
+                </span>
+              </div>
+            )
+          )}
+
           {/* Loser / Pungot Announcement Banner */}
           {loser && (
             <div className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-red-950/80 border-2 border-red-500/70 text-xs sm:text-sm font-black text-red-200 shadow-[0_0_20px_rgba(239,68,68,0.35)] animate-pulse">
@@ -225,8 +256,20 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Right: Card Count & Result Badge */}
+                  {/* Right: Card Count, Prize Payout & Result Badge */}
                   <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
+                    {(() => {
+                      const payout = gameState.payoutResults?.find((p) => p.playerId === player.id);
+                      if (payout && payout.prize > 0) {
+                        return (
+                          <span className="font-mono font-black text-xs sm:text-sm text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/40 shadow">
+                            +₱{payout.prize.toLocaleString()}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+
                     <span className="text-xs sm:text-sm font-mono text-slate-300 bg-slate-900/90 px-2.5 py-1 rounded-xl border border-slate-700">
                       {player.cardCount === 0 ? '0 cards' : `${player.cardCount} left`}
                     </span>
@@ -279,7 +322,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             onClick={onLeave}
             className="w-full sm:w-auto py-3.5 px-6 rounded-2xl bg-red-950/80 hover:bg-red-900 text-red-200 font-bold text-sm flex items-center justify-center gap-2 border border-red-700/60 active:scale-95 transition cursor-pointer shadow-lg"
           >
-            <Home className="w-4 h-4" />
+            <img src="/home screen in game icons/home.png" alt="Home" className="w-5 h-5 object-contain" />
             <span>Leave</span>
           </button>
         </div>

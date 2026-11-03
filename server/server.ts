@@ -3,6 +3,7 @@ import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
 import { RoomManager } from './roomManager';
+import { economyManager } from './economyManager';
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,122 @@ app.post('/api/rooms', (req, res) => {
   res.json({ roomId });
 });
 
+// --- VIRTUAL PESO COIN ECONOMY REST ENDPOINTS ---
+
+// 1. Get or create player wallet & inventory
+app.get('/api/economy/wallet/:playerId', (req, res) => {
+  try {
+    const { playerId } = req.params;
+    const name = (req.query.name as string) || 'Player';
+    const avatar = (req.query.avatar as string) || '🦊';
+    const wallet = economyManager.getOrCreateWallet(playerId, name, avatar);
+    const catalog = economyManager.getCatalog();
+    const missions = economyManager.getDailyMissions(playerId);
+    res.json({ wallet, catalog, missions });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 2. Claim daily ₱100 login reward
+app.post('/api/economy/daily-reward', (req, res) => {
+  try {
+    const { playerId, name, avatar } = req.body;
+    if (!playerId) {
+      res.status(400).json({ error: 'playerId is required' });
+      return;
+    }
+    const result = economyManager.claimDailyReward(playerId, name, avatar);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. Buy Power-Up from Shop
+app.post('/api/economy/buy-powerup', (req, res) => {
+  try {
+    const { playerId, powerUpId, quantity } = req.body;
+    if (!playerId || !powerUpId) {
+      res.status(400).json({ error: 'playerId and powerUpId are required' });
+      return;
+    }
+    const result = economyManager.buyPowerUp(playerId, powerUpId, quantity || 1);
+    
+    // Store strictly in player inventory (do not inject into playing hand cards)
+
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. Claim completed Daily Mission reward
+app.post('/api/economy/claim-mission', (req, res) => {
+  try {
+    const { playerId, missionId } = req.body;
+    if (!playerId || !missionId) {
+      res.status(400).json({ error: 'playerId and missionId are required' });
+      return;
+    }
+    const result = economyManager.claimMissionReward(playerId, missionId);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. Leaderboard rankings
+app.get('/api/economy/leaderboard', (_req, res) => {
+  try {
+    const rankings = economyManager.getLeaderboards();
+    res.json(rankings);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 6. Admin review transactions
+app.get('/api/economy/admin/transactions', (req, res) => {
+  try {
+    const limit = Number(req.query.limit) || 100;
+    const txs = economyManager.getTransactions(limit);
+    res.json({ transactions: txs });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 7. Admin adjust balance or promo coins
+app.post('/api/economy/admin/adjust-balance', (req, res) => {
+  try {
+    const { playerId, amount, reason } = req.body;
+    if (!playerId || typeof amount !== 'number') {
+      res.status(400).json({ error: 'playerId and amount are required' });
+      return;
+    }
+    const result = economyManager.adminAdjustBalance(playerId, amount, reason || 'Promotional award');
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 8. Admin configure item price or toggle enable/disable
+app.post('/api/economy/admin/config-item', (req, res) => {
+  try {
+    const { powerUpId, updates } = req.body;
+    if (!powerUpId || !updates) {
+      res.status(400).json({ error: 'powerUpId and updates are required' });
+      return;
+    }
+    const result = economyManager.adminUpdateCatalogItem(powerUpId, updates);
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
@@ -50,6 +167,12 @@ wss.on('connection', (ws: WebSocket) => {
       const data = JSON.parse(message.toString());
 
       switch (data.type) {
+        case 'PING': {
+          isAlive = true;
+          ws.send(JSON.stringify({ type: 'PONG' }));
+          break;
+        }
+
         case 'JOIN_ROOM': {
           const { roomId, playerId, playerName, playerAvatar } = data;
           boundRoomId = roomId;
@@ -82,6 +205,24 @@ wss.on('connection', (ws: WebSocket) => {
         case 'REMOVE_PLAYER': {
           const { roomId, hostId, targetPlayerId } = data;
           roomManager.removePlayer(roomId, hostId, targetPlayerId);
+          break;
+        }
+
+        case 'CONFIRM_ENTRY_PAYMENT': {
+          const { roomId, playerId } = data;
+          const result = roomManager.confirmEntryPayment(roomId, playerId);
+          if (!result.success) {
+            ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
+          }
+          break;
+        }
+
+        case 'UPDATE_ENTRY_FEE': {
+          const { roomId, hostId, entryFee } = data;
+          const result = roomManager.updateEntryFee(roomId, hostId, entryFee);
+          if (!result.success) {
+            ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
+          }
           break;
         }
 
@@ -199,6 +340,15 @@ wss.on('connection', (ws: WebSocket) => {
         case 'VOICE_SIGNAL': {
           const { roomId, senderId, targetId, signal } = data;
           roomManager.relayVoiceSignal(roomId, senderId, targetId, signal);
+          break;
+        }
+
+        case 'USE_POWERUP': {
+          const { roomId, playerId, powerUpId, targetPlayerId, chosenColor } = data;
+          const result = roomManager.usePowerUp(roomId, playerId, powerUpId, targetPlayerId, chosenColor);
+          if (!result.success) {
+            ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
+          }
           break;
         }
       }

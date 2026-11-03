@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Volume2, VolumeX, Eye, Maximize2, Minimize2, Image, Upload, RotateCcw, Trash2 } from 'lucide-react';
+import { X, Volume2, VolumeX, Eye, Maximize2, Minimize2, Image, Upload, RotateCcw, Trash2, Lock, Unlock, ShieldAlert } from 'lucide-react';
 import { soundManager } from '../../audio/soundManager';
 import {
   getCustomCardSkins,
@@ -51,17 +51,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
   });
   const [selectedUploadKey, setSelectedUploadKey] = useState<keyof CustomCardSkinMap | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [serverAddress, setServerAddress] = useState<string>(() => {
     try {
-      return localStorage.getItem('uno_custom_server') || 'http://192.168.1.80:3001';
+      const saved = localStorage.getItem('uno_custom_server');
+      if (saved) return saved;
+      if (typeof window !== 'undefined') {
+        const { hostname, protocol } = window.location;
+        if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+          return `${protocol}//${hostname}:3001`;
+        }
+      }
+      return 'https://uno-pungot-server.onrender.com';
     } catch {
-      return 'http://192.168.1.80:3001';
+      return 'https://uno-pungot-server.onrender.com';
     }
   });
   const [activeColorTab, setActiveColorTab] = useState<
     'card_back' | 'red' | 'blue' | 'green' | 'yellow' | 'wild' | 'all_wild' | 'flip' | 'dare'
   >('card_back');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('uno_admin_authed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [adminPinInput, setAdminPinInput] = useState<string>('');
+  const [adminPinError, setAdminPinError] = useState<string>('');
+
+  const handleUnlockAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const storedPin = localStorage.getItem('uno_admin_pin') || '8888';
+    if (adminPinInput.trim() === storedPin) {
+      setIsAdminUnlocked(true);
+      try {
+        sessionStorage.setItem('uno_admin_authed', 'true');
+      } catch {}
+      setAdminPinError('');
+      setAdminPinInput('');
+    } else {
+      setAdminPinError('Maling PIN! Admin lamang ang pinahihintulutan.');
+    }
+  };
+
+  const handleLockAdmin = () => {
+    setIsAdminUnlocked(false);
+    try {
+      sessionStorage.removeItem('uno_admin_authed');
+    } catch {}
+  };
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -241,7 +280,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
           <h2 className="text-xl font-black text-white tracking-wide flex items-center gap-2">
-            ⚙️ SETTINGS & CARD CUSTOMIZER
+            ⚙️ {isAdminUnlocked ? 'SETTINGS & CARD CUSTOMIZER (ADMIN)' : 'GAME SETTINGS'}
           </h2>
           <button
             onClick={onClose}
@@ -252,31 +291,45 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         </div>
 
         <div className="py-3 space-y-5 overflow-y-auto pr-1">
-          {/* Custom Card Pictures Section */}
-          <div className="bg-slate-950/70 p-3 sm:p-4 rounded-2xl border border-amber-500/30">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Image className="w-4 h-4 text-amber-400" />
-                <span className="text-sm font-black text-amber-300 uppercase tracking-wide">
-                  Palitan ang Larawan ng Baraha (Per Color / Card)
-                </span>
+          {/* Custom Card Pictures Section (Admin Only - Completely Hidden for regular users) */}
+          {isAdminUnlocked && (
+            <div className="bg-slate-950/70 p-3 sm:p-4 rounded-2xl border border-amber-500/30 animate-fadeIn">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Image className="w-4 h-4 text-amber-400" />
+                  <span className="text-sm font-black text-amber-300 uppercase tracking-wide">
+                    Palitan ang Larawan ng Baraha (Admin Studio)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleLockAdmin}
+                    className="text-[10px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition cursor-pointer"
+                    title="I-lock muli"
+                  >
+                    <Lock className="w-3 h-3 text-amber-400" />
+                    Lock
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAllCardSkins}
+                    className="text-[10px] font-bold text-slate-400 hover:text-red-400 flex items-center gap-1 transition cursor-pointer"
+                    title="Ibalik sa orihinal ang lahat"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Reset All
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={resetAllCardSkins}
-                className="text-[10px] font-bold text-slate-400 hover:text-red-400 flex items-center gap-1 transition cursor-pointer"
-                title="Ibalik sa orihinal ang lahat"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Reset All
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-400 mb-2">
-              Pumili ng kategorya sa ibaba para mag-upload ng larawan para sa partikular na kulay o number card:
-            </p>
 
-            {/* Color Navigation Tabs */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800">
+                <p className="text-[11px] text-emerald-300 mb-2 font-medium flex items-center gap-1">
+                  <span>✓ Naka-unlock bilang Admin.</span>
+                  <span className="text-slate-400">Pumili ng kategorya sa ibaba para mag-upload ng larawan:</span>
+                </p>
+
+                {/* Color Navigation Tabs */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800">
               <button
                 type="button"
                 onClick={() => setActiveColorTab('card_back')}
@@ -817,7 +870,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
 
           {/* Sound Controls */}
           <div>

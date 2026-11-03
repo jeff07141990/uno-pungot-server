@@ -2,9 +2,13 @@ import { WebSocket } from 'ws';
 import {
   Card,
   CardColor,
+  CardType,
   ChatMessage,
+  EntryFeeAmount,
   GameVariant,
   HouseRules,
+  PlayerWallet,
+  PowerUpId,
   PublicGameState,
   PublicPlayer,
   ReactionEvent,
@@ -18,6 +22,7 @@ import {
   isCardPlayable,
 } from '../src/engine/rules';
 import { makeBotMove } from '../src/engine/botAi';
+import { economyManager } from './economyManager';
 
 export interface InternalRoomState {
   publicState: PublicGameState;
@@ -28,6 +33,8 @@ export interface InternalRoomState {
   timerInterval: NodeJS.Timeout | null;
   botTimeout: NodeJS.Timeout | null;
   unoTimeout: NodeJS.Timeout | null;
+  extraTurnsRemaining?: { playerId: string; count: number } | null;
+  payoutsProcessed?: boolean;
   createdAt: number;
 }
 
@@ -68,17 +75,22 @@ export class RoomManager {
       playerCount: number;
       maxPlayers: number;
       phase: string;
+      entryFee: number;
+      prizePool: number;
     }[] = [];
 
     for (const [id, room] of this.rooms.entries()) {
       if (!room.publicState.isPrivate && room.publicState.phase !== 'ended') {
+        const isEntryFeeRoom = room.publicState.entryFee > 0;
         list.push({
           roomId: id,
           roomName: room.publicState.roomName,
           variant: room.publicState.variant,
           playerCount: room.publicState.players.length,
-          maxPlayers: 10,
+          maxPlayers: isEntryFeeRoom ? 5 : 10,
           phase: room.publicState.phase,
+          entryFee: room.publicState.entryFee,
+          prizePool: room.publicState.prizePool,
         });
       }
     }
@@ -97,9 +109,15 @@ export class RoomManager {
       isPrivate?: boolean;
       variant?: GameVariant;
       houseRules?: Partial<HouseRules>;
+      entryFee?: EntryFeeAmount;
+      initialBots?: number;
+      autoStart?: boolean;
     }
   ): string {
     const roomId = this.generateRoomCode();
+    const entryFee: EntryFeeAmount = options.entryFee || 0;
+    const prizePool = entryFee * 5;
+
     const defaultRules: HouseRules = {
       turnTimer: 30,
       stacking: true,
@@ -115,12 +133,13 @@ export class RoomManager {
       name: hostName || 'Host Player',
       avatar: hostAvatar || '🦊',
       cardCount: 0,
-      isReady: true,
+      isReady: entryFee === 0, // In casual matches host is ready; in fee matches host confirms entry payment
       isHost: true,
       isBot: false,
       isDisconnected: false,
       calledUno: false,
       score: 0,
+      hasPaidEntry: false,
     };
 
     const initialPublicState: PublicGameState = {
@@ -153,6 +172,9 @@ export class RoomManager {
       turnCount: 0,
       startedAt: null,
       endedAt: null,
+      entryFee,
+      prizePool,
+      isEntryFeeLocked: false,
     };
 
     const roomState: InternalRoomState = {
@@ -164,10 +186,22 @@ export class RoomManager {
       timerInterval: null,
       botTimeout: null,
       unoTimeout: null,
+      extraTurnsRemaining: null,
       createdAt: Date.now(),
     };
 
     this.rooms.set(roomId, roomState);
+
+    // If options specify initial bots (e.g. Solo Bot Challenge)
+    if (options.initialBots && options.initialBots > 0) {
+      for (let i = 0; i < options.initialBots; i++) {
+        this.addBot(roomId, hostId);
+      }
+      if (options.autoStart) {
+        this.startGame(roomId, hostId);
+      }
+    }
+
     return roomId;
   }
 
@@ -186,17 +220,19 @@ export class RoomManager {
       return { success: false, message: 'Room not found. Check the room code.' };
     }
 
-    // Check if player is reconnecting
+    // Check if player is reconnecting or initial host binding
     const existingIndex = room.publicState.players.findIndex((p) => p.id === playerId);
     if (existingIndex !== -1) {
-      // Reconnection
       const player = room.publicState.players[existingIndex];
+      const wasDisconnected = player.isDisconnected;
       player.isDisconnected = false;
       player.name = playerName || player.name;
       player.avatar = playerAvatar || player.avatar;
       room.sockets.set(playerId, ws);
       this.broadcastState(roomId);
-      this.broadcastToast(roomId, `${player.name} reconnected!`, 'turn_alert');
+      if (wasDisconnected) {
+        this.broadcastToast(roomId, `${player.name} reconnected!`, 'turn_alert');
+      }
       return { success: true };
     }
 
@@ -204,8 +240,16 @@ export class RoomManager {
       return { success: false, message: 'Game has already started in this room.' };
     }
 
-    if (room.publicState.players.length >= 10) {
-      return { success: false, message: 'Room is already full (maximum 10 players).' };
+    const isEntryFeeRoom = room.publicState.entryFee > 0;
+    const maxCapacity = isEntryFeeRoom ? 5 : 10;
+
+    if (room.publicState.players.length >= maxCapacity) {
+      return {
+        success: false,
+        message: isEntryFeeRoom
+          ? 'Puno na ang kwarto! Eksaktong 5 players lamang ang puwede para sa Prize Pool match.'
+          : 'Room is already full (maximum 10 players).',
+      };
     }
 
     const newPlayer: PublicPlayer = {
@@ -219,10 +263,16 @@ export class RoomManager {
       isDisconnected: false,
       calledUno: false,
       score: 0,
+      hasPaidEntry: false,
     };
 
     room.publicState.players.push(newPlayer);
     room.sockets.set(playerId, ws);
+
+    // Rule A: Once the first player joins, lock the selected entry fee
+    if (isEntryFeeRoom) {
+      room.publicState.isEntryFeeLocked = true;
+    }
 
     this.broadcastState(roomId);
     this.broadcastToast(roomId, `${newPlayer.name} joined the room!`, 'card_draw');
@@ -243,6 +293,85 @@ export class RoomManager {
     };
     this.broadcastState(roomId);
     return true;
+  }
+
+  /**
+   * Host updates entry fee before non-host players join.
+   */
+  public updateEntryFee(roomId: string, hostId: string, entryFee: EntryFeeAmount): { success: boolean; message?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room || room.publicState.hostId !== hostId || room.publicState.phase !== 'lobby') {
+      return { success: false, message: 'Only host can change entry fee in lobby.' };
+    }
+
+    if (room.publicState.isEntryFeeLocked) {
+      return { success: false, message: 'Naka-lock na ang entry fee dahil may sumali nang ibang manlalaro.' };
+    }
+
+    room.publicState.entryFee = entryFee;
+    room.publicState.prizePool = entryFee * 5;
+
+    // Reset host payment status if fee changes
+    const host = room.publicState.players.find((p) => p.isHost);
+    if (host) {
+      host.hasPaidEntry = false;
+      host.isReady = entryFee === 0;
+    }
+
+    this.broadcastState(roomId);
+    this.broadcastToast(roomId, `Entry fee updated to ₱${entryFee}. Total Prize Pool: ₱${room.publicState.prizePool}`, 'turn_alert');
+    return { success: true };
+  }
+
+  /**
+   * Confirm and reserve entry fee payment for a player.
+   */
+  public confirmEntryPayment(roomId: string, playerId: string): { success: boolean; message?: string; wallet?: PlayerWallet } {
+    const room = this.rooms.get(roomId);
+    if (!room || room.publicState.phase !== 'lobby') {
+      return { success: false, message: 'Lobby is not currently active.' };
+    }
+
+    const player = room.publicState.players.find((p) => p.id === playerId);
+    if (!player) {
+      return { success: false, message: 'Player not found in room.' };
+    }
+
+    if (player.hasPaidEntry) {
+      return { success: false, message: 'Bayad ka na sa entry fee!' };
+    }
+
+    const entryFee = room.publicState.entryFee;
+    if (entryFee <= 0) {
+      player.hasPaidEntry = true;
+      player.isReady = true;
+      this.broadcastState(roomId);
+      return { success: true, message: 'Free match confirmed.' };
+    }
+
+    // Reserve entry fee atomically from authoritative wallet
+    const res = economyManager.reserveEntryFee(playerId, roomId, entryFee, player.name, player.avatar);
+    if (!res.success) {
+      return { success: false, message: res.message, wallet: res.wallet };
+    }
+
+    player.hasPaidEntry = true;
+    player.isReady = true;
+
+    // Send updated wallet directly to player socket
+    const client = room.sockets.get(playerId);
+    if (client && client.readyState === WebSocket.OPEN && res.wallet) {
+      client.send(
+        JSON.stringify({
+          type: 'WALLET_UPDATE',
+          wallet: res.wallet,
+        })
+      );
+    }
+
+    this.broadcastState(roomId);
+    this.broadcastToast(roomId, `💵 ${player.name} paid ₱${entryFee} entry fee and is ready!`, 'card_draw');
+    return { success: true, message: res.message, wallet: res.wallet };
   }
 
   /**
@@ -268,7 +397,9 @@ export class RoomManager {
       return false;
     }
 
-    if (room.publicState.players.length >= 10) return false;
+    const isEntryFeeRoom = room.publicState.entryFee > 0;
+    const maxCapacity = isEntryFeeRoom ? 5 : 10;
+    if (room.publicState.players.length >= maxCapacity) return false;
 
     const botAvatars = ['🤖', '🦾', '👾', '🚀', '⚡', '🧠'];
     const botNames = ['CyberBot', 'RoboPungot', 'ByteRider', 'AlphaUNO', 'CircuitKing', 'NanoCard'];
@@ -287,9 +418,13 @@ export class RoomManager {
       isDisconnected: false,
       calledUno: false,
       score: 0,
+      hasPaidEntry: isEntryFeeRoom ? true : undefined,
     };
 
     room.publicState.players.push(botPlayer);
+    if (isEntryFeeRoom) {
+      room.publicState.isEntryFeeLocked = true;
+    }
     this.broadcastState(roomId);
     return true;
   }
@@ -308,6 +443,16 @@ export class RoomManager {
     const playerIndex = room.publicState.players.findIndex((p) => p.id === targetPlayerId);
     if (playerIndex !== -1) {
       const removed = room.publicState.players[playerIndex];
+
+      // Refund entry fee if removed player paid in entry fee match
+      if (room.publicState.entryFee > 0 && removed.hasPaidEntry && !removed.isBot) {
+        const refundRes = economyManager.refundEntryFee(removed.id, roomId, room.publicState.entryFee);
+        const ws = room.sockets.get(targetPlayerId);
+        if (ws && ws.readyState === WebSocket.OPEN && refundRes.wallet) {
+          ws.send(JSON.stringify({ type: 'WALLET_UPDATE', wallet: refundRes.wallet }));
+        }
+      }
+
       room.publicState.players.splice(playerIndex, 1);
       const ws = room.sockets.get(targetPlayerId);
       if (ws) {
@@ -332,8 +477,29 @@ export class RoomManager {
       return { success: false, message: 'Only the room host can start the match.' };
     }
 
-    if (room.publicState.players.length < 2) {
-      return { success: false, message: 'At least 2 players are required to start.' };
+    const isEntryFeeRoom = room.publicState.entryFee > 0;
+
+    if (isEntryFeeRoom) {
+      // Rule A: Require exactly five participating players before starting a five-place prize pool match
+      if (room.publicState.players.length !== 5) {
+        return {
+          success: false,
+          message: `Kailangan ng eksaktong 5 players bago masimulan ang Prize Pool match (${room.publicState.players.length}/5 kasalukuyan).`,
+        };
+      }
+
+      // Rule C: Do not allow the host to start the game until all five players have successfully paid
+      const unpaidPlayer = room.publicState.players.find((p) => !p.hasPaidEntry);
+      if (unpaidPlayer) {
+        return {
+          success: false,
+          message: `Hindi pa makapagsimula! May hindi pa nagbabayad ng Entry Fee (${unpaidPlayer.name}).`,
+        };
+      }
+    } else {
+      if (room.publicState.players.length < 2) {
+        return { success: false, message: 'At least 2 players are required to start.' };
+      }
     }
 
     // Initialize Deck based on variant
@@ -350,6 +516,23 @@ export class RoomManager {
         const card = deck.pop();
         if (card) hand.push(card);
       }
+
+      // If player has purchased power-ups in inventory, deal up to 2 power cards into their hand!
+      const playerWallet = economyManager.getWallet(player.id);
+      if (playerWallet?.inventory) {
+        let dealtPowerCards = 0;
+        for (const [pId, count] of Object.entries(playerWallet.inventory)) {
+          const powerId = pId as PowerUpId;
+          const available = count || 0;
+          for (let k = 0; k < available && dealtPowerCards < 2; k++) {
+            hand.push(this.createPowerUpCard(powerId));
+            economyManager.consumePowerUp(player.id, powerId);
+            dealtPowerCards++;
+          }
+          if (dealtPowerCards >= 2) break;
+        }
+      }
+
       room.playerHands.set(player.id, hand);
       player.cardCount = hand.length;
       player.calledUno = false;
@@ -396,9 +579,12 @@ export class RoomManager {
     room.publicState.winnerId = null;
     room.publicState.loserId = null;
     room.publicState.finishOrder = [];
+    room.publicState.matchPowerUpUses = {};
+    room.publicState.activeCoinBoosters = [];
     for (const p of room.publicState.players) {
       p.finishRank = null;
       p.isFinished = false;
+      room.publicState.matchPowerUpUses[p.id] = 0;
     }
     room.publicState.turnCount = 1;
     room.publicState.startedAt = Date.now();
@@ -544,7 +730,8 @@ export class RoomManager {
       card.type === 'wild' ||
       card.type === 'wild4' ||
       card.type === 'wild_draw_color' ||
-      card.type === 'wild_dare';
+      card.type === 'wild_dare' ||
+      card.type === 'power_color';
 
     if (isWildCard) {
       const validColors =
@@ -569,7 +756,7 @@ export class RoomManager {
     // Update active color
     if (isWildCard) {
       publicState.currentColor = chosenColor!;
-    } else {
+    } else if (card.color !== 'wild') {
       publicState.currentColor = card.color;
     }
 
@@ -703,14 +890,86 @@ export class RoomManager {
 
       if (room.timerInterval) clearInterval(room.timerInterval);
       if (room.botTimeout) clearTimeout(room.botTimeout);
-      if (room.unoTimeout) clearTimeout(room.unoTimeout);
+      let coinToastSuffix = '';
+
+      // Prize Pool Distribution for Entry Fee matches (5-Place System)
+      if (publicState.entryFee > 0 && !room.payoutsProcessed) {
+        room.payoutsProcessed = true;
+
+        // Compile ordered rankings based on finishOrder
+        const rankedPlayers = publicState.finishOrder
+          .map((pid, idx) => {
+            const p = publicState.players.find((pl) => pl.id === pid);
+            return {
+              playerId: pid,
+              name: p?.name || `Player ${idx + 1}`,
+              avatar: p?.avatar || '🐼',
+              rank: idx + 1,
+            };
+          });
+
+        // Any players not yet in finishOrder (e.g. ties or unfinished)
+        for (const p of publicState.players) {
+          if (!rankedPlayers.some((rp) => rp.playerId === p.id)) {
+            rankedPlayers.push({
+              playerId: p.id,
+              name: p.name,
+              avatar: p.avatar,
+              rank: rankedPlayers.length + 1,
+            });
+          }
+        }
+
+        const { payouts, updatedWallets } = economyManager.distributePrizePool(
+          roomId,
+          rankedPlayers,
+          publicState.entryFee
+        );
+        publicState.payoutResults = payouts;
+
+        // Send updated wallets directly to connected players
+        for (const [pid, updatedWallet] of Object.entries(updatedWallets)) {
+          const client = room.sockets.get(pid);
+          if (client && client.readyState === WebSocket.OPEN) {
+            client.send(
+              JSON.stringify({
+                type: 'WALLET_UPDATE',
+                wallet: updatedWallet,
+              })
+            );
+          }
+        }
+
+        const firstPlacePayout = payouts.find((p) => p.rank === 1);
+        coinToastSuffix = ` • 💰 1st Place Prize: ₱${firstPlacePayout?.prize || 0} (${firstPlacePayout?.percentage || 50}%)!`;
+      } else if (publicState.entryFee === 0 && !room.payoutsProcessed) {
+        // Casual / Free match: Award Standard Virtual Peso Coins and Streaks
+        room.payoutsProcessed = true;
+        const allHumanIds = publicState.players.filter((p) => !p.isBot).map((p) => p.id);
+        const winnerId = publicState.winnerId;
+        const hasBooster = Boolean(winnerId && publicState.activeCoinBoosters?.includes(winnerId));
+
+        if (winnerId) {
+          const { winnerCoins, streak } = economyManager.awardMatchFinish(
+            winnerId,
+            loser?.id || null,
+            allHumanIds,
+            hasBooster
+          );
+          if (winnerCoins > 0) {
+            coinToastSuffix = ` • 💰 Won ₱${winnerCoins}${hasBooster ? ' (2x Booster!)' : ''}${
+              streak >= 2 ? ` (${streak}x Win Streak!)` : ''
+            }`;
+          }
+        }
+      }
 
       // Pungot Edition: Purely elimination/standing, zero point scoring!
       const winner = publicState.players.find((p) => p.id === publicState.winnerId);
       const loserMsg = loser
         ? ` • 💀 ${loser.name} is ANG PUNGOT (LOST with ${loser.cardCount} cards)!`
         : '';
-      const endDesc = `🏁 MATCH FINISHED! 🏆 1st: ${winner?.name || 'Winner'}${loserMsg}`;
+      const endDesc = `🏁 MATCH FINISHED! 🏆 1st: ${winner?.name || 'Winner'}${coinToastSuffix}${loserMsg}`;
       publicState.lastActionText = endDesc;
 
       this.broadcastState(roomId);
@@ -891,10 +1150,23 @@ export class RoomManager {
     // 10. Skip 2
     else if (card.type === 'skip2') {
       sound = 'skip';
-      const s1 = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)];
-      const s2 = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 2)];
-      actionDescription += ` — ${s1.name} & ${s2.name} were skipped!`;
-      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 3);
+      const activePlayersCount = publicState.players.filter(
+        (p) => !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+      ).length;
+
+      if (activePlayersCount <= 2) {
+        // In 1v1 (2 players left): Opponent is skipped twice, meaning Player 1 gets 2 more cards/turns after this Double Skip!
+        const opponent = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)];
+        room.extraTurnsRemaining = { playerId: activePlayer.id, count: 2 };
+        actionDescription += ` — ⏩ DOUBLE SKIP! ${opponent.name} was skipped twice! ${activePlayer.name} can play 2 more cards!`;
+        // Keep activePlayerIndex on activePlayer so they play their first extra turn immediately
+        publicState.activePlayerIndex = publicState.activePlayerIndex;
+      } else {
+        const s1 = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)];
+        const s2 = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 2)];
+        actionDescription += ` — ${s1.name} & ${s2.name} were skipped!`;
+        publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 3);
+      }
     }
     // 11. Targeted Draw 2
     else if (card.type === 'targeted_draw2') {
@@ -964,9 +1236,147 @@ export class RoomManager {
       actionDescription += ` — 0 played! All hands rotated ${publicState.direction === 1 ? 'clockwise' : 'counter-clockwise'}!`;
       publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
     }
+    // 15. Power-Up Cards played directly from Hand!
+    else if (card.type === 'power_shield') {
+      sound = 'power_draw2';
+      if (publicState.pendingDrawPenalty > 0) {
+        const blocked = publicState.pendingDrawPenalty;
+        publicState.pendingDrawPenalty = 0;
+        actionDescription = `🛡️ SHIELD ACTIVATED! ${activePlayer.name} blocked the +${blocked} penalty completely!`;
+      } else {
+        actionDescription = `🛡️ SHIELD PLAYED! ${activePlayer.name} is protected!`;
+      }
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    } else if (card.type === 'power_swap') {
+      sound = 'card_deal';
+      const validOpponents = publicState.players.filter(
+        (p) => p.id !== activePlayer.id && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+      );
+      const target =
+        validOpponents.find((p) => p.id === targetPlayerId) ||
+        validOpponents[Math.floor(Math.random() * validOpponents.length)];
+
+      const myHand = room.playerHands.get(activePlayer.id) || [];
+      const theirHand = target ? room.playerHands.get(target.id) || [] : [];
+
+      if (target && myHand.length > 0 && theirHand.length > 0) {
+        const myRandomIndex = Math.floor(Math.random() * myHand.length);
+        const theirRandomIndex = Math.floor(Math.random() * theirHand.length);
+
+        const myCard = myHand.splice(myRandomIndex, 1)[0];
+        const theirCard = theirHand.splice(theirRandomIndex, 1)[0];
+
+        myHand.push(theirCard);
+        theirHand.push(myCard);
+
+        activePlayer.cardCount = myHand.length;
+        target.cardCount = theirHand.length;
+
+        actionDescription = `🔄 CARD SWAP! ${activePlayer.name} randomly swapped 1 card with ${target.name}!`;
+      } else {
+        actionDescription = `🔄 CARD SWAP played!`;
+      }
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    } else if (card.type === 'power_reverse') {
+      sound = 'power_reverse';
+      publicState.direction = (publicState.direction * -1) as 1 | -1;
+      actionDescription = `🔁 REVERSE MASTER! ${activePlayer.name} reversed the game direction!`;
+      const activeCount = publicState.players.filter(
+        (p) => !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+      ).length;
+      if (activeCount === 2) {
+        publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 2);
+      } else {
+        publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+      }
+    } else if (card.type === 'power_color') {
+      sound = 'power_wild';
+      const validColors: CardColor[] =
+        publicState.activeFlipSide === 'dark'
+          ? ['teal', 'orange', 'purple', 'pink']
+          : ['red', 'blue', 'green', 'yellow'];
+      const newColor = chosenColor && validColors.includes(chosenColor) ? chosenColor : validColors[0];
+      publicState.currentColor = newColor;
+      actionDescription = `🎨 COLOR CHANGER! ${activePlayer.name} changed table color to ${newColor.toUpperCase()}!`;
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    } else if (card.type === 'power_extra_turn') {
+      sound = 'power_general';
+      actionDescription = `⚡ EXTRA TURN! ${activePlayer.name} takes another turn immediately!`;
+      // Keeps activePlayerIndex unchanged so active player plays again!
+    } else if (card.type === 'power_peek') {
+      sound = 'power_general';
+      const opponents = publicState.players.filter(
+        (p) => p.id !== activePlayer.id && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+      );
+      const target =
+        opponents.find((p) => p.id === targetPlayerId) ||
+        opponents[Math.floor(Math.random() * opponents.length)];
+
+      if (target) {
+        const targetHand = room.playerHands.get(target.id) || [];
+        if (targetHand.length > 0) {
+          const peekedCard = targetHand[Math.floor(Math.random() * targetHand.length)];
+          const client = room.sockets.get(activePlayer.id);
+          if (client && client.readyState === WebSocket.OPEN) {
+            client.send(
+              JSON.stringify({
+                type: 'PEEK_RESULT',
+                targetPlayerName: target.name,
+                card: peekedCard,
+              })
+            );
+          }
+        }
+      }
+      actionDescription = `👁️ PEEK CARD! ${activePlayer.name} peeked at an opponent's card!`;
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    } else if (card.type === 'power_booster') {
+      sound = 'power_general';
+      if (!publicState.activeCoinBoosters) {
+        publicState.activeCoinBoosters = [];
+      }
+      if (!publicState.activeCoinBoosters.includes(activePlayer.id)) {
+        publicState.activeCoinBoosters.push(activePlayer.id);
+      }
+      actionDescription = `💰 COIN BOOSTER ACTIVE! ${activePlayer.name}'s victory reward will be doubled to ₱400!`;
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    } else if (card.type === 'power_reflect') {
+      sound = 'power_draw2';
+      if (publicState.pendingDrawPenalty > 0) {
+        const reflectedPenalty = publicState.pendingDrawPenalty;
+        publicState.pendingDrawPenalty = 0;
+
+        const attackerIdx =
+          (publicState.activePlayerIndex - publicState.direction + publicState.players.length) %
+          publicState.players.length;
+        const attacker = publicState.players[attackerIdx];
+        const attackerHand = room.playerHands.get(attacker.id) || [];
+
+        const drawn = this.drawFromPile(room, reflectedPenalty);
+        attackerHand.push(...drawn);
+        attacker.cardCount = attackerHand.length;
+
+        actionDescription = `🪞 ATTACK REFLECT! ${activePlayer.name} reflected +${reflectedPenalty} back to ${attacker.name}!`;
+      } else {
+        actionDescription = `🪞 ATTACK REFLECT played by ${activePlayer.name}!`;
+      }
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    }
     // Standard number or Wild
     else {
-      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+      if (room.extraTurnsRemaining && room.extraTurnsRemaining.playerId === activePlayer.id && room.extraTurnsRemaining.count > 0) {
+        room.extraTurnsRemaining.count--;
+        actionDescription += ` (Extra Turn Remaining: ${room.extraTurnsRemaining.count})`;
+        if (room.extraTurnsRemaining.count > 0) {
+          // Keep turn on active player for next card
+          publicState.activePlayerIndex = publicState.activePlayerIndex;
+        } else {
+          room.extraTurnsRemaining = null;
+          publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+        }
+      } else {
+        publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+      }
     }
 
     return { sound, actionDescription };
@@ -1259,6 +1669,7 @@ export class RoomManager {
 
     // If card is not playable on table, auto-pass turn to next player
     publicState.pendingKeepOrPlay = null;
+    room.extraTurnsRemaining = null;
     const desc = `${activePlayer.name} drew a card.`;
     publicState.lastActionText = desc;
 
@@ -1299,6 +1710,7 @@ export class RoomManager {
 
     const wasPendingKeep = publicState.pendingKeepOrPlay?.playerId === playerId;
     publicState.pendingKeepOrPlay = null;
+    room.extraTurnsRemaining = null;
 
     publicState.activePlayerIndex = this.getNextActivePlayerIndex(
       room,
@@ -1853,5 +2265,289 @@ export class RoomManager {
       );
     }
   }
+
+  /**
+   * Authoritative Power-Up Activation & Execution
+   */
+  public usePowerUp(
+    roomId: string,
+    playerId: string,
+    powerUpId: PowerUpId,
+    targetPlayerId?: string,
+    chosenColor?: CardColor
+  ): { success: boolean; message?: string; wallet?: PlayerWallet } {
+    const room = this.rooms.get(roomId);
+    if (!room || room.publicState.phase !== 'playing') {
+      return { success: false, message: 'Game is not currently active.' };
+    }
+
+    const { publicState } = room;
+    const player = publicState.players.find((p) => p.id === playerId);
+    if (!player) {
+      return { success: false, message: 'Player not found in room.' };
+    }
+
+    // 1. Check max 2 uses per match rule
+    if (!publicState.matchPowerUpUses) {
+      publicState.matchPowerUpUses = {};
+    }
+    const currentUses = publicState.matchPowerUpUses[playerId] || 0;
+    if (currentUses >= 2) {
+      return {
+        success: false,
+        message: 'Naabot mo na ang limit na 2 Power-Ups bawat laban!',
+      };
+    }
+
+    // 2. Turn order checks:
+    const activePlayer = publicState.players[publicState.activePlayerIndex];
+    const isPlayerTurn = activePlayer?.id === playerId;
+
+    // Reactive power-ups allowed when facing pending penalties or incoming attack:
+    const isReactive = powerUpId === 'shield' || powerUpId === 'reflect';
+    if (!isPlayerTurn && !isReactive) {
+      return { success: false, message: 'Maaari mo lamang gamitin ang Power-Up na ito sa iyong turn!' };
+    }
+
+    // Shield or reflect requires an active incoming attack/draw penalty or being on turn
+    if (isReactive && !isPlayerTurn && publicState.pendingDrawPenalty <= 0) {
+      return {
+        success: false,
+        message: 'Maaari mo lamang gamitin ang Shield o Reflect kung may paparating na parusa o sa iyong turn!',
+      };
+    }
+
+    // 3. Server Inventory verification & deduction
+    const consumeRes = economyManager.consumePowerUp(playerId, powerUpId);
+    if (!consumeRes.success) {
+      return { success: false, message: consumeRes.message || 'Wala kang sapat na Power-Up sa iyong imbentaryo.' };
+    }
+
+    // Record match usage
+    publicState.matchPowerUpUses[playerId] = currentUses + 1;
+
+    let toastText = '';
+    let sound: SoundEffectType = 'power_general';
+
+    switch (powerUpId) {
+      // 1. SHIELD PROTECTION: Blocks incoming Draw 2 / Draw 4 penalty completely
+      case 'shield': {
+        sound = 'power_draw2';
+        if (publicState.pendingDrawPenalty > 0) {
+          const blocked = publicState.pendingDrawPenalty;
+          publicState.pendingDrawPenalty = 0;
+          toastText = `🛡️ SHIELD ACTIVATED! ${player.name} blocked the +${blocked} penalty completely!`;
+        } else {
+          toastText = `🛡️ SHIELD READY! ${player.name} activated Shield Protection!`;
+        }
+        break;
+      }
+
+      // 2. CARD SWAP: Exchange 1 random card with a selected opponent
+      case 'swap': {
+        sound = 'card_deal';
+        const validOpponents = publicState.players.filter(
+          (p) => p.id !== playerId && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+        );
+        if (validOpponents.length === 0) {
+          return { success: false, message: 'Walang kalaban na may hawak na baraha para makipagpalit.' };
+        }
+        const target =
+          validOpponents.find((p) => p.id === targetPlayerId) ||
+          validOpponents[Math.floor(Math.random() * validOpponents.length)];
+
+        const myHand = room.playerHands.get(playerId) || [];
+        const theirHand = room.playerHands.get(target.id) || [];
+
+        if (myHand.length > 0 && theirHand.length > 0) {
+          const myRandomIndex = Math.floor(Math.random() * myHand.length);
+          const theirRandomIndex = Math.floor(Math.random() * theirHand.length);
+
+          const myCard = myHand.splice(myRandomIndex, 1)[0];
+          const theirCard = theirHand.splice(theirRandomIndex, 1)[0];
+
+          myHand.push(theirCard);
+          theirHand.push(myCard);
+
+          player.cardCount = myHand.length;
+          target.cardCount = theirHand.length;
+
+          toastText = `🔄 CARD SWAP! ${player.name} randomly swapped 1 card with ${target.name}!`;
+        } else {
+          toastText = `🔄 CARD SWAP attempted, ngunit walang barahang maipapalit.`;
+        }
+        break;
+      }
+
+      // 3. REVERSE MASTER: Reverse the playing direction immediately
+      case 'reverse': {
+        sound = 'power_reverse';
+        publicState.direction = (publicState.direction * -1) as 1 | -1;
+        toastText = `🔁 REVERSE MASTER! ${player.name} reversed the game direction!`;
+        break;
+      }
+
+      // 4. COLOR CHANGER: Select a new active color
+      case 'color': {
+        sound = 'power_wild';
+        const validColors: CardColor[] =
+          publicState.activeFlipSide === 'dark'
+            ? ['teal', 'orange', 'purple', 'pink']
+            : ['red', 'blue', 'green', 'yellow'];
+        const newColor = chosenColor && validColors.includes(chosenColor) ? chosenColor : validColors[0];
+        publicState.currentColor = newColor;
+        toastText = `🎨 COLOR CHANGER! ${player.name} changed table color to ${newColor.toUpperCase()}!`;
+        break;
+      }
+
+      // 5. EXTRA TURN: Grant one additional turn
+      case 'extra_turn': {
+        sound = 'power_general';
+        toastText = `⚡ EXTRA TURN! ${player.name} takes another turn immediately!`;
+        // Reset turn timer for extra turn
+        this.startTurnTimer(room);
+        break;
+      }
+
+      // 6. PEEK CARD: Reveal 1 random opponent card privately to user
+      case 'peek': {
+        sound = 'power_general';
+        const opponents = publicState.players.filter(
+          (p) => p.id !== playerId && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+        );
+        const target =
+          opponents.find((p) => p.id === targetPlayerId) ||
+          opponents[Math.floor(Math.random() * opponents.length)];
+
+        if (target) {
+          const targetHand = room.playerHands.get(target.id) || [];
+          if (targetHand.length > 0) {
+            const peekedCard = targetHand[Math.floor(Math.random() * targetHand.length)];
+            const client = room.sockets.get(playerId);
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({
+                  type: 'PEEK_RESULT',
+                  targetPlayerName: target.name,
+                  card: peekedCard,
+                })
+              );
+            }
+          }
+        }
+        toastText = `👁️ PEEK CARD! ${player.name} peeked at an opponent's card!`;
+        break;
+      }
+
+      // 7. COIN BOOSTER: Double match victory reward
+      case 'booster': {
+        sound = 'power_general';
+        if (!publicState.activeCoinBoosters) {
+          publicState.activeCoinBoosters = [];
+        }
+        if (!publicState.activeCoinBoosters.includes(playerId)) {
+          publicState.activeCoinBoosters.push(playerId);
+        }
+        toastText = `💰 COIN BOOSTER ACTIVE! ${player.name}'s victory reward will be doubled to ₱400!`;
+        break;
+      }
+
+      // 8. ATTACK REFLECT: Reflect incoming Draw 2 or Draw 4 to the attacker
+      case 'reflect': {
+        sound = 'power_draw2';
+        if (publicState.pendingDrawPenalty > 0) {
+          const reflectedPenalty = publicState.pendingDrawPenalty;
+          publicState.pendingDrawPenalty = 0;
+
+          // Find the previous player index who attacked
+          const attackerIdx = (publicState.activePlayerIndex - publicState.direction + publicState.players.length) % publicState.players.length;
+          const attacker = publicState.players[attackerIdx];
+          const attackerHand = room.playerHands.get(attacker.id) || [];
+
+          const drawn = this.drawFromPile(room, reflectedPenalty);
+          attackerHand.push(...drawn);
+          attacker.cardCount = attackerHand.length;
+
+          toastText = `🪞 ATTACK REFLECT! ${player.name} reflected +${reflectedPenalty} back to ${attacker.name}!`;
+        } else {
+          toastText = `🪞 ATTACK REFLECT activated by ${player.name}!`;
+        }
+        break;
+      }
+    }
+
+    publicState.lastActionText = toastText;
+    this.broadcastState(roomId);
+    this.broadcastToast(roomId, toastText, sound);
+
+    // Send updated wallet directly to the user socket so client inventory decrements in real time
+    if (consumeRes.wallet) {
+      const client = room.sockets.get(playerId);
+      if (client && client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            type: 'WALLET_UPDATE',
+            wallet: consumeRes.wallet,
+          })
+        );
+      }
+    }
+
+    return { success: true, wallet: consumeRes.wallet };
+  }
+
+  /**
+   * Helper to construct a tangible Card object for a given PowerUpId
+   */
+  public createPowerUpCard(powerUpId: PowerUpId): Card {
+    const typeMap: Record<PowerUpId, CardType> = {
+      shield: 'power_shield',
+      swap: 'power_swap',
+      reverse: 'power_reverse',
+      color: 'power_color',
+      extra_turn: 'power_extra_turn',
+      peek: 'power_peek',
+      booster: 'power_booster',
+      reflect: 'power_reflect',
+    };
+
+    return {
+      id: `pcard-${powerUpId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      color: 'wild',
+      type: typeMap[powerUpId] || 'power_shield',
+      powerUpId,
+    };
+  }
+
+  /**
+   * Directly inject a purchased power-up card into the active player's hand!
+   */
+  public addPowerUpCardToHand(playerId: string, powerUpId: PowerUpId): boolean {
+    for (const [roomId, room] of this.rooms.entries()) {
+      if (room.publicState.phase === 'playing') {
+        const player = room.publicState.players.find((p) => p.id === playerId);
+        if (player) {
+          const hand = room.playerHands.get(playerId) || [];
+          const card = this.createPowerUpCard(powerUpId);
+          hand.push(card);
+          room.playerHands.set(playerId, hand);
+          player.cardCount = hand.length;
+
+          // Consume inventory item since it became a card in hand
+          economyManager.consumePowerUp(playerId, powerUpId);
+
+          const itemName = economyManager.getCatalog()[powerUpId]?.name || 'Power-Up';
+          const toastText = `🃏 ${player.name} bought and drew a ${itemName} card!`;
+          room.publicState.lastActionText = toastText;
+
+          this.broadcastState(roomId);
+          this.broadcastToast(roomId, toastText, 'power_general');
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }
+
 

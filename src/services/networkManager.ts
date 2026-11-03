@@ -1,4 +1,4 @@
-import { Card, CardColor, ChatMessage, HouseRules, PublicGameState, ReactionEvent, SoundEffectType } from '../engine/types';
+import { Card, CardColor, ChatMessage, HouseRules, PowerUpId, PublicGameState, ReactionEvent, SoundEffectType } from '../engine/types';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 
@@ -11,6 +11,8 @@ export interface NetworkCallbacks {
   onStatusChange: (status: ConnectionStatus) => void;
   onVoiceSignal: (senderId: string, signal: unknown) => void;
   onUnoShout: (playerId: string, playerName: string) => void;
+  onPeekResult?: (targetPlayerName: string, card: Card) => void;
+  onWalletUpdate?: (wallet: any) => void;
 }
 
 class NetworkManager {
@@ -21,30 +23,150 @@ class NetworkManager {
   private currentPlayer: { id: string; name: string; avatar: string } | null = null;
   private reconnectAttempts = 0;
   private reconnectTimeout: number | null = null;
+  private heartbeatInterval: number | null = null;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      // Reconnect immediately when user returns to app (e.g., from switching apps/unlocking screen)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && this.currentRoomId && this.currentPlayer) {
+          if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+            console.log('App returned to foreground, reconnecting WebSocket...');
+            if (this.reconnectTimeout) {
+              clearTimeout(this.reconnectTimeout);
+              this.reconnectTimeout = null;
+            }
+            this.reconnectAttempts = 0;
+            this.connect(this.currentRoomId, this.currentPlayer);
+          }
+        }
+      });
+
+      // Also listen to online event
+      window.addEventListener('online', () => {
+        if (this.currentRoomId && this.currentPlayer) {
+          if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+            console.log('Network back online, reconnecting...');
+            this.reconnectAttempts = 0;
+            this.connect(this.currentRoomId, this.currentPlayer);
+          }
+        }
+      });
+    }
+  }
+
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    // Send keepalive ping every 10 seconds to prevent mobile sleep & telco NAT drop
+    this.heartbeatInterval = window.setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.send({ type: 'PING' });
+      }
+    }, 10000);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+  }
+
+  private getCustomServer(): string | null {
+    if (typeof window === 'undefined') return null;
+    const custom = localStorage.getItem('uno_custom_server');
+    if (custom) {
+      return custom.trim().replace(/\/$/, '');
+    }
+    return null;
+  }
+
+  private detectedWorkingHost: string | null = null;
+
+  public getCandidateHosts(): string[] {
+    const list: string[] = [];
+    const custom = this.getCustomServer();
+    if (custom) list.push(custom);
+    if (this.detectedWorkingHost) list.push(this.detectedWorkingHost);
+    // Include both host machine IP addresses
+    list.push('http://192.168.1.80:3001');
+    list.push('http://192.168.1.2:3001');
+    if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
+      list.push(`http://${window.location.hostname}:3001`);
+    }
+    return Array.from(new Set(list));
+  }
+
+  public setWorkingHost(host: string) {
+    this.detectedWorkingHost = host.trim().replace(/\/$/, '');
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('uno_active_server', this.detectedWorkingHost);
+    }
+  }
 
   private getServerUrl(): string {
-    const customServer = typeof window !== 'undefined' ? localStorage.getItem('uno_custom_server') : null;
+    const customServer = this.getCustomServer();
     if (customServer) {
       return customServer.replace(/^http/, 'ws');
+    }
+    if (this.detectedWorkingHost) {
+      return this.detectedWorkingHost.replace(/^http/, 'ws');
+    }
+    if (typeof window !== 'undefined') {
+      const active = localStorage.getItem('uno_active_server');
+      if (active) return active.replace(/^http/, 'ws');
     }
     if (import.meta.env.VITE_SERVER_URL) {
       const url = import.meta.env.VITE_SERVER_URL;
       return url.replace(/^http/, 'ws');
     }
-    // Default to Live Render Server URL
-    return 'wss://uno-pungot-server.onrender.com';
+    if (typeof window !== 'undefined') {
+      const { hostname, protocol } = window.location;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        const isCapacitor = (window as any).Capacitor !== undefined || !window.location.port;
+        if (isCapacitor) {
+          return 'ws://192.168.1.80:3001';
+        }
+        const wsProto = protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProto}//${hostname}:3001`;
+      }
+      if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+        const wsProto = protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${wsProto}//${hostname}:3001`;
+      }
+    }
+    return 'ws://192.168.1.80:3001';
   }
 
   public getHttpApiUrl(): string {
-    const customServer = typeof window !== 'undefined' ? localStorage.getItem('uno_custom_server') : null;
+    const customServer = this.getCustomServer();
     if (customServer) {
       return customServer;
+    }
+    if (this.detectedWorkingHost) {
+      return this.detectedWorkingHost;
+    }
+    if (typeof window !== 'undefined') {
+      const active = localStorage.getItem('uno_active_server');
+      if (active) return active;
     }
     if (import.meta.env.VITE_SERVER_URL) {
       return import.meta.env.VITE_SERVER_URL;
     }
-    // Default to Live Render Server URL
-    return 'https://uno-pungot-server.onrender.com';
+    if (typeof window !== 'undefined') {
+      const { hostname, protocol } = window.location;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        const isCapacitor = (window as any).Capacitor !== undefined || !window.location.port;
+        if (isCapacitor) {
+          return 'http://192.168.1.80:3001';
+        }
+        return `${protocol}//${hostname}:3001`;
+      }
+      if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+        return `${protocol}//${hostname}:3001`;
+      }
+    }
+    return 'http://192.168.1.80:3001';
   }
 
   public setCallbacks(cbs: Partial<NetworkCallbacks>) {
@@ -75,6 +197,7 @@ class NetworkManager {
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
         this.setStatus('connected');
+        this.startHeartbeat();
         if (this.currentRoomId && this.currentPlayer) {
           this.send({
             type: 'JOIN_ROOM',
@@ -90,6 +213,9 @@ class NetworkManager {
         try {
           const msg = JSON.parse(event.data);
           switch (msg.type) {
+            case 'PONG':
+              // Heartbeat acknowledged by server
+              break;
             case 'SYNC_STATE':
               this.callbacks.onSyncState?.(msg.publicState, msg.yourHand, msg.yourPlayerId);
               break;
@@ -108,6 +234,12 @@ class NetworkManager {
             case 'UNO_SHOUT':
               this.callbacks.onUnoShout?.(msg.playerId, msg.playerName);
               break;
+            case 'PEEK_RESULT':
+              this.callbacks.onPeekResult?.(msg.targetPlayerName, msg.card);
+              break;
+            case 'WALLET_UPDATE':
+              this.callbacks.onWalletUpdate?.(msg.wallet);
+              break;
             case 'ERROR':
               this.callbacks.onError?.(msg.message);
               break;
@@ -122,6 +254,7 @@ class NetworkManager {
       };
 
       this.ws.onclose = () => {
+        this.stopHeartbeat();
         this.setStatus('disconnected');
         this.scheduleReconnect();
       };
@@ -131,6 +264,7 @@ class NetworkManager {
       };
     } catch (err) {
       console.error('Failed to establish WebSocket connection:', err);
+      this.stopHeartbeat();
       this.setStatus('disconnected');
       this.scheduleReconnect();
     }
@@ -153,6 +287,7 @@ class NetworkManager {
   }
 
   public disconnect() {
+    this.stopHeartbeat();
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -256,6 +391,31 @@ class NetworkManager {
 
   public sendVoiceSignal(roomId: string, senderId: string, targetId: string, signal: unknown) {
     this.send({ type: 'VOICE_SIGNAL', roomId, senderId, targetId, signal });
+  }
+
+  public confirmEntryPayment(roomId: string, playerId: string) {
+    this.send({ type: 'CONFIRM_ENTRY_PAYMENT', roomId, playerId });
+  }
+
+  public updateEntryFee(roomId: string, hostId: string, entryFee: number) {
+    this.send({ type: 'UPDATE_ENTRY_FEE', roomId, hostId, entryFee });
+  }
+
+  public usePowerUp(
+    roomId: string,
+    playerId: string,
+    powerUpId: PowerUpId,
+    targetPlayerId?: string,
+    chosenColor?: CardColor
+  ) {
+    this.send({
+      type: 'USE_POWERUP',
+      roomId,
+      playerId,
+      powerUpId,
+      targetPlayerId,
+      chosenColor,
+    });
   }
 }
 

@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { X, UserCheck, Flame, Trophy, Percent, Camera, Upload, Trash2 } from 'lucide-react';
+import { X, UserCheck, Flame, Trophy, Percent, Camera, Upload, Trash2, Coins, Star, Shield, Award } from 'lucide-react';
 import { PlayerStats } from '../../services/historyService';
+import { PlayerWallet, PowerUpId, PowerUpItem } from '../../engine/types';
 
 interface ProfileModalProps {
   isOpen: boolean;
   currentName: string;
   currentAvatar: string;
   stats: PlayerStats | null;
+  wallet: PlayerWallet | null;
+  catalog?: Record<PowerUpId, PowerUpItem> | null;
   onSave: (name: string, avatar: string) => void;
   onClose: () => void;
 }
@@ -24,6 +27,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   currentName,
   currentAvatar,
   stats,
+  wallet,
+  catalog,
   onSave,
   onClose,
 }) => {
@@ -98,7 +103,33 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
+          {/* Virtual Coin & Level Card */}
+          {wallet && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-2 border-amber-400/80 shadow-md flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">💰</span>
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                    Virtual Peso Balance
+                  </span>
+                  <span className="text-lg font-black text-amber-300">
+                    ₱{wallet.balance.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 inline-block mb-0.5">
+                  Level {wallet.level}
+                </span>
+                <span className="block text-[10px] text-slate-400 font-bold">
+                  {wallet.experience} XP
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Avatar Preview & Name Input */}
           <div className="flex items-center gap-4">
             {/* Avatar Preview */}
@@ -238,33 +269,96 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           />
 
           {/* Stats Overview */}
-          {stats && (
+          <div className="pt-3 border-t border-slate-800">
+            <label className="text-xs font-semibold text-slate-400 block mb-2">Career Stats</label>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                  <Flame className="w-3 h-3 text-amber-500" />
+                  <span>Games</span>
+                </div>
+                <div className="text-base font-black text-white">
+                  {stats?.gamesPlayed ?? (wallet ? wallet.totalWins + wallet.totalLosses : 0)}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                  <Trophy className="w-3 h-3 text-yellow-400" />
+                  <span>Wins</span>
+                </div>
+                <div className="text-base font-black text-emerald-400">
+                  {stats?.wins ?? wallet?.totalWins ?? 0}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                  <Flame className="w-3 h-3 text-orange-400" />
+                  <span>Streak</span>
+                </div>
+                <div className="text-base font-black text-orange-400">
+                  {wallet?.winStreak ?? 0}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                <div className="text-[10px] text-slate-400 flex items-center justify-center gap-1">
+                  <Percent className="w-3 h-3 text-cyan-400" />
+                  <span>Win %</span>
+                </div>
+                <div className="text-base font-black text-cyan-400">
+                  {stats?.winPercentage ?? 0}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Owned Power-Up Inventory */}
+          {wallet && (
             <div className="pt-3 border-t border-slate-800">
-              <label className="text-xs font-semibold text-slate-400 block mb-2">Career Stats</label>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                    <Flame className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Games</span>
-                  </div>
-                  <div className="text-lg font-black text-white">{stats.gamesPlayed}</div>
-                </div>
+              <label className="text-xs font-semibold text-slate-400 block mb-2">
+                Power-Up Inventory (Imbentaryo)
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {catalog &&
+                  Object.values(catalog).map((item) => {
+                    const count = wallet.inventory[item.id] || 0;
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-slate-950 p-2 rounded-xl border border-slate-800 flex flex-col items-center text-center shadow-inner"
+                      >
+                        <span className="text-xl">{item.icon}</span>
+                        <span className="text-[9px] font-black text-white truncate max-w-full">
+                          {item.name}
+                        </span>
+                        <span className="text-[10px] font-black text-amber-300 mt-0.5">
+                          {count}x
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
 
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                    <Trophy className="w-3.5 h-3.5 text-yellow-400" />
-                    <span>Wins</span>
-                  </div>
-                  <div className="text-lg font-black text-emerald-400">{stats.wins}</div>
-                </div>
-
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  <div className="text-xs text-slate-400 flex items-center justify-center gap-1">
-                    <Percent className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Win %</span>
-                  </div>
-                  <div className="text-lg font-black text-cyan-400">{stats.winPercentage}%</div>
-                </div>
+          {/* Achievements Badges */}
+          {wallet?.achievements && wallet.achievements.length > 0 && (
+            <div className="pt-3 border-t border-slate-800">
+              <label className="text-xs font-semibold text-slate-400 block mb-2">
+                Achievement Badges
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {wallet.achievements.map((ach) => (
+                  <span
+                    key={ach}
+                    className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-950 text-amber-300 border border-amber-400/40 flex items-center gap-1"
+                  >
+                    <span>🎖️</span>
+                    <span>{ach.replace(/_/g, ' ').toUpperCase()}</span>
+                  </span>
+                ))}
               </div>
             </div>
           )}

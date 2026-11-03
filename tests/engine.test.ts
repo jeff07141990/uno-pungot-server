@@ -196,6 +196,9 @@ describe('Bot AI Logic', () => {
       turnCount: 5,
       startedAt: Date.now(),
       endedAt: null,
+      entryFee: 0,
+      prizePool: 0,
+      isEntryFeeLocked: false,
     };
 
     const decision = makeBotMove(botHand, mockGameState, mockGameState.houseRules);

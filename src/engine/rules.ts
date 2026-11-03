@@ -16,6 +16,11 @@ export function isCardPlayable(
 
   // 1. Stacking logic when penalty is pending (enforced across ALL variants when stacking is enabled)
   if (pendingDrawPenalty > 0) {
+    // Defensive Power-Up Cards: Shield and Reflect can always counter incoming pending draw penalty!
+    if (card.type === 'power_shield' || card.type === 'power_reflect') {
+      return true;
+    }
+
     if (!stackingEnabled) return false;
 
     // +2 on +2
@@ -34,12 +39,17 @@ export function isCardPlayable(
     return false;
   }
 
-  // 2. Uno All Wild: Every card is wild, so any card can be played when there's no pending penalty
+  // 2. Power-Up Cards: all power cards are playable on player's turn like wild action cards
+  if (card.type.startsWith('power_')) {
+    return true;
+  }
+
+  // 3. Uno All Wild: Every card is wild, so any card can be played when there's no pending penalty
   if (variant === 'all_wild') {
     return true;
   }
 
-  // 3. Wilds can always be played
+  // 4. Wilds can always be played
   if (
     card.color === 'wild' ||
     card.type === 'wild' ||

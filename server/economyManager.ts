@@ -1,0 +1,821 @@
+import fs from 'fs';
+import path from 'path';
+import {
+  CoinTransaction,
+  DailyMission,
+  PlayerWallet,
+  PowerUpId,
+  PowerUpItem,
+  PrizePayoutResult,
+  TransactionType,
+} from '../src/engine/types';
+
+export const DEFAULT_POWER_UP_CATALOG: Record<PowerUpId, PowerUpItem> = {
+  shield: {
+    id: 'shield',
+    name: 'Shield Protection',
+    description: 'Block the next attack!',
+    price: 100,
+    icon: '🛡️',
+    badge: 'Defense',
+    enabled: true,
+  },
+  extra_turn: {
+    id: 'extra_turn',
+    name: 'Extra Turn',
+    description: 'Play one more turn!',
+    price: 250,
+    icon: '⚡',
+    badge: 'Special',
+    enabled: true,
+  },
+  swap: {
+    id: 'swap',
+    name: 'Card Swap',
+    description: 'Swap hands with another player!',
+    price: 150,
+    icon: '🔄',
+    badge: 'Tactical',
+    enabled: true,
+  },
+  color: {
+    id: 'color',
+    name: 'Color Changer',
+    description: 'Change the color anytime!',
+    price: 120,
+    icon: '🎨',
+    badge: 'Control',
+    enabled: true,
+  },
+  reverse: {
+    id: 'reverse',
+    name: 'Reverse Master',
+    description: 'Reverse the turn!',
+    price: 100,
+    icon: '🔁',
+    badge: 'Control',
+    enabled: true,
+  },
+  peek: {
+    id: 'peek',
+    name: 'Peek Card',
+    description: "View a player's card!",
+    price: 80,
+    icon: '👁️',
+    badge: 'Scout',
+    enabled: true,
+  },
+  booster: {
+    id: 'booster',
+    name: 'Coin Booster',
+    description: 'Earn extra coins!',
+    price: 200,
+    icon: '💰',
+    badge: 'Reward',
+    enabled: true,
+  },
+  reflect: {
+    id: 'reflect',
+    name: 'Attack Reflect',
+    description: 'Send the attack back!',
+    price: 180,
+    icon: '🪞',
+    badge: 'Defense',
+    enabled: true,
+  },
+};
+
+export const MISSION_DEFINITIONS = [
+  {
+    id: 'play_match',
+    title: 'Play 1 Match',
+    description: 'Complete 1 match against players or bots.',
+    rewardCoins: 50,
+    targetCount: 1,
+  },
+  {
+    id: 'win_match',
+    title: 'Victory Champion',
+    description: 'Win 1 match (empty all your cards first).',
+    rewardCoins: 100,
+    targetCount: 1,
+  },
+  {
+    id: 'use_powerup',
+    title: 'Tactical Master',
+    description: 'Use at least 1 Power-Up in any active game.',
+    rewardCoins: 60,
+    targetCount: 1,
+  },
+  {
+    id: 'play_friends',
+    title: 'Multiplayer Fun',
+    description: 'Play a match with online human players.',
+    rewardCoins: 80,
+    targetCount: 1,
+  },
+];
+
+interface EconomyDatabaseSchema {
+  wallets: Record<string, PlayerWallet>;
+  transactions: CoinTransaction[];
+  catalog: Record<PowerUpId, PowerUpItem>;
+  missions: Record<string, Record<string, DailyMission>>;
+  systemConfig: {
+    startingBalance: number;
+    dailyLoginReward: number;
+    matchVictoryReward: number;
+    streakBonusBase: number;
+  };
+}
+
+export class EconomyManager {
+  private dataFilePath: string;
+  private db: EconomyDatabaseSchema;
+
+  constructor() {
+    const dataDir = path.resolve(process.cwd(), 'server', 'data');
+    if (!fs.existsSync(dataDir)) {
+      try {
+        fs.mkdirSync(dataDir, { recursive: true });
+      } catch (e) {
+        console.warn('Failed to create server data directory:', e);
+      }
+    }
+    this.dataFilePath = path.join(dataDir, 'economy.json');
+    this.db = this.loadDatabase();
+  }
+
+  private loadDatabase(): EconomyDatabaseSchema {
+    try {
+      if (fs.existsSync(this.dataFilePath)) {
+        const raw = fs.readFileSync(this.dataFilePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        return {
+          wallets: parsed.wallets || {},
+          transactions: parsed.transactions || [],
+          catalog: { ...DEFAULT_POWER_UP_CATALOG, ...(parsed.catalog || {}) },
+          missions: parsed.missions || {},
+          systemConfig: {
+            startingBalance: 1000,
+            dailyLoginReward: 100,
+            matchVictoryReward: 200,
+            streakBonusBase: 50,
+            ...(parsed.systemConfig || {}),
+          },
+        };
+      }
+    } catch (e) {
+      console.warn('Could not read existing economy.json, initializing fresh store:', e);
+    }
+
+    return {
+      wallets: {},
+      transactions: [],
+      catalog: { ...DEFAULT_POWER_UP_CATALOG },
+      missions: {},
+      systemConfig: {
+        startingBalance: 1000,
+        dailyLoginReward: 100,
+        matchVictoryReward: 200,
+        streakBonusBase: 50,
+      },
+    };
+  }
+
+  private persistDatabase() {
+    try {
+      fs.writeFileSync(this.dataFilePath, JSON.stringify(this.db, null, 2), 'utf-8');
+    } catch (e) {
+      console.error('Failed to write economy database to disk:', e);
+    }
+  }
+
+  private getTodayDateKey(): string {
+    const now = new Date();
+    return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(
+      now.getUTCDate()
+    ).padStart(2, '0')}`;
+  }
+
+  public getOrCreateWallet(
+    playerId: string,
+    playerName: string = 'Player',
+    playerAvatar: string = '🦊'
+  ): PlayerWallet {
+    if (!playerId) {
+      throw new Error('playerId is required');
+    }
+
+    let wallet = this.db.wallets[playerId];
+    if (!wallet) {
+      const startingBalance = this.db.systemConfig.startingBalance || 1000;
+      wallet = {
+        playerId,
+        playerName,
+        playerAvatar,
+        balance: startingBalance,
+        totalWins: 0,
+        totalLosses: 0,
+        winStreak: 0,
+        bestWinStreak: 0,
+        level: 1,
+        experience: 0,
+        lastDailyClaimDate: null,
+        inventory: {
+          shield: 1,
+          swap: 0,
+          reverse: 0,
+          color: 0,
+          extra_turn: 0,
+          peek: 1,
+          booster: 0,
+          reflect: 0,
+        },
+        achievements: ['welcome_aboard'],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      this.db.wallets[playerId] = wallet;
+
+      this.recordTransaction(
+        playerId,
+        'WELCOME_BONUS',
+        startingBalance,
+        wallet.balance,
+        'Welcome to UNO Pungot! ₱1,000 starting gift.'
+      );
+
+      this.persistDatabase();
+    } else {
+      let changed = false;
+      if (playerName && wallet.playerName !== playerName) {
+        wallet.playerName = playerName;
+        changed = true;
+      }
+      if (playerAvatar && wallet.playerAvatar !== playerAvatar) {
+        wallet.playerAvatar = playerAvatar;
+        changed = true;
+      }
+      for (const key of Object.keys(DEFAULT_POWER_UP_CATALOG) as PowerUpId[]) {
+        if (typeof wallet.inventory[key] !== 'number') {
+          wallet.inventory[key] = 0;
+          changed = true;
+        }
+      }
+      if (changed) {
+        wallet.updatedAt = Date.now();
+        this.persistDatabase();
+      }
+    }
+
+    return wallet;
+  }
+
+  public getWallet(playerId: string): PlayerWallet | null {
+    return this.db.wallets[playerId] || null;
+  }
+
+  private recordTransaction(
+    playerId: string,
+    type: TransactionType,
+    amount: number,
+    balanceAfter: number,
+    description: string
+  ): CoinTransaction {
+    const tx: CoinTransaction = {
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      playerId,
+      type,
+      amount,
+      balanceAfter,
+      description,
+      timestamp: Date.now(),
+    };
+
+    this.db.transactions.unshift(tx);
+    if (this.db.transactions.length > 500) {
+      this.db.transactions = this.db.transactions.slice(0, 500);
+    }
+    return tx;
+  }
+
+  public claimDailyReward(
+    playerId: string,
+    playerName?: string,
+    playerAvatar?: string
+  ): { success: boolean; message: string; wallet?: PlayerWallet; coinsAdded?: number } {
+    const wallet = this.getOrCreateWallet(playerId, playerName, playerAvatar);
+    const today = this.getTodayDateKey();
+
+    if (wallet.lastDailyClaimDate === today) {
+      return {
+        success: false,
+        message: 'Nakuha mo na ang iyong Daily Reward ngayong araw! Bumalik muli bukas.',
+        wallet,
+      };
+    }
+
+    const reward = this.db.systemConfig.dailyLoginReward || 100;
+    wallet.balance += reward;
+    wallet.lastDailyClaimDate = today;
+    wallet.updatedAt = Date.now();
+    this.addExperience(wallet, 25);
+
+    this.recordTransaction(
+      playerId,
+      'DAILY_LOGIN',
+      reward,
+      wallet.balance,
+      `Daily Login Reward for ${today} (+₱${reward})`
+    );
+
+    this.persistDatabase();
+
+    return {
+      success: true,
+      message: `Nakuha mo ang +₱${reward} Daily Login Reward!`,
+      wallet,
+      coinsAdded: reward,
+    };
+  }
+
+  public buyPowerUp(
+    playerId: string,
+    powerUpId: PowerUpId,
+    quantity: number = 1
+  ): { success: boolean; message: string; wallet?: PlayerWallet } {
+    const wallet = this.getOrCreateWallet(playerId);
+    const item = this.db.catalog[powerUpId] || DEFAULT_POWER_UP_CATALOG[powerUpId];
+
+    if (!item || item.enabled === false) {
+      // Auto-enable if it's a valid default powerup
+      if (item) {
+        item.enabled = true;
+        this.persistDatabase();
+      } else {
+        return { success: false, message: 'Ang item na ito ay kasalukuyang hindi magagamit.', wallet };
+      }
+    }
+
+    if (quantity <= 0 || !Number.isInteger(quantity)) {
+      return { success: false, message: 'Maling quantity ng bibilhin.', wallet };
+    }
+
+    const totalCost = item.price * quantity;
+    if (wallet.balance < totalCost) {
+      return {
+        success: false,
+        message: `Kulang ang iyong barya! Kailangan ng ₱${totalCost}, ngunit mayroon ka lamang ₱${wallet.balance}.`,
+        wallet,
+      };
+    }
+
+    wallet.balance -= totalCost;
+    wallet.inventory[powerUpId] = (wallet.inventory[powerUpId] || 0) + quantity;
+    wallet.updatedAt = Date.now();
+    this.addExperience(wallet, 15 * quantity);
+
+    this.recordTransaction(
+      playerId,
+      'POWERUP_PURCHASE',
+      -totalCost,
+      wallet.balance,
+      `Binili ang ${quantity}x ${item.name} (-₱${totalCost})`
+    );
+
+    this.persistDatabase();
+
+    return {
+      success: true,
+      message: `Matagumpay na nabili ang ${quantity}x ${item.name} para sa ₱${totalCost}!`,
+      wallet,
+    };
+  }
+
+  public consumePowerUp(
+    playerId: string,
+    powerUpId: PowerUpId
+  ): { success: boolean; message?: string; wallet?: PlayerWallet } {
+    const wallet = this.getOrCreateWallet(playerId);
+    const owned = wallet.inventory[powerUpId] || 0;
+
+    if (owned <= 0) {
+      return { success: false, message: 'Wala kang natitirang stock ng Power-Up na ito.' };
+    }
+
+    wallet.inventory[powerUpId] = owned - 1;
+    wallet.updatedAt = Date.now();
+    this.addExperience(wallet, 10);
+    this.trackMissionProgress(playerId, 'use_powerup', 1);
+
+    this.persistDatabase();
+    return { success: true, wallet };
+  }
+
+  public awardMatchFinish(
+    winnerId: string,
+    loserId: string | null,
+    allPlayerIds: string[],
+    hasCoinBooster: boolean = false
+  ): { winnerCoins: number; streak: number } {
+    let winnerReward = 0;
+    let currentStreak = 0;
+
+    if (winnerId) {
+      const winnerWallet = this.getOrCreateWallet(winnerId);
+      winnerWallet.totalWins += 1;
+      winnerWallet.winStreak += 1;
+      currentStreak = winnerWallet.winStreak;
+      if (winnerWallet.winStreak > winnerWallet.bestWinStreak) {
+        winnerWallet.bestWinStreak = winnerWallet.winStreak;
+      }
+
+      const baseReward = this.db.systemConfig.matchVictoryReward || 200;
+      let totalAward = hasCoinBooster ? baseReward * 2 : baseReward;
+
+      let streakBonus = 0;
+      if (winnerWallet.winStreak >= 2) {
+        streakBonus = Math.min((winnerWallet.winStreak - 1) * this.db.systemConfig.streakBonusBase, 200);
+        totalAward += streakBonus;
+      }
+
+      winnerWallet.balance += totalAward;
+      this.addExperience(winnerWallet, 100);
+      this.checkAchievements(winnerWallet);
+
+      this.trackMissionProgress(winnerId, 'play_match', 1);
+      this.trackMissionProgress(winnerId, 'win_match', 1);
+      if (allPlayerIds.length > 1) {
+        this.trackMissionProgress(winnerId, 'play_friends', 1);
+      }
+
+      this.recordTransaction(
+        winnerId,
+        'MATCH_VICTORY',
+        totalAward,
+        winnerWallet.balance,
+        `1st Place Victory Reward! (+₱${baseReward}${hasCoinBooster ? ' x2 Booster' : ''}${
+          streakBonus > 0 ? ` + ₱${streakBonus} Streak Bonus` : ''
+        })`
+      );
+
+      winnerReward = totalAward;
+    }
+
+    for (const pid of allPlayerIds) {
+      if (pid === winnerId) continue;
+      const wallet = this.getOrCreateWallet(pid);
+      wallet.winStreak = 0;
+      if (pid === loserId) {
+        wallet.totalLosses += 1;
+      }
+      this.addExperience(wallet, 35);
+      this.trackMissionProgress(pid, 'play_match', 1);
+      if (allPlayerIds.length > 1) {
+        this.trackMissionProgress(pid, 'play_friends', 1);
+      }
+    }
+
+    this.persistDatabase();
+    return { winnerCoins: winnerReward, streak: currentStreak };
+  }
+
+  /**
+   * Reserve entry fee from player wallet atomically.
+   */
+  public reserveEntryFee(
+    playerId: string,
+    roomId: string,
+    entryFee: number,
+    playerName: string = 'Player',
+    playerAvatar: string = '🦊'
+  ): { success: boolean; message: string; wallet?: PlayerWallet } {
+    if (entryFee <= 0) {
+      return { success: true, message: 'Free match - No entry fee required.' };
+    }
+
+    const wallet = this.getOrCreateWallet(playerId, playerName, playerAvatar);
+    if (wallet.balance < entryFee) {
+      return {
+        success: false,
+        message: `Kulang ang iyong barya! Kailangan ng ₱${entryFee}, ngunit ang iyong balance ay ₱${wallet.balance}.`,
+        wallet,
+      };
+    }
+
+    wallet.balance -= entryFee;
+    wallet.updatedAt = Date.now();
+
+    this.recordTransaction(
+      playerId,
+      'MATCH_ENTRY_FEE',
+      -entryFee,
+      wallet.balance,
+      `Reserved ₱${entryFee} entry fee for 5-Place Prize Pool match in Room ${roomId}`
+    );
+
+    this.persistDatabase();
+    return {
+      success: true,
+      message: `Matagumpay na na-reserve ang ₱${entryFee} Entry Fee!`,
+      wallet,
+    };
+  }
+
+  /**
+   * Refund entry fee back to player wallet if lobby is canceled or player leaves.
+   */
+  public refundEntryFee(
+    playerId: string,
+    roomId: string,
+    entryFee: number
+  ): { success: boolean; message: string; wallet?: PlayerWallet } {
+    if (entryFee <= 0) {
+      return { success: true, message: 'No fee to refund.' };
+    }
+
+    const wallet = this.getOrCreateWallet(playerId);
+    wallet.balance += entryFee;
+    wallet.updatedAt = Date.now();
+
+    this.recordTransaction(
+      playerId,
+      'MATCH_ENTRY_REFUND',
+      entryFee,
+      wallet.balance,
+      `Refunded ₱${entryFee} entry fee from canceled Room ${roomId}`
+    );
+
+    this.persistDatabase();
+    return {
+      success: true,
+      message: `Nai-refund ang ₱${entryFee} Entry Fee pabalik sa iyong wallet!`,
+      wallet,
+    };
+  }
+
+  /**
+   * Distribute five-place prize pool (50%, 25%, 15%, 7%, 3%) with integer-safe calculation.
+   * Guarantees total payout equals exactly 100% of the pool.
+   */
+  public distributePrizePool(
+    roomId: string,
+    rankings: { playerId: string; name: string; avatar: string; rank: number }[],
+    entryFee: number
+  ): { payouts: PrizePayoutResult[]; updatedWallets: Record<string, PlayerWallet> } {
+    const totalPrizePool = entryFee * 5;
+    const payouts: PrizePayoutResult[] = [];
+    const updatedWallets: Record<string, PlayerWallet> = {};
+
+    if (totalPrizePool <= 0 || rankings.length === 0) {
+      return { payouts, updatedWallets };
+    }
+
+    // Integer-safe percentages:
+    // 1st: 50%
+    // 2nd: 25%
+    // 3rd: 15%
+    // 4th: 7%
+    // 5th: Remainder (exact 3% with total = 100%)
+    const p1 = Math.floor(totalPrizePool * 0.50);
+    const p2 = Math.floor(totalPrizePool * 0.25);
+    const p3 = Math.floor(totalPrizePool * 0.15);
+    const p4 = Math.floor(totalPrizePool * 0.07);
+    const p5 = totalPrizePool - (p1 + p2 + p3 + p4);
+
+    const prizeTable = [
+      { rank: 1, prize: p1, percentage: 50 },
+      { rank: 2, prize: p2, percentage: 25 },
+      { rank: 3, prize: p3, percentage: 15 },
+      { rank: 4, prize: p4, percentage: 7 },
+      { rank: 5, prize: p5, percentage: 3 },
+    ];
+
+    for (let i = 0; i < rankings.length; i++) {
+      const playerRank = rankings[i];
+      const tier = prizeTable.find((t) => t.rank === playerRank.rank) || prizeTable[i] || {
+        rank: playerRank.rank,
+        prize: 0,
+        percentage: 0,
+      };
+
+      payouts.push({
+        playerId: playerRank.playerId,
+        playerName: playerRank.name,
+        playerAvatar: playerRank.avatar,
+        rank: playerRank.rank,
+        prize: tier.prize,
+        percentage: tier.percentage,
+      });
+
+      // If player is human and won prize, credit wallet
+      if (!playerRank.playerId.startsWith('bot-') && tier.prize > 0) {
+        const wallet = this.getOrCreateWallet(playerRank.playerId, playerRank.name, playerRank.avatar);
+        wallet.balance += tier.prize;
+        wallet.updatedAt = Date.now();
+
+        this.recordTransaction(
+          playerRank.playerId,
+          'MATCH_PRIZE_PAYOUT',
+          tier.prize,
+          wallet.balance,
+          `🏆 Rank #${playerRank.rank} Prize Payout (${tier.percentage}%) from Room ${roomId} (+₱${tier.prize})`
+        );
+
+        updatedWallets[playerRank.playerId] = wallet;
+      }
+    }
+
+    this.persistDatabase();
+    return { payouts, updatedWallets };
+  }
+
+  public getDailyMissions(playerId: string): DailyMission[] {
+    const today = this.getTodayDateKey();
+    if (!this.db.missions[playerId]) {
+      this.db.missions[playerId] = {};
+    }
+
+    const playerMissions = this.db.missions[playerId];
+
+    const result: DailyMission[] = [];
+    for (const def of MISSION_DEFINITIONS) {
+      let mission = playerMissions[def.id];
+      if (!mission || (mission as any).dateKey !== today) {
+        mission = {
+          id: def.id,
+          title: def.title,
+          description: def.description,
+          rewardCoins: def.rewardCoins,
+          targetCount: def.targetCount,
+          currentCount: 0,
+          isCompleted: false,
+          isClaimed: false,
+        };
+        (mission as any).dateKey = today;
+        playerMissions[def.id] = mission;
+      }
+      result.push(mission);
+    }
+
+    return result;
+  }
+
+  public trackMissionProgress(playerId: string, missionId: string, amount: number = 1) {
+    const missions = this.getDailyMissions(playerId);
+    const mission = missions.find((m) => m.id === missionId);
+    if (mission && !mission.isCompleted) {
+      mission.currentCount = Math.min(mission.currentCount + amount, mission.targetCount);
+      if (mission.currentCount >= mission.targetCount) {
+        mission.isCompleted = true;
+      }
+      this.persistDatabase();
+    }
+  }
+
+  public claimMissionReward(
+    playerId: string,
+    missionId: string
+  ): { success: boolean; message: string; wallet?: PlayerWallet; reward?: number } {
+    const missions = this.getDailyMissions(playerId);
+    const mission = missions.find((m) => m.id === missionId);
+
+    if (!mission) {
+      return { success: false, message: 'Hindi nahanap ang mission.' };
+    }
+    if (!mission.isCompleted) {
+      return { success: false, message: 'Hindi pa tapos ang mission na ito.' };
+    }
+    if (mission.isClaimed) {
+      return { success: false, message: 'Nakuha mo na ang pabuya para sa mission na ito.' };
+    }
+
+    const wallet = this.getOrCreateWallet(playerId);
+    mission.isClaimed = true;
+    wallet.balance += mission.rewardCoins;
+    this.addExperience(wallet, 50);
+
+    this.recordTransaction(
+      playerId,
+      'MISSION_REWARD',
+      mission.rewardCoins,
+      wallet.balance,
+      `Pabuya sa pagtatapos ng Mission: "${mission.title}" (+₱${mission.rewardCoins})`
+    );
+
+    this.persistDatabase();
+
+    return {
+      success: true,
+      message: `Nakuha mo ang +₱${mission.rewardCoins} para sa "${mission.title}"!`,
+      wallet,
+      reward: mission.rewardCoins,
+    };
+  }
+
+  private addExperience(wallet: PlayerWallet, xp: number) {
+    wallet.experience += xp;
+    const newLevel = Math.max(1, Math.floor(Math.sqrt(wallet.experience / 100)) + 1);
+    if (newLevel > wallet.level) {
+      wallet.level = newLevel;
+      const bonus = 50 * newLevel;
+      wallet.balance += bonus;
+      this.recordTransaction(
+        wallet.playerId,
+        'ADMIN_GRANT',
+        bonus,
+        wallet.balance,
+        `Level Up! Umabot sa Level ${newLevel}! (+₱${bonus})`
+      );
+    }
+  }
+
+  private checkAchievements(wallet: PlayerWallet) {
+    const badges = new Set(wallet.achievements);
+    if (wallet.totalWins >= 1) badges.add('first_blood');
+    if (wallet.totalWins >= 5) badges.add('veteran');
+    if (wallet.totalWins >= 20) badges.add('uno_legend');
+    if (wallet.winStreak >= 3) badges.add('on_fire');
+    if (wallet.winStreak >= 5) badges.add('unstoppable');
+    if (wallet.level >= 5) badges.add('high_roller');
+    wallet.achievements = Array.from(badges);
+  }
+
+  public getLeaderboards() {
+    const all = Object.values(this.db.wallets);
+
+    const topWins = [...all]
+      .sort((a, b) => b.totalWins - a.totalWins || b.balance - a.balance)
+      .slice(0, 20);
+
+    const topStreaks = [...all]
+      .sort((a, b) => b.bestWinStreak - a.bestWinStreak || b.totalWins - a.totalWins)
+      .slice(0, 20);
+
+    const topLevels = [...all]
+      .sort((a, b) => b.level - a.level || b.experience - a.experience)
+      .slice(0, 20);
+
+    const topCoins = [...all]
+      .sort((a, b) => b.balance - a.balance)
+      .slice(0, 20);
+
+    return { topWins, topStreaks, topLevels, topCoins };
+  }
+
+  public adminAdjustBalance(
+    playerId: string,
+    amount: number,
+    reason: string
+  ): { success: boolean; wallet?: PlayerWallet; message: string } {
+    const wallet = this.db.wallets[playerId];
+    if (!wallet) {
+      return { success: false, message: 'Hindi nahanap ang manlalaro.' };
+    }
+
+    if (wallet.balance + amount < 0) {
+      return { success: false, message: 'Hindi maaaring maging negatibo ang balanse.' };
+    }
+
+    wallet.balance += amount;
+    wallet.updatedAt = Date.now();
+
+    this.recordTransaction(
+      playerId,
+      amount >= 0 ? 'ADMIN_GRANT' : 'ADMIN_DEDUCT',
+      amount,
+      wallet.balance,
+      `Admin action: ${reason}`
+    );
+
+    this.persistDatabase();
+    return { success: true, wallet, message: `Balanse binago ng ₱${amount}. Bagong balanse: ₱${wallet.balance}.` };
+  }
+
+  public adminUpdateCatalogItem(
+    powerUpId: PowerUpId,
+    updates: Partial<PowerUpItem>
+  ): { success: boolean; item?: PowerUpItem } {
+    if (!this.db.catalog[powerUpId]) {
+      return { success: false };
+    }
+    this.db.catalog[powerUpId] = {
+      ...this.db.catalog[powerUpId],
+      ...updates,
+    };
+    this.persistDatabase();
+    return { success: true, item: this.db.catalog[powerUpId] };
+  }
+
+  public getTransactions(limit: number = 100): CoinTransaction[] {
+    return this.db.transactions.slice(0, limit);
+  }
+
+  public getCatalog(): Record<PowerUpId, PowerUpItem> {
+    return this.db.catalog;
+  }
+}
+
+export const economyManager = new EconomyManager();

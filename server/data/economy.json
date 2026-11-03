@@ -1,0 +1,1901 @@
+{
+  "wallets": {
+    "test_user_1793602467685": {
+      "playerId": "test_user_1793602467685",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 70,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 175,
+      "lastDailyClaimDate": "2026-11-02",
+      "inventory": {
+        "shield": 4,
+        "swap": 1,
+        "reverse": 1,
+        "color": 1,
+        "extra_turn": 1,
+        "peek": 2,
+        "booster": 1,
+        "reflect": 1
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793602467712,
+      "updatedAt": 1793628636381
+    },
+    "test-p1": {
+      "playerId": "test-p1",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 800,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 1,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793602563115,
+      "updatedAt": 1793602644874
+    },
+    "test-user-99": {
+      "playerId": "test-user-99",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 800,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 1,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793602699443,
+      "updatedAt": 1793602699443
+    },
+    "player-host-1793602978381": {
+      "playerId": "player-host-1793602978381",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793602978437,
+      "updatedAt": 1793602978438
+    },
+    "player-host-1793602994119": {
+      "playerId": "player-host-1793602994119",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793602994170,
+      "updatedAt": 1793602994171
+    },
+    "player-host-1793603037354": {
+      "playerId": "player-host-1793603037354",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603037415,
+      "updatedAt": 1793603037416
+    },
+    "player-host-1793603077732": {
+      "playerId": "player-host-1793603077732",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603077787,
+      "updatedAt": 1793603077787
+    },
+    "player-host-1793603120601": {
+      "playerId": "player-host-1793603120601",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603120656,
+      "updatedAt": 1793603120657
+    },
+    "player-host-1793603146997": {
+      "playerId": "player-host-1793603146997",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603147049,
+      "updatedAt": 1793603147050
+    },
+    "player-host-1793603178931": {
+      "playerId": "player-host-1793603178931",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603178986,
+      "updatedAt": 1793603178987
+    },
+    "player-host-1793603194154": {
+      "playerId": "player-host-1793603194154",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603194210,
+      "updatedAt": 1793603194211
+    },
+    "player-host-1793603225091": {
+      "playerId": "player-host-1793603225091",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793603225147,
+      "updatedAt": 1793603225364
+    },
+    "usr_0j3aqw3mvs2oa9c": {
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "playerName": "jeffrey",
+      "playerAvatar": "data:image/jpeg;base64,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",
+      "balance": 980,
+      "totalWins": 2,
+      "totalLosses": 3,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 3,
+      "experience": 450,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 0,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 0,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793609903986,
+      "updatedAt": 1793680600658
+    },
+    "test-user-123": {
+      "playerId": "test-user-123",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 900,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 15,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 2,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793629805416,
+      "updatedAt": 1793629814499
+    },
+    "bot-1793674071067-248": {
+      "playerId": "bot-1793674071067-248",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1300,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 100,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793674129576,
+      "updatedAt": 1793674129576
+    },
+    "bot-1793677273246-19": {
+      "playerId": "bot-1793677273246-19",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1300,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 0,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 0,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793677301926,
+      "updatedAt": 1793677307596
+    },
+    "bot-1793678657451-705": {
+      "playerId": "bot-1793678657451-705",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1300,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 0,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 0,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793678697370,
+      "updatedAt": 1793678705581
+    },
+    "p1": {
+      "playerId": "p1",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 5750,
+      "totalWins": 12,
+      "totalLosses": 0,
+      "winStreak": 12,
+      "bestWinStreak": 12,
+      "level": 4,
+      "experience": 1220,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 0,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 0,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood",
+        "on_fire",
+        "veteran",
+        "unstoppable"
+      ],
+      "createdAt": 1793680381795,
+      "updatedAt": 1793680381800
+    },
+    "test_player_1793680391429": {
+      "playerId": "test_player_1793680391429",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793680391429,
+      "updatedAt": 1793680391431
+    },
+    "poor_player_1793680391432": {
+      "playerId": "poor_player_1793680391432",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 50,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793680391432,
+      "updatedAt": 1793680391433
+    },
+    "test_player_1793683141176": {
+      "playerId": "test_player_1793683141176",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793683141177,
+      "updatedAt": 1793683141180
+    },
+    "poor_player_1793683141181": {
+      "playerId": "poor_player_1793683141181",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 50,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793683141181,
+      "updatedAt": 1793683141182
+    },
+    "test_player_1793683889384": {
+      "playerId": "test_player_1793683889384",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793683889384,
+      "updatedAt": 1793683889388
+    },
+    "poor_player_1793683889389": {
+      "playerId": "poor_player_1793683889389",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 50,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 0,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793683889389,
+      "updatedAt": 1793683889390
+    }
+  },
+  "transactions": [
+    {
+      "id": "tx_1793683889501_fn7tg",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 5750,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683889501
+    },
+    {
+      "id": "tx_1793683889500_lux30",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 5350,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683889500
+    },
+    {
+      "id": "tx_1793683889498_1u0r1",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 4950,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683889498
+    },
+    {
+      "id": "tx_1793683889389_pysjw",
+      "playerId": "poor_player_1793683889389",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793683889389
+    },
+    {
+      "id": "tx_1793683889388_sf9o3",
+      "playerId": "test_player_1793683889384",
+      "type": "MATCH_ENTRY_REFUND",
+      "amount": 200,
+      "balanceAfter": 1000,
+      "description": "Refunded ₱200 entry fee from canceled Room room_123",
+      "timestamp": 1793683889388
+    },
+    {
+      "id": "tx_1793683889387_137wz",
+      "playerId": "test_player_1793683889384",
+      "type": "MATCH_ENTRY_FEE",
+      "amount": -200,
+      "balanceAfter": 800,
+      "description": "Reserved ₱200 entry fee for 5-Place Prize Pool match in Room room_123",
+      "timestamp": 1793683889387
+    },
+    {
+      "id": "tx_1793683889384_0vc4a",
+      "playerId": "test_player_1793683889384",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793683889384
+    },
+    {
+      "id": "tx_1793683141293_d4aod",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 4550,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683141293
+    },
+    {
+      "id": "tx_1793683141293_5okda",
+      "playerId": "p1",
+      "type": "ADMIN_GRANT",
+      "amount": 200,
+      "balanceAfter": 4550,
+      "description": "Level Up! Umabot sa Level 4! (+₱200)",
+      "timestamp": 1793683141293
+    },
+    {
+      "id": "tx_1793683141292_pkh8d",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 3950,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683141292
+    },
+    {
+      "id": "tx_1793683141291_bafxm",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 3550,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793683141291
+    },
+    {
+      "id": "tx_1793683141181_n7e1z",
+      "playerId": "poor_player_1793683141181",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793683141181
+    },
+    {
+      "id": "tx_1793683141180_gwkl8",
+      "playerId": "test_player_1793683141176",
+      "type": "MATCH_ENTRY_REFUND",
+      "amount": 200,
+      "balanceAfter": 1000,
+      "description": "Refunded ₱200 entry fee from canceled Room room_123",
+      "timestamp": 1793683141180
+    },
+    {
+      "id": "tx_1793683141178_qkba1",
+      "playerId": "test_player_1793683141176",
+      "type": "MATCH_ENTRY_FEE",
+      "amount": -200,
+      "balanceAfter": 800,
+      "description": "Reserved ₱200 entry fee for 5-Place Prize Pool match in Room room_123",
+      "timestamp": 1793683141178
+    },
+    {
+      "id": "tx_1793683141177_kopfq",
+      "playerId": "test_player_1793683141176",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793683141177
+    },
+    {
+      "id": "tx_1793680600045_qzyy1",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 980,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793680600045
+    },
+    {
+      "id": "tx_1793680600044_v03t5",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "ADMIN_GRANT",
+      "amount": 150,
+      "balanceAfter": 980,
+      "description": "Level Up! Umabot sa Level 3! (+₱150)",
+      "timestamp": 1793680600044
+    },
+    {
+      "id": "tx_1793680391541_4knn5",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 3150,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793680391541
+    },
+    {
+      "id": "tx_1793680391540_a2rex",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 2750,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793680391540
+    },
+    {
+      "id": "tx_1793680391539_rp7zd",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 350,
+      "balanceAfter": 2350,
+      "description": "1st Place Victory Reward! (+₱200 + ₱150 Streak Bonus)",
+      "timestamp": 1793680391539
+    },
+    {
+      "id": "tx_1793680391539_uac0o",
+      "playerId": "p1",
+      "type": "ADMIN_GRANT",
+      "amount": 150,
+      "balanceAfter": 2350,
+      "description": "Level Up! Umabot sa Level 3! (+₱150)",
+      "timestamp": 1793680391539
+    },
+    {
+      "id": "tx_1793680391432_krbpf",
+      "playerId": "poor_player_1793680391432",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793680391432
+    },
+    {
+      "id": "tx_1793680391431_tyf0p",
+      "playerId": "test_player_1793680391429",
+      "type": "MATCH_ENTRY_REFUND",
+      "amount": 200,
+      "balanceAfter": 1000,
+      "description": "Refunded ₱200 entry fee from canceled Room room_123",
+      "timestamp": 1793680391431
+    },
+    {
+      "id": "tx_1793680391431_hzhcs",
+      "playerId": "test_player_1793680391429",
+      "type": "MATCH_ENTRY_FEE",
+      "amount": -200,
+      "balanceAfter": 800,
+      "description": "Reserved ₱200 entry fee for 5-Place Prize Pool match in Room room_123",
+      "timestamp": 1793680391431
+    },
+    {
+      "id": "tx_1793680391429_2mh2p",
+      "playerId": "test_player_1793680391429",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793680391429
+    },
+    {
+      "id": "tx_1793680381802_xbdd3",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 300,
+      "balanceAfter": 1850,
+      "description": "1st Place Victory Reward! (+₱200 + ₱100 Streak Bonus)",
+      "timestamp": 1793680381802
+    },
+    {
+      "id": "tx_1793680381801_jj1rn",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 250,
+      "balanceAfter": 1550,
+      "description": "1st Place Victory Reward! (+₱200 + ₱50 Streak Bonus)",
+      "timestamp": 1793680381801
+    },
+    {
+      "id": "tx_1793680381798_2qsye",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1300,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793680381798
+    },
+    {
+      "id": "tx_1793680381796_najqv",
+      "playerId": "p1",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 1300,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793680381796
+    },
+    {
+      "id": "tx_1793680381795_fbqng",
+      "playerId": "p1",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793680381795
+    },
+    {
+      "id": "tx_1793678697372_gltxn",
+      "playerId": "bot-1793678657451-705",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1300,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793678697372
+    },
+    {
+      "id": "tx_1793678697371_byrqh",
+      "playerId": "bot-1793678657451-705",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 1300,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793678697371
+    },
+    {
+      "id": "tx_1793678697370_rqd8q",
+      "playerId": "bot-1793678657451-705",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793678697370
+    },
+    {
+      "id": "tx_1793677301928_1r888",
+      "playerId": "bot-1793677273246-19",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1300,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793677301928
+    },
+    {
+      "id": "tx_1793677301927_jz6wd",
+      "playerId": "bot-1793677273246-19",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 1300,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793677301927
+    },
+    {
+      "id": "tx_1793677301926_i62f4",
+      "playerId": "bot-1793677273246-19",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793677301926
+    },
+    {
+      "id": "tx_1793674348282_hve88",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 630,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793674348282
+    },
+    {
+      "id": "tx_1793674129579_olj82",
+      "playerId": "bot-1793674071067-248",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1300,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793674129579
+    },
+    {
+      "id": "tx_1793674129577_ku2fz",
+      "playerId": "bot-1793674071067-248",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 1300,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793674129577
+    },
+    {
+      "id": "tx_1793674129576_ghml3",
+      "playerId": "bot-1793674071067-248",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793674129576
+    },
+    {
+      "id": "tx_1793645784406_wwcfa",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 430,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793645784407
+    },
+    {
+      "id": "tx_1793633341731_h0qkn",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "POWERUP_PURCHASE",
+      "amount": -120,
+      "balanceAfter": 530,
+      "description": "Binili ang 1x Color Changer (-₱120)",
+      "timestamp": 1793633341731
+    },
+    {
+      "id": "tx_1793633341731_cezvs",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 530,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793633341731
+    },
+    {
+      "id": "tx_1793629814499_h4qif",
+      "playerId": "test-user-123",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793629814500
+    },
+    {
+      "id": "tx_1793629805416_u4cfk",
+      "playerId": "test-user-123",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793629805416
+    },
+    {
+      "id": "tx_1793629777765_75lxq",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "POWERUP_PURCHASE",
+      "amount": -250,
+      "balanceAfter": 550,
+      "description": "Binili ang 1x Extra Turn (-₱250)",
+      "timestamp": 1793629777765
+    },
+    {
+      "id": "tx_1793629624995_01zp9",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 800,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793629624995
+    },
+    {
+      "id": "tx_1793628849258_8vui0",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Reverse Master (-₱100)",
+      "timestamp": 1793628849258
+    },
+    {
+      "id": "tx_1793628636381_zmfjv",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -200,
+      "balanceAfter": 70,
+      "description": "Binili ang 1x Coin Booster (-₱200)",
+      "timestamp": 1793628636381
+    },
+    {
+      "id": "tx_1793628636379_q88zu",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -180,
+      "balanceAfter": 270,
+      "description": "Binili ang 1x Attack Reflect (-₱180)",
+      "timestamp": 1793628636379
+    },
+    {
+      "id": "tx_1793628636378_8k1ea",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -80,
+      "balanceAfter": 450,
+      "description": "Binili ang 1x Peek Card (-₱80)",
+      "timestamp": 1793628636378
+    },
+    {
+      "id": "tx_1793628636376_l1mn5",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -250,
+      "balanceAfter": 530,
+      "description": "Binili ang 1x Extra Turn (-₱250)",
+      "timestamp": 1793628636376
+    },
+    {
+      "id": "tx_1793628636374_n9jxe",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 780,
+      "description": "Binili ang 1x Reverse Master (-₱100)",
+      "timestamp": 1793628636374
+    },
+    {
+      "id": "tx_1793628636372_ngu71",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -120,
+      "balanceAfter": 880,
+      "description": "Binili ang 1x Color Changer (-₱120)",
+      "timestamp": 1793628636372
+    },
+    {
+      "id": "tx_1793628636372_morcw",
+      "playerId": "test_user_1793602467685",
+      "type": "ADMIN_GRANT",
+      "amount": 100,
+      "balanceAfter": 880,
+      "description": "Level Up! Umabot sa Level 2! (+₱100)",
+      "timestamp": 1793628636372
+    },
+    {
+      "id": "tx_1793628636371_kwsc6",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793628636371
+    },
+    {
+      "id": "tx_1793628636369_3nf2e",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -150,
+      "balanceAfter": 1000,
+      "description": "Binili ang 1x Card Swap (-₱150)",
+      "timestamp": 1793628636369
+    },
+    {
+      "id": "tx_1793628606921_jv5s2",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 1150,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793628606921
+    },
+    {
+      "id": "tx_1793609903986_253u8",
+      "playerId": "usr_0j3aqw3mvs2oa9c",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793609903986
+    },
+    {
+      "id": "tx_1793603225148_p1vpo",
+      "playerId": "player-host-1793603225091",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603225148
+    },
+    {
+      "id": "tx_1793603225147_ho7xk",
+      "playerId": "player-host-1793603225091",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603225147
+    },
+    {
+      "id": "tx_1793603194211_0sscf",
+      "playerId": "player-host-1793603194154",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603194211
+    },
+    {
+      "id": "tx_1793603194210_geti2",
+      "playerId": "player-host-1793603194154",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603194210
+    },
+    {
+      "id": "tx_1793603178987_sqq3l",
+      "playerId": "player-host-1793603178931",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603178987
+    },
+    {
+      "id": "tx_1793603178986_g3axd",
+      "playerId": "player-host-1793603178931",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603178986
+    },
+    {
+      "id": "tx_1793603147050_nvzv5",
+      "playerId": "player-host-1793603146997",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603147050
+    },
+    {
+      "id": "tx_1793603147049_2u3ks",
+      "playerId": "player-host-1793603146997",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603147049
+    },
+    {
+      "id": "tx_1793603120657_8a1po",
+      "playerId": "player-host-1793603120601",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603120657
+    },
+    {
+      "id": "tx_1793603120656_xe5uu",
+      "playerId": "player-host-1793603120601",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603120656
+    },
+    {
+      "id": "tx_1793603077787_7an5q",
+      "playerId": "player-host-1793603077732",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603077787
+    },
+    {
+      "id": "tx_1793603077787_c7abh",
+      "playerId": "player-host-1793603077732",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603077787
+    },
+    {
+      "id": "tx_1793603037416_v0sx8",
+      "playerId": "player-host-1793603037354",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793603037416
+    },
+    {
+      "id": "tx_1793603037415_fa6x6",
+      "playerId": "player-host-1793603037354",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793603037415
+    },
+    {
+      "id": "tx_1793602994171_8u320",
+      "playerId": "player-host-1793602994119",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793602994171
+    },
+    {
+      "id": "tx_1793602994170_8814n",
+      "playerId": "player-host-1793602994119",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793602994170
+    },
+    {
+      "id": "tx_1793602978438_6jx05",
+      "playerId": "player-host-1793602978381",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 900,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793602978438
+    },
+    {
+      "id": "tx_1793602978437_951ub",
+      "playerId": "player-host-1793602978381",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793602978437
+    },
+    {
+      "id": "tx_1793602699443_53qdz",
+      "playerId": "test-user-99",
+      "type": "POWERUP_PURCHASE",
+      "amount": -200,
+      "balanceAfter": 800,
+      "description": "Binili ang 1x Coin Booster (-₱200)",
+      "timestamp": 1793602699443
+    },
+    {
+      "id": "tx_1793602699443_hff8r",
+      "playerId": "test-user-99",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793602699443
+    },
+    {
+      "id": "tx_1793602644874_9dfri",
+      "playerId": "test-p1",
+      "type": "POWERUP_PURCHASE",
+      "amount": -200,
+      "balanceAfter": 800,
+      "description": "Binili ang 1x Coin Booster (-₱200)",
+      "timestamp": 1793602644874
+    },
+    {
+      "id": "tx_1793602563115_47p59",
+      "playerId": "test-p1",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793602563115
+    },
+    {
+      "id": "tx_1793602467765_2nfog",
+      "playerId": "test_user_1793602467685",
+      "type": "ADMIN_GRANT",
+      "amount": 250,
+      "balanceAfter": 1250,
+      "description": "Admin action: Test Grant",
+      "timestamp": 1793602467765
+    },
+    {
+      "id": "tx_1793602467761_lhnzu",
+      "playerId": "test_user_1793602467685",
+      "type": "POWERUP_PURCHASE",
+      "amount": -100,
+      "balanceAfter": 1000,
+      "description": "Binili ang 1x Shield Protection (-₱100)",
+      "timestamp": 1793602467761
+    },
+    {
+      "id": "tx_1793602467758_amqjl",
+      "playerId": "test_user_1793602467685",
+      "type": "DAILY_LOGIN",
+      "amount": 100,
+      "balanceAfter": 1100,
+      "description": "Daily Login Reward for 2026-11-02 (+₱100)",
+      "timestamp": 1793602467758
+    },
+    {
+      "id": "tx_1793602467712_4ayti",
+      "playerId": "test_user_1793602467685",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793602467712
+    }
+  ],
+  "catalog": {
+    "shield": {
+      "id": "shield",
+      "name": "Shield Protection",
+      "description": "Block 1 incoming Draw 2 or Draw 4 penalty completely!",
+      "price": 100,
+      "icon": "🛡️",
+      "badge": "Defense",
+      "enabled": true
+    },
+    "extra_turn": {
+      "id": "extra_turn",
+      "name": "Extra Turn",
+      "description": "Play again immediately without passing the turn!",
+      "price": 250,
+      "icon": "⚡",
+      "badge": "Special",
+      "enabled": true
+    },
+    "swap": {
+      "id": "swap",
+      "name": "Card Swap",
+      "description": "Exchange 1 random card with a selected opponent.",
+      "price": 150,
+      "icon": "🔄",
+      "badge": "Tactical",
+      "enabled": true
+    },
+    "color": {
+      "id": "color",
+      "name": "Color Changer",
+      "description": "Instantly select a new active color on the table.",
+      "price": 120,
+      "icon": "🎨",
+      "badge": "Control",
+      "enabled": true
+    },
+    "reverse": {
+      "id": "reverse",
+      "name": "Reverse Master",
+      "description": "Reverse the turn order instantly on your turn!",
+      "price": 100,
+      "icon": "🔁",
+      "badge": "Control",
+      "enabled": true
+    },
+    "peek": {
+      "id": "peek",
+      "name": "Peek Card",
+      "description": "Privately reveal 1 random card from an opponent hand.",
+      "price": 80,
+      "icon": "👁️",
+      "badge": "Scout",
+      "enabled": true
+    },
+    "booster": {
+      "id": "booster",
+      "name": "Coin Booster",
+      "description": "Doubles your match victory reward from ₱200 to ₱400!",
+      "price": 200,
+      "icon": "💰",
+      "badge": "Reward",
+      "enabled": true
+    },
+    "reflect": {
+      "id": "reflect",
+      "name": "Attack Reflect",
+      "description": "Reflect incoming +2 or +4 penalty back to the attacker!",
+      "price": 180,
+      "icon": "🪞",
+      "badge": "Defense",
+      "enabled": true
+    }
+  },
+  "missions": {
+    "test_user_1793602467685": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      }
+    },
+    "player-host-1793603225091": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      }
+    },
+    "usr_0j3aqw3mvs2oa9c": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      }
+    },
+    "test-user-123": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-02"
+      }
+    },
+    "bot-1793674071067-248": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      }
+    },
+    "bot-1793677273246-19": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      }
+    },
+    "bot-1793678657451-705": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      }
+    },
+    "p1": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-03"
+      }
+    }
+  },
+  "systemConfig": {
+    "startingBalance": 1000,
+    "dailyLoginReward": 100,
+    "matchVictoryReward": 200,
+    "streakBonusBase": 50
+  }
+}

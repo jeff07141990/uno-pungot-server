@@ -14,6 +14,7 @@ import {
   Settings,
   Mic,
   MicOff,
+  ShoppingBag,
 } from 'lucide-react';
 import {
   Card,
@@ -29,6 +30,8 @@ import { isCardPlayable } from '../engine/rules';
 import { soundManager } from '../audio/soundManager';
 import { voiceManager } from '../services/voiceManager';
 import { networkManager } from '../services/networkManager';
+import { PowerUpDock } from './PowerUpDock';
+import { PlayerWallet, PowerUpId, PowerUpItem } from '../engine/types';
 
 interface GameTableProps {
   gameState: PublicGameState;
@@ -47,6 +50,11 @@ interface GameTableProps {
   onLeaveMatch: () => void;
   onDeclareDeadlock?: () => void;
   unreadChatCount: number;
+  wallet?: PlayerWallet | null;
+  catalog?: Record<PowerUpId, PowerUpItem> | null;
+  onUsePowerUp?: (powerUpId: PowerUpId, targetPlayerId?: string, chosenColor?: CardColor) => void;
+  onOpenShop?: () => void;
+  isVsIntroActive?: boolean;
 }
 
 const UnoCallout: React.FC<{ isSelf?: boolean }> = ({ isSelf = false }) => {
@@ -103,6 +111,11 @@ export const GameTable: React.FC<GameTableProps> = ({
   onLeaveMatch,
   onDeclareDeadlock,
   unreadChatCount,
+  wallet,
+  catalog,
+  onUsePowerUp,
+  onOpenShop,
+  isVsIntroActive = false,
 }) => {
   const [selectedWildCard, setSelectedWildCard] = useState<Card | null>(null);
   const [selectedSevenCard, setSelectedSevenCard] = useState<Card | null>(null);
@@ -568,6 +581,11 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
+    // Wait for VS Intro Screen animation to finish first!
+    if (isVsIntroActive) {
+      return;
+    }
+
     // Safety check: If match is already beyond turn 1 (e.g. joined in progress or bots already played),
     // ensure table is immediately set to 'done' so it never freezes on shuffling
     if (gameState.turnCount > 1) {
@@ -651,7 +669,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     }, 2250 + dealTotalDurationMs + 700);
 
     introTimersRef.current = [moveTimer, dealingHandsTimer, dealFirstCardTimer, doneTimer];
-  }, [gameState.phase, gameState.turnCount, gameState.startedAt]);
+  }, [gameState.phase, gameState.turnCount, gameState.startedAt, isVsIntroActive]);
 
   // Find index of current user in players list
   const myIndex = players.findIndex((p) => p.id === currentUserId);
@@ -870,8 +888,13 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
-    // In Uno All Wild: targeted_draw2 and forced_swap require picking an opponent
-    if (card.type === 'targeted_draw2' || card.type === 'forced_swap') {
+    // In Uno All Wild or Power-Ups: targeted_draw2, forced_swap, power_swap, power_peek require picking an opponent
+    if (
+      card.type === 'targeted_draw2' ||
+      card.type === 'forced_swap' ||
+      card.type === 'power_swap' ||
+      card.type === 'power_peek'
+    ) {
       if (activeOpponents.length === 1) {
         recentlyPlayedCardsRef.current.add(card.id);
         const cardEl = document.getElementById(`player-card-${card.id}`);
@@ -883,14 +906,15 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
-    // If Wild, Wild Draw 4, Wild Draw Color, or Wild Dare, trigger color choice
+    // If Wild, Wild Draw 4, Wild Draw Color, Wild Dare, or Power Color, trigger color choice
     if (
-      gameState.variant !== 'all_wild' &&
-      (card.color === 'wild' ||
-        card.type === 'wild' ||
-        card.type === 'wild4' ||
-        card.type === 'wild_draw_color' ||
-        card.type === 'wild_dare')
+      card.type === 'power_color' ||
+      (gameState.variant !== 'all_wild' &&
+        (card.color === 'wild' ||
+          card.type === 'wild' ||
+          card.type === 'wild4' ||
+          card.type === 'wild_draw_color' ||
+          card.type === 'wild_dare'))
     ) {
       setSelectedWildCard(card);
       return;
@@ -1065,23 +1089,31 @@ export const GameTable: React.FC<GameTableProps> = ({
         <div className="flex-1" />
 
         {/* Top-Right: Sound & Settings auto-hidden, ONLY Exit button is displayed */}
-        <div className="flex items-center gap-1.5 pointer-events-auto">
+        <div className="flex items-center gap-2 pointer-events-auto">
           {showTopBarMenu && (
-            <div className="flex items-center gap-1.5 animate-fadeIn">
+            <div className="flex items-center gap-2 animate-fadeIn">
               <button
                 onClick={onToggleMute}
-                className="p-1.5 sm:p-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-950 shadow active:scale-95 transition cursor-pointer"
+                className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
                 title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
               >
-                {isMuted ? <VolumeX className="w-3.5 h-3.5 text-red-700" /> : <Volume2 className="w-3.5 h-3.5" />}
+                <img
+                  src={isMuted ? "/home screen in game icons/sound off.png" : "/home screen in game icons/sound on.png"}
+                  alt="Sound"
+                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                />
               </button>
 
               <button
                 onClick={() => onOpenSettings?.()}
-                className="p-1.5 sm:p-2 rounded-xl bg-amber-400/90 hover:bg-amber-300 text-slate-950 shadow active:scale-95 transition cursor-pointer flex items-center gap-1"
+                className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
                 title="Settings at Palitan ang Larawan ng Baraha"
               >
-                <Settings className="w-3.5 h-3.5" />
+                <img
+                  src="/home screen in game icons/setting.png"
+                  alt="Settings"
+                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                />
               </button>
             </div>
           )}
@@ -1089,10 +1121,14 @@ export const GameTable: React.FC<GameTableProps> = ({
           {/* Exit Match Button (Always visible on top right as requested) */}
           <button
             onClick={() => setShowLeaveConfirm(true)}
-            className="p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-red-600/90 hover:bg-red-500 text-white shadow-xl active:scale-95 transition cursor-pointer border border-red-400/60"
+            className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
             title="Umalis sa Laro (Leave Match)"
           >
-            <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <img
+              src="/home screen in game icons/exit game.png"
+              alt="Exit Match"
+              className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+            />
           </button>
         </div>
       </div>
@@ -1846,11 +1882,14 @@ export const GameTable: React.FC<GameTableProps> = ({
             <div className="flex flex-col items-center">
               <button
                 onClick={onOpenChat}
-                className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition border border-amber-300"
+                className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
                 title="Room Chat"
               >
-                <Smile className="w-3.5 h-3.5 text-slate-950" />
-                <span className="text-[7px] font-black leading-none mt-0.5">Chat</span>
+                <img
+                  src="/home screen in game icons/chats.png"
+                  alt="Chat"
+                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                />
                 {unreadChatCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
                     {unreadChatCount}
@@ -1859,19 +1898,11 @@ export const GameTable: React.FC<GameTableProps> = ({
               </button>
             </div>
 
-            {/* Circular Open Mic Button */}
+            {/* Circular Open Mic Button - Official Uploaded Game Icon */}
             <div className="flex flex-col items-center">
               <button
                 onClick={handleToggleMic}
-                className={`relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-xl flex flex-col items-center justify-center cursor-pointer active:scale-95 transition border ${
-                  !isVoiceConnected
-                    ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
-                    : isVoiceMuted
-                    ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400'
-                    : speakingPlayerIds.has(currentUserId)
-                    ? 'bg-emerald-500 text-slate-950 border-white ring-4 ring-emerald-400/80 animate-pulse'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400'
-                }`}
+                className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
                 title={
                   !isVoiceConnected
                     ? 'Buksan ang Mikropono (Enable Mic)'
@@ -1880,14 +1911,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                     : 'Bukas ang Mic (Nagsasalita / Live)'
                 }
               >
-                {isVoiceMuted || !isVoiceConnected ? (
-                  <MicOff className="w-3.5 h-3.5" />
-                ) : (
-                  <Mic className="w-3.5 h-3.5" />
-                )}
-                <span className="text-[7px] font-black leading-none mt-0.5">
-                  {!isVoiceConnected ? 'Mic' : isVoiceMuted ? 'Mute' : 'Live'}
-                </span>
+                <img
+                  src={isVoiceMuted || !isVoiceConnected ? "/home screen in game icons/mic off.png" : "/home screen in game icons/mic on.png"}
+                  alt="Mic"
+                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                />
 
                 {/* Pulsing indicator when speaking */}
                 {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
@@ -1895,6 +1923,23 @@ export const GameTable: React.FC<GameTableProps> = ({
                 )}
               </button>
             </div>
+
+            {/* Circular Yellow Tindahan / Power-Up Shop Button - Official Uploaded Game Icon */}
+            {onOpenShop && (
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={onOpenShop}
+                  className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+                  title="Buksan ang Tindahan (Power-Up Shop)"
+                >
+                  <img
+                    src="/home screen in game icons/shop.png"
+                    alt="Shop"
+                    className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                  />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Bottom-Center: Interactive Player Hand or Finished Banner */}
@@ -2263,6 +2308,18 @@ export const GameTable: React.FC<GameTableProps> = ({
           <CardView isBack={true} size="md" className="shadow-2xl" />
         </div>
       ))}
+
+      {/* In-Game Authoritative Power-Up Dock */}
+      {onUsePowerUp && onOpenShop && (
+        <PowerUpDock
+          gameState={gameState}
+          currentUserId={currentUserId}
+          wallet={wallet || null}
+          catalog={catalog || null}
+          onUsePowerUp={onUsePowerUp}
+          onOpenShop={onOpenShop}
+        />
+      )}
     </div>
   );
 };
