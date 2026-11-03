@@ -58,6 +58,8 @@ export const App: React.FC = () => {
 
   // Game & Networking state
   const [view, setView] = useState<'home' | 'lobby' | 'game'>('home');
+  const viewRef = useRef<'home' | 'lobby' | 'game'>('home');
+  viewRef.current = view;
   const [showVsScreen, setShowVsScreen] = useState<boolean>(false);
   const previousPhaseRef = useRef<string>('lobby');
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
@@ -266,8 +268,8 @@ export const App: React.FC = () => {
       },
       onToast: (text, sound) => {
         // If we are currently in an active game, don't show repetitive turn action toasts
-        // since the top HUD ticker (lastActionText) already displays them cleanly.
-        if (view === 'game') {
+        // since the center table ticker already displays them cleanly.
+        if (viewRef.current === 'game') {
           // Play the sound if provided, but don't show redundant popup toast
           if (sound && !isMuted) {
             soundManager.play(sound);

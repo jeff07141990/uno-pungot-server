@@ -107,20 +107,20 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white animate-fadeIn overflow-y-auto p-4 sm:p-6 md:p-8">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-white animate-fadeIn overflow-y-auto p-2 sm:p-4 md:p-6">
       {/* Background Animated Glows */}
       <div className="fixed top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-500/15 rounded-full blur-[120px] pointer-events-none" />
       <div className="fixed bottom-10 left-10 w-80 h-80 bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="fixed bottom-10 right-10 w-80 h-80 bg-red-600/10 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Main Full-Screen Content Container */}
-      <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center flex-1 my-auto py-2">
+      <div className="relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center flex-1 my-auto py-1">
         {/* Top Header: Winner Crown & Trophy Hero */}
-        <div className="flex flex-col items-center text-center mb-4">
-          <div className="relative inline-block mb-3">
+        <div className="flex flex-col items-center text-center mb-2">
+          <div className="relative inline-block mb-1">
             {/* Glowing Ring Around Winner Avatar */}
             <div className="absolute -inset-2 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 rounded-3xl blur-md opacity-80 animate-pulse pointer-events-none" />
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-200 border-4 border-yellow-100 flex items-center justify-center text-5xl sm:text-6xl shadow-[0_0_40px_rgba(250,204,21,0.6)] overflow-hidden">
+            <div className="relative w-16 h-16 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-200 border-3 border-yellow-100 flex items-center justify-center text-4xl sm:text-5xl shadow-[0_0_40px_rgba(250,204,21,0.6)] overflow-hidden">
               <AvatarDisplay avatar={winner?.avatar || '🏆'} />
             </div>
             <div className="absolute -bottom-3 -right-3 bg-red-600 rounded-full p-2.5 border-2 border-white shadow-xl animate-bounce">
@@ -128,7 +128,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             </div>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400 tracking-tight drop-shadow-[0_2px_10px_rgba(250,204,21,0.4)]">
+          <h1 className="text-xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400 tracking-tight drop-shadow-[0_2px_10px_rgba(250,204,21,0.4)]">
             {isCurrentUserWinner ? '🏆 VICTORY IS YOURS! 🏆' : `🏆 ${winner?.name || 'Player'} WINS! 🏆`}
           </h1>
 
@@ -186,7 +186,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         {/* Players Elimination & Finish Ladder Scoreboard (Full Details & Winners Highlighted) */}
-        <div className="w-full bg-slate-900/90 backdrop-blur-md rounded-3xl p-4 sm:p-6 border-2 border-amber-500/40 shadow-2xl mb-6">
+        <div className="w-full bg-slate-900/90 backdrop-blur-md rounded-2xl p-2 sm:p-4 border-2 border-amber-500/40 shadow-2xl mb-2">
           <div className="flex items-center justify-between text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider pb-3 border-b border-slate-800 px-2 sm:px-4">
             <span className="flex items-center gap-1.5">
               <Award className="w-4 h-4 text-amber-400" />
@@ -195,7 +195,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             <span>Cards & Result</span>
           </div>
 
-          <div className="space-y-2.5 mt-3 max-h-[46vh] sm:max-h-[50vh] overflow-y-auto pr-1">
+          <div className="space-y-1.5 mt-2 pr-1">
             {sortedPlayers.map((player) => {
               const isWinner = player.id === winner?.id;
               const isLoser = player.id === loser?.id;
@@ -204,7 +204,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               return (
                 <div
                   key={player.id}
-                  className={`flex items-center justify-between p-3 sm:p-4 rounded-2xl transition-all shadow-md ${
+                  className={`flex items-center justify-between p-2 sm:p-3 rounded-xl transition-all shadow-md ${
                     isWinner
                       ? 'bg-gradient-to-r from-amber-500/30 via-yellow-500/20 to-amber-500/30 border-2 border-amber-400/90 text-amber-200 ring-2 ring-yellow-400/50 shadow-[0_0_25px_rgba(250,204,21,0.35)] scale-[1.01]'
                       : isLoser
@@ -218,7 +218,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                       {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : isLoser ? '💀' : `${rank || '-'}`}
                     </span>
 
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl sm:text-3xl shrink-0 shadow overflow-hidden">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl sm:text-2xl shrink-0 shadow overflow-hidden">
                       <AvatarDisplay avatar={player.avatar} />
                     </div>
 
@@ -295,11 +295,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         {/* Bottom Actions Bar */}
-        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-lg">
+        <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 max-w-lg">
           {isHost ? (
             <button
               onClick={onPlayAgain}
-              className="w-full sm:flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-base flex items-center justify-center gap-2.5 shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95 transition cursor-pointer"
+              className="w-full sm:flex-1 py-2.5 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-sm flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(16,185,129,0.5)] active:scale-95 transition cursor-pointer"
             >
               <RotateCcw className="w-5 h-5" />
               <span>Play Again</span>

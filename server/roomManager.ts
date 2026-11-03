@@ -510,22 +510,6 @@ export class RoomManager {
         if (card) hand.push(card);
       }
 
-      // If player has purchased power-ups in inventory, deal up to 2 power cards into their hand!
-      const playerWallet = economyManager.getWallet(player.id);
-      if (playerWallet?.inventory) {
-        let dealtPowerCards = 0;
-        for (const [pId, count] of Object.entries(playerWallet.inventory)) {
-          const powerId = pId as PowerUpId;
-          const available = count || 0;
-          for (let k = 0; k < available && dealtPowerCards < 2; k++) {
-            hand.push(this.createPowerUpCard(powerId));
-            economyManager.consumePowerUp(player.id, powerId);
-            dealtPowerCards++;
-          }
-          if (dealtPowerCards >= 2) break;
-        }
-      }
-
       room.playerHands.set(player.id, hand);
       player.cardCount = hand.length;
       player.calledUno = false;
@@ -1853,6 +1837,14 @@ export class RoomManager {
     room.publicState.pendingSevenSwap = null;
     room.publicState.unoCallWindow = null;
     room.playerHands.clear();
+
+    room.payoutsProcessed = false;
+    room.publicState.payoutResults = undefined;
+
+    // For entry fee rooms, reset payment so players pay again for rematch
+    if (room.publicState.entryFee > 0) {
+      room.publicState.prizePool = room.publicState.entryFee;
+    }
 
     room.publicState.finishOrder = [];
     for (const p of room.publicState.players) {

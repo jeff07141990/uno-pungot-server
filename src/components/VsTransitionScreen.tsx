@@ -147,50 +147,64 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
   onFinishRef.current = onFinish;
 
   useEffect(() => {
-    // 0s: Play VS impact sound instantly with no delays
+    // 0s: Play VS impact sound instantly
     soundManager.play('vs_impact');
     setAnimStage('players');
 
-    // 0.6s: Countdown 3
-    const t3 = setTimeout(() => {
+    // 0.8s: Countdown 5
+    const t5 = setTimeout(() => {
       setAnimStage('countdown');
+      setCountdownNum(5);
+      soundManager.play('countdown_tick');
+    }, 800);
+
+    // 1.6s: Countdown 4
+    const t4 = setTimeout(() => {
+      setCountdownNum(4);
+      soundManager.play('countdown_tick');
+    }, 1600);
+
+    // 2.4s: Countdown 3
+    const t3 = setTimeout(() => {
       setCountdownNum(3);
       soundManager.play('countdown_tick');
-    }, 600);
+    }, 2400);
 
-    // 1.3s: Countdown 2
+    // 3.2s: Countdown 2
     const t2 = setTimeout(() => {
       setCountdownNum(2);
       soundManager.play('countdown_tick');
-    }, 1300);
+    }, 3200);
 
-    // 2.0s: Countdown 1
+    // 4.0s: Countdown 1
     const t1 = setTimeout(() => {
       setCountdownNum(1);
       soundManager.play('countdown_tick');
-    }, 2000);
+    }, 4000);
 
-    // 2.7s: START!
+    // 4.7s: START!
     const tStart = setTimeout(() => {
       setCountdownNum('START');
       setAnimStage('start');
       soundManager.play('match_start');
-    }, 2700);
+    }, 4700);
 
-    // 3.1s: Smooth fade exit
+    // 5.1s: Smooth fade exit
     const tExit = setTimeout(() => {
       setAnimStage('exiting');
-    }, 3100);
+    }, 5100);
 
-    // 3.4s: Finish & transition directly into GameTable
+    // 5.4s: Finish & transition directly into GameTable (5s total duration)
     const tFinish = setTimeout(() => {
       if (videoRef.current) {
         videoRef.current.pause();
       }
       onFinishRef.current();
-    }, 3400);
+    }, 5400);
 
     return () => {
+      clearTimeout(t5);
+      clearTimeout(t4);
       clearTimeout(t3);
       clearTimeout(t2);
       clearTimeout(t1);

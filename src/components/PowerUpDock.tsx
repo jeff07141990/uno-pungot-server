@@ -62,11 +62,11 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
 
   return (
     <>
-      {/* Floating Special Power-Ups Button on Side */}
-      <div className="fixed right-3 sm:right-6 bottom-24 z-40 flex flex-col items-end gap-2 select-none pointer-events-auto">
+      {/* Inline Power-Ups Button */}
+      <div className="relative flex flex-col items-end gap-1 select-none pointer-events-auto">
         {/* Expanded Tray */}
         {isExpanded && (
-          <div className="bg-[#120826]/95 border-2 border-amber-400 rounded-3xl p-3.5 shadow-2xl backdrop-blur-xl mb-1 max-w-[340px] sm:max-w-[380px] w-full animate-fadeIn flex flex-col gap-2.5">
+          <div className="absolute top-full right-0 mt-1 bg-[#120826]/95 border-2 border-amber-400 rounded-3xl p-3.5 shadow-2xl backdrop-blur-xl max-w-[340px] sm:max-w-[380px] w-[320px] animate-fadeIn flex flex-col gap-2.5 z-50">
             <div className="flex items-center justify-between border-b border-purple-800/60 pb-2">
               <div className="flex items-center gap-2">
                 <span className="text-lg">⚡</span>
@@ -155,29 +155,21 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
           </div>
         )}
 
-        {/* Special Button on the side to Trigger Power-Ups */}
+        {/* Compact Power-Up trigger button (sits in header next to exit) */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className={`group flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border-2 shadow-[0_8px_20px_rgba(0,0,0,0.6)] transition-all active:scale-95 cursor-pointer backdrop-blur-md ${
+          className={`w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center rounded-xl border-2 transition-all active:scale-95 cursor-pointer ${
             hasPendingPenalty
-              ? 'bg-rose-600 border-yellow-300 text-white animate-pulse ring-4 ring-rose-400/80 scale-105'
+              ? 'bg-rose-600 border-yellow-300 text-white animate-pulse ring-2 ring-rose-400/80'
               : remainingUses > 0 && availableItems.length > 0
-              ? 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 border-white hover:scale-105 shadow-[0_0_15px_rgba(250,204,21,0.7)]'
-              : 'bg-[#180a32]/90 border-purple-600/70 text-slate-300 hover:border-amber-400'
+              ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-white shadow-[0_0_10px_rgba(250,204,21,0.5)]'
+              : 'bg-[#180a32]/90 border-purple-600/70 text-slate-300'
           }`}
-          title="Buksan ang Power-Up Dock"
+          title="Power-Ups"
         >
-          <span className="text-xl sm:text-2xl group-hover:scale-110 transition-transform">
+          <span className="text-lg">
             {hasPendingPenalty ? '🛡️' : '⚡'}
           </span>
-          <div className="flex flex-col text-left">
-            <span className="text-xs sm:text-sm font-black uppercase tracking-wider leading-none">
-              {hasPendingPenalty ? 'Depensahan!' : 'Power-Ups'}
-            </span>
-            <span className="text-[9px] font-bold opacity-80 leading-tight mt-0.5">
-              {availableItems.length} Available ({remainingUses}/2)
-            </span>
-          </div>
         </button>
       </div>
 

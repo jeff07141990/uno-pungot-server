@@ -1118,6 +1118,18 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
           )}
 
+          {/* Power-Up Dock Button (next to exit) */}
+          {onUsePowerUp && onOpenShop && (
+            <PowerUpDock
+              gameState={gameState}
+              currentUserId={currentUserId}
+              wallet={wallet || null}
+              catalog={catalog || null}
+              onUsePowerUp={onUsePowerUp}
+              onOpenShop={onOpenShop}
+            />
+          )}
+
           {/* Exit Match Button (Always visible on top right as requested) */}
           <button
             onClick={() => setShowLeaveConfirm(true)}
@@ -2309,17 +2321,6 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       ))}
 
-      {/* In-Game Authoritative Power-Up Dock */}
-      {onUsePowerUp && onOpenShop && (
-        <PowerUpDock
-          gameState={gameState}
-          currentUserId={currentUserId}
-          wallet={wallet || null}
-          catalog={catalog || null}
-          onUsePowerUp={onUsePowerUp}
-          onOpenShop={onOpenShop}
-        />
-      )}
     </div>
   );
 };
