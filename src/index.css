@@ -991,18 +991,18 @@
 }
 
 .anim-vs-banner {
-  animation: vsBannerSlideIn 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: vsBannerSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .anim-vs-center {
-  animation: vsCenterSlamIn 0.85s cubic-bezier(0.19, 1, 0.22, 1) both;
+  animation: vsCenterSlamIn 0.35s cubic-bezier(0.19, 1, 0.22, 1) both;
 }
 
 .anim-vs-avatar-left {
-  animation: vsAvatarSlideLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  animation: vsAvatarSlideLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .anim-vs-avatar-right {
-  animation: vsAvatarSlideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  animation: vsAvatarSlideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 

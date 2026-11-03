@@ -88,7 +88,9 @@ class NetworkManager {
     const custom = this.getCustomServer();
     if (custom) list.push(custom);
     if (this.detectedWorkingHost) list.push(this.detectedWorkingHost);
-    // Include both host machine IP addresses
+    // Include Render online production server
+    list.push('https://uno-pungot-server.onrender.com');
+    // Include both local LAN host machine IP addresses
     list.push('http://192.168.1.80:3001');
     list.push('http://192.168.1.2:3001');
     if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
