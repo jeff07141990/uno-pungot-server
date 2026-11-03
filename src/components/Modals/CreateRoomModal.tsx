@@ -151,11 +151,11 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
             <div className="flex items-center justify-between">
               <label className="text-xs font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
                 <span>💰</span>
-                <span>Entry Fee & Prize Pool (5 Players)</span>
+                <span>Entry Fee & 5-Tier Prize Pool</span>
               </label>
               {entryFee > 0 && (
                 <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                  Pool: ₱{entryFee * 5}
+                  ₱{entryFee}/player
                 </span>
               )}
             </div>
@@ -208,7 +208,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                   </div>
                 </div>
                 <p className="text-[9px] text-amber-300/80 italic text-center pt-0.5">
-                  *Nangangailangan ng eksaktong 5 players upang masimulan ang match.
+                  *Top 5 places lang ang may premyo (50%, 25%, 15%, 7%, 3%). Ang 6th place pataas ay walang matatanggap. Ang kabuuang premyo ay nakabase sa kabuuang pusta ng mga sumali.
                 </p>
               </div>
             ) : (

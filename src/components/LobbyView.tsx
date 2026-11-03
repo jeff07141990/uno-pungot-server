@@ -68,19 +68,18 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   const currentPlayer = gameState.players.find((p) => p.id === currentUserId);
   const isReady = currentPlayer?.isReady ?? false;
   const isFeeRoom = (gameState.entryFee ?? 0) > 0;
-  const maxPlayersAllowed = isFeeRoom ? 5 : 10;
-  const minPlayersRequired = isFeeRoom ? 5 : 2;
+  const maxPlayersAllowed = 10;
+  const minPlayersRequired = 2;
 
   // Validation for starting game
   const hasMinPlayers = gameState.players.length >= minPlayersRequired;
-  const hasExactPlayers = !isFeeRoom || gameState.players.length === 5;
   const allPaid = !isFeeRoom || gameState.players.every((p) => p.hasPaidEntry);
-  const canStart = hasMinPlayers && hasExactPlayers && allPaid;
+  const canStart = hasMinPlayers && allPaid;
 
   const currentPaid = currentPlayer?.hasPaidEntry ?? false;
   const userBalance = wallet?.balance ?? 0;
   const feeAmount = gameState.entryFee ?? 0;
-  const poolAmount = gameState.prizePool ?? feeAmount * (isFeeRoom ? 5 : gameState.players.length);
+  const poolAmount = gameState.prizePool ?? (feeAmount * gameState.players.length);
 
   // Prize calculation breakdown for 5 places
   const prizeBreakdown = [
@@ -316,12 +315,8 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
               <span>Players in Lobby</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
-                isFeeRoom && gameState.players.length === 5
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-slate-800 text-amber-400'
-              }`}>
-                {gameState.players.length}/{maxPlayersAllowed} {isFeeRoom ? '(Fixed 5)' : ''}
+              <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-amber-400">
+                {gameState.players.length}/{maxPlayersAllowed}
               </span>
             </h3>
 
@@ -575,9 +570,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         <div className="flex-1 text-center sm:text-right">
           {isFeeRoom && (
             <div className="text-xs text-amber-300 font-bold">
-              Bayad: {gameState.players.filter((p) => p.hasPaidEntry).length}/5 Manlalaro
-              {gameState.players.length < 5 && (
-                <span className="text-slate-400 ml-2">({5 - gameState.players.length} kulang pa)</span>
+              Bayad: {gameState.players.filter((p) => p.hasPaidEntry).length}/{gameState.players.length} Manlalaro
+              {gameState.players.some((p) => !p.hasPaidEntry) && (
+                <span className="text-slate-400 ml-2">
+                  ({gameState.players.filter((p) => !p.hasPaidEntry).length} hindi pa bayad)
+                </span>
               )}
             </div>
           )}
@@ -595,11 +592,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             </button>
             {!canStart && (
               <span className="text-[11px] text-amber-400/90 font-medium">
-                {isFeeRoom
-                  ? gameState.players.length !== 5
-                    ? 'Eksaktong 5 players ang kailangan'
-                    : 'Kailangang magbayad ang lahat ng 5 manlalaro'
-                  : 'Kailangan ng kahit 2 manlalaro'}
+                {gameState.players.length < 2
+                  ? 'Kailangan ng kahit 2 manlalaro'
+                  : isFeeRoom && gameState.players.some((p) => !p.hasPaidEntry)
+                  ? 'Kailangang magbayad ang lahat ng manlalaro'
+                  : 'Hindi pa handa ang lahat'}
               </span>
             )}
           </div>

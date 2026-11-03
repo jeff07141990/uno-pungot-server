@@ -565,7 +565,7 @@ export class EconomyManager {
     rankings: { playerId: string; name: string; avatar: string; rank: number }[],
     entryFee: number
   ): { payouts: PrizePayoutResult[]; updatedWallets: Record<string, PlayerWallet> } {
-    const totalPrizePool = entryFee * 5;
+    const totalPrizePool = entryFee * rankings.length;
     const payouts: PrizePayoutResult[] = [];
     const updatedWallets: Record<string, PlayerWallet> = {};
 

@@ -81,13 +81,12 @@ export class RoomManager {
 
     for (const [id, room] of this.rooms.entries()) {
       if (!room.publicState.isPrivate && room.publicState.phase !== 'ended') {
-        const isEntryFeeRoom = room.publicState.entryFee > 0;
         list.push({
           roomId: id,
           roomName: room.publicState.roomName,
           variant: room.publicState.variant,
           playerCount: room.publicState.players.length,
-          maxPlayers: isEntryFeeRoom ? 5 : 10,
+          maxPlayers: 10,
           phase: room.publicState.phase,
           entryFee: room.publicState.entryFee,
           prizePool: room.publicState.prizePool,
@@ -116,7 +115,7 @@ export class RoomManager {
   ): string {
     const roomId = this.generateRoomCode();
     const entryFee: EntryFeeAmount = options.entryFee || 0;
-    const prizePool = entryFee * 5;
+    const prizePool = entryFee * 1; // Starts at 1x, grows as players pay
 
     const defaultRules: HouseRules = {
       turnTimer: 30,
@@ -241,14 +240,11 @@ export class RoomManager {
     }
 
     const isEntryFeeRoom = room.publicState.entryFee > 0;
-    const maxCapacity = isEntryFeeRoom ? 5 : 10;
-
+    const maxCapacity = 10;
     if (room.publicState.players.length >= maxCapacity) {
       return {
         success: false,
-        message: isEntryFeeRoom
-          ? 'Puno na ang kwarto! Eksaktong 5 players lamang ang puwede para sa Prize Pool match.'
-          : 'Room is already full (maximum 10 players).',
+        message: 'Room is already full (maximum 10 players).',
       };
     }
 
@@ -309,7 +305,8 @@ export class RoomManager {
     }
 
     room.publicState.entryFee = entryFee;
-    room.publicState.prizePool = entryFee * 5;
+    const paidCount = Math.max(1, room.publicState.players.filter((p) => p.hasPaidEntry).length);
+    room.publicState.prizePool = entryFee * paidCount;
 
     // Reset host payment status if fee changes
     const host = room.publicState.players.find((p) => p.isHost);
@@ -358,6 +355,10 @@ export class RoomManager {
     player.hasPaidEntry = true;
     player.isReady = true;
 
+    // Recalculate total prize pool based on actual paid players
+    const paidPlayersCount = room.publicState.players.filter((p) => p.hasPaidEntry).length;
+    room.publicState.prizePool = entryFee * paidPlayersCount;
+
     // Send updated wallet directly to player socket
     const client = room.sockets.get(playerId);
     if (client && client.readyState === WebSocket.OPEN && res.wallet) {
@@ -370,7 +371,7 @@ export class RoomManager {
     }
 
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, `💵 ${player.name} paid ₱${entryFee} entry fee and is ready!`, 'card_draw');
+    this.broadcastToast(roomId, `💵 ${player.name} paid ₱${entryFee} entry fee and is ready! Prize Pool: ₱${room.publicState.prizePool}`, 'card_draw');
     return { success: true, message: res.message, wallet: res.wallet };
   }
 
@@ -398,7 +399,7 @@ export class RoomManager {
     }
 
     const isEntryFeeRoom = room.publicState.entryFee > 0;
-    const maxCapacity = isEntryFeeRoom ? 5 : 10;
+    const maxCapacity = 10;
     if (room.publicState.players.length >= maxCapacity) return false;
 
     const botAvatars = ['🤖', '🦾', '👾', '🚀', '⚡', '🧠'];
@@ -479,16 +480,11 @@ export class RoomManager {
 
     const isEntryFeeRoom = room.publicState.entryFee > 0;
 
-    if (isEntryFeeRoom) {
-      // Rule A: Require exactly five participating players before starting a five-place prize pool match
-      if (room.publicState.players.length !== 5) {
-        return {
-          success: false,
-          message: `Kailangan ng eksaktong 5 players bago masimulan ang Prize Pool match (${room.publicState.players.length}/5 kasalukuyan).`,
-        };
-      }
+    if (room.publicState.players.length < 2) {
+      return { success: false, message: 'At least 2 players are required to start.' };
+    }
 
-      // Rule C: Do not allow the host to start the game until all five players have successfully paid
+    if (isEntryFeeRoom) {
       const unpaidPlayer = room.publicState.players.find((p) => !p.hasPaidEntry);
       if (unpaidPlayer) {
         return {
@@ -496,10 +492,7 @@ export class RoomManager {
           message: `Hindi pa makapagsimula! May hindi pa nagbabayad ng Entry Fee (${unpaidPlayer.name}).`,
         };
       }
-    } else {
-      if (room.publicState.players.length < 2) {
-        return { success: false, message: 'At least 2 players are required to start.' };
-      }
+      room.publicState.prizePool = room.publicState.entryFee * room.publicState.players.length;
     }
 
     // Initialize Deck based on variant

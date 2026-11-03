@@ -40,19 +40,25 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
+    // Mobile browsers require muted autoplay. Play immediately to show background instantly!
     if (videoRef.current) {
       videoRef.current.muted = isMuted;
       videoRef.current.volume = isMuted ? 0 : 0.85;
-      if (!isMuted) {
-        videoRef.current.play().catch(() => {});
-      }
+      videoRef.current.play().catch(() => {
+        // Fallback: Force muted play if browser blocked unmuted
+        if (videoRef.current) {
+          videoRef.current.muted = true;
+          videoRef.current.play().catch(() => {});
+        }
+      });
     }
   }, [isMuted]);
 
   const players = gameState.players;
   const isFeeMatch = (gameState.entryFee ?? 0) > 0;
   const entryFee = gameState.entryFee ?? 0;
-  const prizePool = gameState.prizePool ?? entryFee * 5;
+  // Prize pool is total amount bet (entryFee * paid players or total players)
+  const prizePool = gameState.prizePool ?? (entryFee * players.length);
 
   const modeName = useMemo(() => {
     switch (gameState.variant) {
@@ -216,7 +222,9 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
           ref={videoRef}
           autoPlay
           loop
+          muted
           playsInline
+          poster="/vs animation screen/vs.png"
           className="w-full h-full object-cover select-none pointer-events-none"
           style={{
             transform: 'translateZ(0)',
