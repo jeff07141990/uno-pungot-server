@@ -245,64 +245,64 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       <div className="absolute -top-20 -right-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none" />
 
       {/* TOP HEADER BAR (Transparent / Floating with Official Shop Banner) */}
-      <div className="relative z-20 w-full px-4 sm:px-6 pt-1 pb-1 flex items-center justify-between pointer-events-auto">
-        {/* Left: Official Shop Banner (Extra Large & Prominent) */}
-        <div className="flex items-center gap-3 sm:gap-5 -ml-1 sm:-ml-2">
-          <div className="h-20 sm:h-28 md:h-36 lg:h-40 max-w-[420px] sm:max-w-[620px] md:max-w-[750px] flex items-center">
+      <div className="relative z-20 w-full px-2 sm:px-6 pt-1 pb-0.5 flex items-center justify-between pointer-events-auto">
+        {/* Left: Official Shop Banner (Compact on mobile) */}
+        <div className="flex items-center gap-2 -ml-1 sm:-ml-2">
+          <div className="h-10 sm:h-16 md:h-24 max-w-[170px] sm:max-w-[320px] md:max-w-[480px] flex items-center">
             <img
               src="/shop icon/Shop banner.png"
               alt="UNO Shop Banner"
-              className="h-full w-auto object-contain drop-shadow-[0_10px_25px_rgba(250,204,21,0.7)] select-none hover:scale-105 transition-transform duration-200"
+              className="h-full w-auto object-contain drop-shadow-[0_4px_12px_rgba(250,204,21,0.6)] select-none hover:scale-105 transition-transform duration-200"
             />
           </div>
         </div>
 
         {/* Right: Coins Balance Counter + Close/Home Button */}
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Admin Live Shop Editor Button (Visible only to Admin) */}
           {isAdmin && (
             <button
               onClick={() => setAdminEditMode(!adminEditMode)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-black text-xs uppercase shadow transition active:scale-95 cursor-pointer border ${
+              className={`flex items-center gap-1 px-2 sm:px-3 py-1 rounded-full font-black text-[10px] sm:text-xs uppercase shadow transition active:scale-95 cursor-pointer border ${
                 adminEditMode
                   ? 'bg-rose-600 text-white border-rose-300 ring-2 ring-rose-400 animate-pulse'
                   : 'bg-purple-900/90 hover:bg-purple-800 text-amber-300 border-amber-400/60'
               }`}
               title="I-edit ang Shop (Presyo & PNG Icons)"
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>{adminEditMode ? 'Tapusin ang Edit' : 'Admin: Edit Shop'}</span>
+              <Sliders className="w-3 h-3" />
+              <span className="hidden sm:inline">{adminEditMode ? 'Tapusin ang Edit' : 'Admin: Edit'}</span>
             </button>
           )}
 
-          {/* Floating User Money (No Box / Container) */}
-          <div className="flex items-center gap-1.5 select-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+          {/* Floating User Money (Compact) */}
+          <div className="flex items-center gap-1 select-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             <img
               src="/shop_coin_icon.png"
               alt="Coins"
-              className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0 filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)] hover:scale-105 transition-transform"
+              className="w-5 h-5 sm:w-8 sm:h-8 object-contain shrink-0 filter drop-shadow"
             />
-            <span className="font-black text-amber-300 text-base sm:text-xl tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+            <span className="font-black text-amber-300 text-xs sm:text-lg tracking-wider drop-shadow">
               {currentCoins.toLocaleString()}
             </span>
             <button
               onClick={() => {
                 setFeedback({ text: 'Nakatanggap ka ng +500 Free Coins mula sa Store Event! 🎉' });
               }}
-              className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg shop-btn-gold flex items-center justify-center font-black cursor-pointer active:scale-95 shadow ml-1"
+              className="w-4 h-4 sm:w-5 sm:h-5 rounded-md shop-btn-gold flex items-center justify-center font-black cursor-pointer active:scale-95 shadow ml-0.5"
               title="Magdagdag ng Barya"
             >
-              <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+              <Plus className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 stroke-[3]" />
             </button>
           </div>
 
           {/* Chunky Blue Close/Home Button */}
           <button
             onClick={onClose}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-b from-[#2563eb] to-[#1e3a8a] border-2 border-cyan-400 flex items-center justify-center text-white shadow-[0_4px_0_#0f172a,0_5px_10px_rgba(0,0,0,0.6)] hover:brightness-110 active:translate-y-0.5 cursor-pointer transition"
+            className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-b from-[#2563eb] to-[#1e3a8a] border border-cyan-400 flex items-center justify-center text-white shadow hover:brightness-110 active:translate-y-0.5 cursor-pointer transition shrink-0"
             title="Isara ang Tindahan"
           >
-            <Home className="w-5 h-5 fill-white/20 stroke-[2.5]" />
+            <Home className="w-4 h-4 sm:w-5 sm:h-5 fill-white/20 stroke-[2.5]" />
           </button>
         </div>
       </div>
@@ -318,25 +318,25 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
       {/* FEEDBACK BANNER */}
       {feedback && (
-        <div className="px-4 sm:px-6 pt-2 z-20">
+        <div className="px-2 sm:px-6 pt-1 z-20">
           <div
-            className={`p-2.5 rounded-2xl border text-xs font-bold flex items-center justify-between gap-2 shadow-lg animate-fadeIn ${
+            className={`p-1.5 sm:p-2 rounded-xl border text-[10px] sm:text-xs font-bold flex items-center justify-between gap-2 shadow-lg animate-fadeIn ${
               feedback.isError
                 ? 'bg-rose-950/90 border-rose-500 text-rose-200'
                 : 'bg-emerald-950/90 border-emerald-500 text-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {feedback.isError ? (
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               ) : (
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               )}
               <span>{feedback.text}</span>
             </div>
             <button
               onClick={() => setFeedback(null)}
-              className="text-xs opacity-70 hover:opacity-100"
+              className="text-[10px] opacity-70 hover:opacity-100"
             >
               ✕
             </button>
@@ -345,25 +345,24 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       )}
 
       {/* MAIN BODY: LEFT SIDEBAR TABS + RIGHT STORE CONTENT */}
-      <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden p-3 sm:p-5 gap-4">
-        {/* LEFT SIDEBAR NAVIGATION (Excluding daily deals and vip membership as requested) */}
-        <div className="w-full md:w-48 lg:w-52 flex md:flex-col gap-2 shrink-0 overflow-x-auto md:overflow-visible pb-1 md:pb-0">
+      <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden p-1.5 sm:p-4 gap-2 sm:gap-3">
+        {/* LEFT SIDEBAR NAVIGATION */}
+        <div className="w-full md:w-36 lg:w-44 flex md:flex-col gap-1 sm:gap-1.5 shrink-0 overflow-x-auto md:overflow-visible pb-0.5 md:pb-0">
           {/* Power-Ups Tab */}
           <button
             onClick={() => setActiveCategory('powerups')}
-            className={`w-full py-3 px-4 flex items-center gap-3 cursor-pointer shrink-0 font-black text-sm tracking-wide ${
+            className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
               activeCategory === 'powerups'
-                ? 'shop-nav-tab-active scale-[1.02]'
+                ? 'shop-nav-tab-active scale-[1.01]'
                 : 'shop-nav-tab-inactive'
             }`}
           >
-            {/* Bold black/dark brown lightning icon matching reference */}
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <svg className={`w-5 h-5 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} viewBox="0 0 24 24" fill="currentColor">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
+              <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M13 2 L3 14 L11 14 L10 22 L21 9 L13 9 Z" />
               </svg>
             </div>
-            <span className={`text-sm font-black ${activeCategory === 'powerups' ? 'text-[#1a0b02]' : 'text-white'}`}>
+            <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'powerups' ? 'text-[#1a0b02]' : 'text-white'}`}>
               Power-Ups
             </span>
           </button>
@@ -371,24 +370,18 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* Card Skins Tab */}
           <button
             onClick={() => setActiveCategory('skins')}
-            className={`w-full py-3 px-4 flex items-center gap-3 cursor-pointer shrink-0 font-black text-sm tracking-wide ${
+            className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
               activeCategory === 'skins'
-                ? 'shop-nav-tab-active scale-[1.02]'
+                ? 'shop-nav-tab-active scale-[1.01]'
                 : 'shop-nav-tab-inactive'
             }`}
           >
-            {/* Fanned 3-Card mini deck icon matching reference */}
-            <div className="w-6 h-6 relative flex items-center justify-center shrink-0">
-              {/* Yellow card back */}
-              <div className="absolute w-3.5 h-5 rounded-xs bg-amber-400 border border-white shadow-xs rotate-[-22deg] -translate-x-1.5" />
-              {/* White card middle */}
-              <div className="absolute w-3.5 h-5 rounded-xs bg-rose-500 border border-white shadow-xs rotate-[-8deg] -translate-x-0.5" />
-              {/* Magenta card front */}
-              <div className="absolute w-3.5 h-5 rounded-xs bg-gradient-to-tr from-purple-600 to-pink-500 border border-white shadow-sm rotate-[12deg] translate-x-1 flex items-center justify-center">
-                <div className="w-1.5 h-2.5 rounded-full border border-white/60" />
-              </div>
+            <div className="w-4 h-4 sm:w-5 sm:h-5 relative flex items-center justify-center shrink-0">
+              <div className="absolute w-2.5 h-3.5 rounded-xs bg-amber-400 border border-white shadow-xs rotate-[-22deg] -translate-x-1" />
+              <div className="absolute w-2.5 h-3.5 rounded-xs bg-rose-500 border border-white shadow-xs rotate-[-8deg] -translate-x-0.5" />
+              <div className="absolute w-2.5 h-3.5 rounded-xs bg-gradient-to-tr from-purple-600 to-pink-500 border border-white shadow-sm rotate-[12deg] translate-x-0.5" />
             </div>
-            <span className={`text-sm font-black ${activeCategory === 'skins' ? 'text-[#1a0b02]' : 'text-white'}`}>
+            <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'skins' ? 'text-[#1a0b02]' : 'text-white'}`}>
               Card Skins
             </span>
           </button>
@@ -396,19 +389,18 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* Avatars Tab */}
           <button
             onClick={() => setActiveCategory('avatars')}
-            className={`w-full py-3 px-4 flex items-center gap-3 cursor-pointer shrink-0 font-black text-sm tracking-wide ${
+            className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
               activeCategory === 'avatars'
-                ? 'shop-nav-tab-active scale-[1.02]'
+                ? 'shop-nav-tab-active scale-[1.01]'
                 : 'shop-nav-tab-inactive'
             }`}
           >
-            {/* White glossy avatar profile bust silhouette matching reference */}
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <svg className={`w-5 h-5 ${activeCategory === 'avatars' ? 'text-[#1a0b02]' : 'text-slate-100'} filter drop-shadow`} viewBox="0 0 24 24" fill="currentColor">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
+              <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'avatars' ? 'text-[#1a0b02]' : 'text-slate-100'}`} viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm0 2c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5z" />
               </svg>
             </div>
-            <span className={`text-sm font-black ${activeCategory === 'avatars' ? 'text-[#1a0b02]' : 'text-white'}`}>
+            <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'avatars' ? 'text-[#1a0b02]' : 'text-white'}`}>
               Avatars
             </span>
           </button>
@@ -416,23 +408,19 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* Frames Tab */}
           <button
             onClick={() => setActiveCategory('frames')}
-            className={`w-full py-3 px-4 flex items-center gap-3 cursor-pointer shrink-0 font-black text-sm tracking-wide ${
+            className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
               activeCategory === 'frames'
-                ? 'shop-nav-tab-active scale-[1.02]'
+                ? 'shop-nav-tab-active scale-[1.01]'
                 : 'shop-nav-tab-inactive'
             }`}
           >
-            {/* Golden 3D faceted Crown icon matching reference */}
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <svg className="w-5 h-5 text-amber-400 filter drop-shadow-[0_2px_4px_rgba(245,158,11,0.5)]" viewBox="0 0 24 24" fill="currentColor">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M5 16 L19 16 L21 7 L16 11 L12 4 L8 11 L3 7 Z" />
                 <rect x="5" y="17" width="14" height="2.5" rx="1" fill="#facc15" />
-                <circle cx="12" cy="4" r="1.2" fill="#fef08a" />
-                <circle cx="3" cy="7" r="1" fill="#fef08a" />
-                <circle cx="21" cy="7" r="1" fill="#fef08a" />
               </svg>
             </div>
-            <span className={`text-sm font-black ${activeCategory === 'frames' ? 'text-[#1a0b02]' : 'text-white'}`}>
+            <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'frames' ? 'text-[#1a0b02]' : 'text-white'}`}>
               Frames
             </span>
           </button>
@@ -440,70 +428,66 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           {/* My Inventory Tab */}
           <button
             onClick={() => setActiveCategory('inventory')}
-            className={`w-full py-3 px-4 flex items-center gap-3 cursor-pointer shrink-0 font-black text-sm tracking-wide ${
+            className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
               activeCategory === 'inventory'
-                ? 'shop-nav-tab-active scale-[1.02]'
+                ? 'shop-nav-tab-active scale-[1.01]'
                 : 'shop-nav-tab-inactive'
             }`}
           >
-            {/* 3D Box / Package icon */}
-            <div className="w-6 h-6 flex items-center justify-center shrink-0">
-              <Package className={`w-5 h-5 ${activeCategory === 'inventory' ? 'text-[#1a0b02]' : 'text-slate-100'} filter drop-shadow`} />
+            <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
+              <Package className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'inventory' ? 'text-[#1a0b02]' : 'text-slate-100'}`} />
             </div>
-            <span className={`text-sm font-black ${activeCategory === 'inventory' ? 'text-[#1a0b02]' : 'text-white'}`}>
-              My Inventory
+            <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'inventory' ? 'text-[#1a0b02]' : 'text-white'}`}>
+              Inventory
             </span>
           </button>
         </div>
 
-        {/* RIGHT SECTION: POWER-UPS SLIDER (Main Box Frame Removed) */}
-        <div className="flex-1 flex flex-col overflow-hidden p-1 sm:p-2 relative justify-start -mt-2 sm:-mt-4">
-          {/* Header info elevated without heavy box border (Right arrows removed) */}
-          <div className="flex items-center justify-between pb-2 mb-1 border-b border-purple-800/30">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
-                <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+        {/* RIGHT SECTION: POWER-UPS SLIDER (Even, Compact, Uncut) */}
+        <div className="flex-1 flex flex-col overflow-hidden p-0.5 sm:p-2 relative justify-start">
+          {/* Header info */}
+          <div className="flex items-center justify-between pb-1 sm:pb-2 mb-0.5 border-b border-purple-800/30">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
+                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
               </div>
-              <h2 className="text-base sm:text-lg font-black tracking-wider uppercase text-amber-400 drop-shadow">
+              <h2 className="text-xs sm:text-base font-black tracking-wider uppercase text-amber-400 drop-shadow">
                 {activeCategory === 'powerups' && 'POWER-UPS'}
                 {activeCategory === 'skins' && 'CARD SKINS'}
                 {activeCategory === 'avatars' && 'AVATAR ICONS'}
                 {activeCategory === 'frames' && 'AVATAR FRAMES'}
                 {activeCategory === 'inventory' && 'MY INVENTORY'}
               </h2>
-              <span className="text-xs text-slate-400 hidden sm:inline">
-                — Use these special cards to gain an edge in your UNO game!
-              </span>
             </div>
           </div>
 
           {/* CARDS DISPLAY AREA */}
-          <div className="flex-1 flex flex-col justify-center overflow-hidden">
+          <div className="flex-1 flex flex-col justify-center overflow-hidden min-h-0">
             {activeCategory === 'powerups' ? (
-              /* HORIZONTAL SLIDING CAROUSEL (Slide na lang ang pagpili) */
-              <div className="relative w-full group/slider">
+              /* HORIZONTAL SLIDING CAROUSEL (Compact with Even Sizing & Visible Buttons) */
+              <div className="relative w-full h-full flex items-center group/slider">
                 {/* Floating Left Arrow */}
                 <button
                   type="button"
                   onClick={() => scrollSlider('left')}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-slate-950/80 border-2 border-amber-400 text-yellow-300 flex items-center justify-center hover:bg-amber-400 hover:text-slate-950 transition-all shadow-[0_0_20px_rgba(250,204,21,0.5)] cursor-pointer active:scale-90 opacity-80 hover:opacity-100"
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-slate-950/85 border border-amber-400 text-yellow-300 flex items-center justify-center hover:bg-amber-400 hover:text-slate-950 transition-all shadow-md cursor-pointer active:scale-90"
                 >
-                  <ChevronLeft className="w-6 h-6 stroke-[3]" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
                 </button>
 
                 {/* Floating Right Arrow */}
                 <button
                   type="button"
                   onClick={() => scrollSlider('right')}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-slate-950/80 border-2 border-amber-400 text-yellow-300 flex items-center justify-center hover:bg-amber-400 hover:text-slate-950 transition-all shadow-[0_0_20px_rgba(250,204,21,0.5)] cursor-pointer active:scale-90 opacity-80 hover:opacity-100"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-slate-950/85 border border-amber-400 text-yellow-300 flex items-center justify-center hover:bg-amber-400 hover:text-slate-950 transition-all shadow-md cursor-pointer active:scale-90"
                 >
-                  <ChevronRight className="w-6 h-6 stroke-[3]" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
                 </button>
 
-                {/* Horizontal Scroll Track */}
+                {/* Horizontal Scroll Track - Even Card Dimensions & Spacing */}
                 <div
                   ref={sliderContainerRef}
-                  className="flex items-center gap-6 sm:gap-10 overflow-x-auto scroll-smooth py-6 px-12 no-scrollbar"
+                  className="w-full flex items-center gap-3 sm:gap-6 overflow-x-auto scroll-smooth py-1 sm:py-3 px-8 sm:px-10 no-scrollbar h-full"
                   style={{ scrollSnapType: 'x mandatory' }}
                 >
                   {items.map((item) => {
@@ -523,33 +507,33 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         key={item.id}
                         onClick={() => setSelectedPowerUpId(item.id)}
                         style={{ scrollSnapAlign: 'center' }}
-                        className={`w-48 sm:w-56 md:w-60 shrink-0 flex flex-col items-center text-center justify-between transition-all duration-300 cursor-pointer relative group ${
-                          isSelected ? 'scale-105' : 'hover:scale-102 opacity-90 hover:opacity-100'
+                        className={`w-32 sm:w-44 md:w-52 shrink-0 flex flex-col items-center text-center justify-between transition-all duration-200 cursor-pointer relative group p-1.5 sm:p-2 rounded-2xl bg-slate-950/40 border ${
+                          isSelected
+                            ? 'border-amber-400/80 shadow-[0_0_15px_rgba(250,204,21,0.3)] bg-purple-950/30'
+                            : 'border-slate-800/80 hover:border-slate-700'
                         }`}
                       >
-                        {/* Dynamic Moving Gradient Glowing Aura Behind Card */}
-                        <div className="absolute top-2 inset-x-0 h-44 flex items-center justify-center pointer-events-none overflow-visible z-0">
-                          <div className={`w-36 h-40 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-100' : 'opacity-60'}`} />
-                          <div className="absolute w-28 h-32 bg-cyan-400/30 blur-xl rounded-full animate-pulse" />
+                        {/* Dynamic Aura Behind Card */}
+                        <div className="absolute top-1 inset-x-0 h-28 flex items-center justify-center pointer-events-none overflow-visible z-0">
+                          <div className={`w-20 h-24 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-80' : 'opacity-30'}`} />
                         </div>
 
-                        {/* Card Visual Display matching reference tilted glossy 3D card (Floating, unclipped) */}
-                        <div className="relative my-3 group-hover:scale-105 transition-transform duration-200 drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)] card-float-anim z-10">
-                          <CardView card={previewCard} size="xl" isPlayable={false} />
+                        {/* Card Visual Display (Scaled md for mobile landscape) */}
+                        <div className="relative my-0.5 sm:my-1 drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] z-10 shrink-0">
+                          <CardView card={previewCard} size="md" isPlayable={false} />
 
                           {/* Admin PNG Icon Upload Overlay */}
                           {adminEditMode && (
-                            <div className="absolute inset-0 bg-black/85 rounded-xl flex flex-col items-center justify-center gap-1.5 p-1 z-20 animate-fadeIn">
+                            <div className="absolute inset-0 bg-black/85 rounded-lg flex flex-col items-center justify-center gap-1 p-0.5 z-20 animate-fadeIn">
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTriggerUpload(item.id);
                                 }}
-                                className="w-full py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[10px] font-black flex items-center justify-center gap-1"
-                                title="Upload Custom PNG"
+                                className="w-full py-0.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-[8px] font-black flex items-center justify-center gap-0.5"
                               >
-                                <Upload className="w-3 h-3" />
+                                <Upload className="w-2.5 h-2.5" />
                                 <span>PNG</span>
                               </button>
                               {customSkin && (
@@ -559,7 +543,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                                     e.stopPropagation();
                                     handleRemoveIcon(item.id);
                                   }}
-                                  className="w-full py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-[9px] font-bold"
+                                  className="w-full py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-[8px] font-bold"
                                 >
                                   Reset
                                 </button>
@@ -575,34 +559,34 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                                     description: item.description,
                                   });
                                 }}
-                                className="w-full py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[9px] font-bold flex items-center justify-center gap-0.5"
+                                className="w-full py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[8px] font-bold flex items-center justify-center gap-0.5"
                               >
-                                <Edit2 className="w-2.5 h-2.5" />
+                                <Edit2 className="w-2 h-2" />
                                 <span>Edit</span>
                               </button>
                             </div>
                           )}
                         </div>
 
-                        {/* Floating Item Name & Description (No box, unclipped) */}
-                        <div className="w-full mt-2 mb-2 z-10">
-                          <h3 className="font-black text-white text-base sm:text-lg tracking-normal drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]">
+                        {/* Item Name & Description */}
+                        <div className="w-full my-0.5 sm:my-1 z-10">
+                          <h3 className="font-black text-white text-xs sm:text-sm truncate drop-shadow">
                             {item.name}
                           </h3>
-                          <p className="text-xs sm:text-sm text-slate-300 font-semibold line-clamp-2 mt-0.5 drop-shadow min-h-[2.5rem]">
+                          <p className="text-[9px] sm:text-[11px] text-slate-300 font-medium line-clamp-1 mt-0.5">
                             {item.description}
                           </p>
                         </div>
 
-                        {/* Floating Price & Buy Button (Clean, no inner card box) */}
-                        <div className="w-full flex items-center justify-center gap-3 mt-1 py-1 z-10">
-                          <div className="flex items-center gap-1.5 py-0.5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+                        {/* Price & Buy Button - Always Visible */}
+                        <div className="w-full flex items-center justify-between gap-1 sm:gap-2 mt-auto pt-1 border-t border-slate-800/80 z-10">
+                          <div className="flex items-center gap-1 shrink-0">
                             <img
                               src="/shop_coin_icon.png"
                               alt="Coins"
-                              className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0 filter drop-shadow-[0_4px_10px_rgba(234,179,8,0.7)]"
+                              className="w-4 h-4 sm:w-6 sm:h-6 object-contain shrink-0"
                             />
-                            <span className="font-black text-yellow-300 text-lg sm:text-2xl tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                            <span className="font-black text-yellow-300 text-xs sm:text-base font-mono">
                               {item.price}
                             </span>
                           </div>
@@ -613,7 +597,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                               e.stopPropagation();
                               handlePurchaseItem(item);
                             }}
-                            className="shop-buy-btn px-5 sm:px-7 py-1.5 sm:py-2 text-xs sm:text-sm tracking-wider active:scale-95 cursor-pointer shadow-lg"
+                            className="shop-buy-btn px-2.5 sm:px-4 py-1 text-[10px] sm:text-xs tracking-wider active:scale-95 cursor-pointer shadow shrink-0"
                           >
                             {isProcessing ? '...' : 'Buy'}
                           </button>
