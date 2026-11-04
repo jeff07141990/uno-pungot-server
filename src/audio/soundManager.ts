@@ -4,6 +4,8 @@ class SoundManager {
   private ctx: AudioContext | null = null;
   private volume: number = 0.7;
   private isMuted: boolean = false;
+  private audioCache: Map<string, HTMLAudioElement> = new Map();
+  private unlockedMobileAudio: boolean = false;
 
   constructor() {
     // Lazy initialize AudioContext on first user interaction
@@ -14,6 +16,55 @@ class SoundManager {
     const savedVol = localStorage.getItem('uno_volume');
     if (savedVol !== null) {
       this.volume = parseFloat(savedVol);
+    }
+
+    // Mobile audio auto-unlock on first user tap/click
+    if (typeof window !== 'undefined') {
+      const unlock = () => {
+        if (!this.unlockedMobileAudio) {
+          this.unlockedMobileAudio = true;
+          this.initContext();
+          // Pre-touch an audio element so iOS/Android policy allows background audio play
+          try {
+            const silent = new Audio();
+            silent.volume = 0;
+            silent.play().catch(() => {});
+          } catch (_) {}
+          window.removeEventListener('click', unlock);
+          window.removeEventListener('touchstart', unlock);
+        }
+      };
+      window.addEventListener('click', unlock, { passive: true });
+      window.addEventListener('touchstart', unlock, { passive: true });
+    }
+  }
+
+  /**
+   * Helper to play an external audio file with high reliability on mobile & desktop browsers.
+   */
+  public playAudioFile(path: string, volumeScale: number = 1.0): boolean {
+    if (this.isMuted || this.volume <= 0 || typeof window === 'undefined') return false;
+    try {
+      let audio = this.audioCache.get(path);
+      if (!audio) {
+        audio = new Audio(encodeURI(path));
+        audio.preload = 'auto';
+        this.audioCache.set(path, audio);
+      }
+      // Clone or reset to allow rapid sequential triggers without clipping previous play
+      const sound = audio.cloneNode() as HTMLAudioElement;
+      sound.volume = Math.max(0, Math.min(1, this.volume * volumeScale));
+      const playPromise = sound.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => {
+          // If browser policy blocked, fallback gracefully
+          console.warn('Audio file play prevented:', path, err);
+        });
+      }
+      return true;
+    } catch (e) {
+      console.warn('Audio playback exception for', path, e);
+      return false;
     }
   }
 
@@ -114,6 +165,12 @@ class SoundManager {
         case 'power_flip':
           this.playPowerFlip(ctx);
           break;
+        case 'power_skip2':
+          this.playPowerDoubleSkip(ctx);
+          break;
+        case 'power_swap':
+          this.playPowerSwap(ctx);
+          break;
         case 'power_general':
         case 'flip':
         case 'dare':
@@ -136,8 +193,11 @@ class SoundManager {
 
   // --- POWER CARDS SOUND EFFECTS (Synthesized Web Audio) ---
 
-  // 1. SKIP: Sharp buzzer whistle & freeze whip
+  // 1. SKIP: Play skip.mp3, fallback to synthesized buzzer whistle
   private playPowerSkip(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/skip.mp3', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -155,8 +215,11 @@ class SoundManager {
     osc.stop(now + 0.22);
   }
 
-  // 2. REVERSE: Double resonant swish with pitch spin
+  // 2. REVERSE: Play reverse.mp3, fallback to synthesized double swish
   private playPowerReverse(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/reverse.mp3', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
     [0, 0.09].forEach((delay, idx) => {
       const osc = ctx.createOscillator();
@@ -182,8 +245,11 @@ class SoundManager {
     });
   }
 
-  // 3. DRAW 2: Double punchy impact boom
+  // 3. DRAW 2: Play draw 2.mp3, fallback to synthesized double punchy impact
   private playPowerDraw2(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/draw 2.mp3', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
     [0, 0.11].forEach((delay) => {
       const t = now + delay;
@@ -204,8 +270,11 @@ class SoundManager {
     });
   }
 
-  // 4. WILD DRAW 4 / MEGA DRAW 5: Dramatic bass drop & power surge
+  // 4. WILD DRAW 4 / MEGA DRAW 5: Play draw 4.mp3, fallback to synthesized bass drop
   private playPowerWild4(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/draw 4.mp3', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
     // Sub-bass heavy drop
     const subOsc = ctx.createOscillator();
@@ -241,8 +310,11 @@ class SoundManager {
     });
   }
 
-  // 5. WILD: Magical color chime shimmer
+  // 5. WILD: Play draw color card the power card.wav, fallback to synthesized chime
   private playPowerWild(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/draw color card the power card.wav', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
     const freqs = [440, 554.37, 659.25, 880]; // A4, C#5, E5, A5
     freqs.forEach((freq, idx) => {
@@ -302,11 +374,68 @@ class SoundManager {
     osc.stop(now + 0.16);
   }
 
+  // 8. DOUBLE SKIP: Play douple skip.wav, fallback to dual skip buzzers
+  private playPowerDoubleSkip(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/douple skip.wav', 0.9);
+    if (played) return;
+    this.playPowerSkip(ctx);
+    setTimeout(() => {
+      try {
+        this.playPowerSkip(ctx);
+      } catch (_) {}
+    }, 120);
+  }
+
+  // 9. SWAP CARD: Play swap card.wav, fallback to frequency sweep
+  private playPowerSwap(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/swap card.wav', 0.9);
+    if (played) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.linearRampToValueAtTime(660, now + 0.15);
+    osc.frequency.linearRampToValueAtTime(330, now + 0.3);
+
+    gain.gain.setValueAtTime(0.4 * this.volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  }
+
   private playCardPlay(_ctx: AudioContext) {
-    // Card lay down sound muted per user request
+    // Play card pic audio file when putting card down
+    const played = this.playAudioFile('/sound effects/card pic.mp3', 0.85);
+    if (!played) {
+      // Fallback subtle pop
+      try {
+        const now = _ctx.currentTime;
+        const osc = _ctx.createOscillator();
+        const gain = _ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.06);
+        gain.gain.setValueAtTime(0.2 * this.volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(_ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } catch (_) {}
+    }
   }
 
   private playCardDraw(ctx: AudioContext) {
+    // Play card deal / draw sound file
+    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.8);
+    if (played) return;
+
     const bufferSize = ctx.sampleRate * 0.1;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -334,6 +463,9 @@ class SoundManager {
   }
 
   private playCardDeal(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.8);
+    if (played) return;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     const now = ctx.currentTime;
@@ -378,6 +510,11 @@ class SoundManager {
   private unoAudioElement: HTMLAudioElement | null = null;
 
   private playUnoCall(ctx: AudioContext) {
+    // PRIMARY: Play the actual UNO shout audio file
+    const played = this.playAudioFile('/sound effects/uno shout.mp3', 1.0);
+    if (played) return;
+
+    // FALLBACK: If audio file failed, use synthesized sounds
     const now = ctx.currentTime;
 
     // 1. Browser Speech Synthesis vocal shout "UNO!"
@@ -410,19 +547,15 @@ class SoundManager {
       }
     }
 
-    // 2. High-Impact Web Audio Formant Vocalizer: Emulates human vocal tract shouting "OO-NO!"
-    // Syllable 1: "OO" (0.00s -> 0.12s)
-    // Syllable 2: "NO!" (0.12s -> 0.45s)
+    // 2. Formant Vocalizer fallback
     const vocalOsc = ctx.createOscillator();
     const vocalGain = ctx.createGain();
     vocalOsc.type = 'sawtooth';
 
-    // Vocal cord pitch curve (sharp attack at 380Hz, soaring to 520Hz, then settling to 340Hz)
     vocalOsc.frequency.setValueAtTime(380, now);
     vocalOsc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
     vocalOsc.frequency.exponentialRampToValueAtTime(320, now + 0.44);
 
-    // Formant filter 1: First formant frequency (F1)
     const f1 = ctx.createBiquadFilter();
     f1.type = 'bandpass';
     f1.Q.value = 5.0;
@@ -430,7 +563,6 @@ class SoundManager {
     f1.frequency.exponentialRampToValueAtTime(680, now + 0.14);
     f1.frequency.exponentialRampToValueAtTime(540, now + 0.44);
 
-    // Formant filter 2: Second formant frequency (F2)
     const f2 = ctx.createBiquadFilter();
     f2.type = 'bandpass';
     f2.Q.value = 6.0;
@@ -438,7 +570,6 @@ class SoundManager {
     f2.frequency.exponentialRampToValueAtTime(1250, now + 0.14);
     f2.frequency.exponentialRampToValueAtTime(950, now + 0.44);
 
-    // Formant filter 3: Third formant (vocal presence & edge)
     const f3 = ctx.createBiquadFilter();
     f3.type = 'bandpass';
     f3.Q.value = 7.0;
@@ -459,7 +590,7 @@ class SoundManager {
     vocalOsc.start(now);
     vocalOsc.stop(now + 0.46);
 
-    // 3. Staccato punch hit: Sharp percussive clap to give the shout instant bite
+    // 3. Staccato punch hit
     const punchOsc = ctx.createOscillator();
     const punchGain = ctx.createGain();
     punchOsc.type = 'square';
@@ -474,7 +605,7 @@ class SoundManager {
     punchOsc.start(now);
     punchOsc.stop(now + 0.08);
 
-    // 4. Energetic fanfare brass chord (C5, E5, G5, C6)
+    // 4. Fanfare brass chord (C5, E5, G5, C6)
     const fanfareNotes = [523.25, 659.25, 783.99, 1046.5];
     fanfareNotes.forEach((freq) => {
       const osc = ctx.createOscillator();

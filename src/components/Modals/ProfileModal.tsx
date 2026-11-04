@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, UserCheck, Flame, Trophy, Percent, Camera, Upload, Trash2, Coins, Star, Shield, Award } from 'lucide-react';
 import { PlayerStats } from '../../services/historyService';
 import { PlayerWallet, PowerUpId, PowerUpItem } from '../../engine/types';
+import { getXPProgress } from '../../utils/levelUtils';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -105,30 +106,53 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
         <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {/* Virtual Coin & Level Card */}
-          {wallet && (
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-2 border-amber-400/80 shadow-md flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">💰</span>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                    Virtual Peso Balance
-                  </span>
-                  <span className="text-lg font-black text-amber-300">
-                    ₱{wallet.balance.toLocaleString()}
-                  </span>
+          {wallet && (() => {
+            const xp = getXPProgress(wallet.experience || 0);
+            return (
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-amber-500/20 border-2 border-amber-400/80 shadow-md space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-2xl">💰</span>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                        Virtual Peso Balance
+                      </span>
+                      <span className="text-lg font-black text-amber-300">
+                        ₱{wallet.balance.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 inline-block mb-0.5 shadow">
+                      Level {xp.level}
+                    </span>
+                    <span className="block text-[11px] text-slate-300 font-mono font-bold">
+                      {wallet.experience.toLocaleString()} Total XP
+                    </span>
+                  </div>
+                </div>
+
+                {/* Level Progress Bar & Info */}
+                <div className="pt-1 border-t border-amber-400/20">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 mb-1">
+                    <span className="text-cyan-300">Level {xp.level} Progress</span>
+                    <span className="font-mono">{xp.currentLevelXP} / {xp.neededXPForNext} XP ({xp.percent}%)</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-slate-900 overflow-hidden border border-slate-700/80 shadow-inner">
+                    <div
+                      className="h-full bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 transition-all duration-300 shadow-[0_0_8px_rgba(34,211,238,0.7)]"
+                      style={{ width: `${xp.percent}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                    <span>Kailangan para sa Lvl {xp.level + 1}: <b className="text-amber-300 font-mono">{xp.neededXPForNext - xp.currentLevelXP} XP</b></span>
+                    <span className="text-amber-400 font-bold">🎁 Level Up Bonus: +₱{xp.bonusCoinsForNext}</span>
+                  </div>
                 </div>
               </div>
-
-              <div className="text-right">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 inline-block mb-0.5">
-                  Level {wallet.level}
-                </span>
-                <span className="block text-[10px] text-slate-400 font-bold">
-                  {wallet.experience} XP
-                </span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Avatar Preview & Name Input */}
           <div className="flex items-center gap-4">

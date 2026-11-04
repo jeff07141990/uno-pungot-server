@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getXPProgress } from '../utils/levelUtils';
 import {
   Play,
   Plus,
@@ -166,9 +167,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <span className="block text-[11px] sm:text-xs font-black text-white group-hover:text-amber-300 transition truncate max-w-[80px] sm:max-w-[120px]">
                 {playerName}
               </span>
-              <span className="block text-[9px] text-cyan-400 font-bold leading-none">
-                Lvl {wallet?.level || 1}
-              </span>
+              {(() => {
+                const xpInfo = getXPProgress(wallet?.experience || 0);
+                return (
+                  <div className="flex flex-col gap-0.5 mt-0.5" title={`${xpInfo.currentLevelXP} / ${xpInfo.neededXPForNext} XP (${xpInfo.percent}%)`}>
+                    <div className="flex items-center gap-1 leading-none">
+                      <span className="text-[9px] text-cyan-400 font-black">
+                        Lvl {xpInfo.level}
+                      </span>
+                      <span className="text-[8px] font-mono text-slate-400 font-bold">
+                        {xpInfo.percent}%
+                      </span>
+                    </div>
+                    <div className="w-14 sm:w-16 h-1 rounded-full bg-slate-800 overflow-hidden border border-slate-700/60 shadow-inner">
+                      <div
+                        className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300"
+                        style={{ width: `${xpInfo.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </button>
 
@@ -187,7 +206,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {/* Main Content: Compact and responsive width & yellow theme */}
-      <div className="my-auto z-10 w-full max-w-[280px] sm:max-w-[310px] md:max-w-[340px] flex flex-col items-center sm:items-start self-center sm:self-start sm:ml-4 md:ml-8 gap-2 py-1">
+      <div className="my-auto z-10 w-full max-w-[220px] sm:max-w-[250px] md:max-w-[270px] flex flex-col items-center sm:items-start self-center sm:self-start sm:ml-4 md:ml-8 gap-1.5 py-1">
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center sm:items-start text-center sm:text-left shrink-0">
           {/* Animated Brand Uno Cards - Compact and High Contrast */}
@@ -231,70 +250,68 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] uppercase leading-tight">
+          <h1 className="text-lg sm:text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] uppercase leading-tight">
             THE PUNGOT EDITION
           </h1>
-          <p className="text-[9px] sm:text-[10px] font-black text-amber-200 uppercase tracking-widest mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] flex items-center gap-1.5">
+          <p className="text-[8.5px] sm:text-[9.5px] font-black text-amber-200 uppercase tracking-widest mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] flex items-center gap-1.5">
             <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
             <span>Voice & Multiplayer Ready</span>
           </p>
         </div>
 
-        {/* Action Menu Buttons: Unified Bold Yellow Theme - Scaled down & Sleek */}
-        <div className="space-y-1.5 w-full shrink-0">
+        {/* Action Menu Buttons: Custom 3D Buttons from Untitled-1.png */}
+        <div className="space-y-1 w-full shrink-0 flex flex-col items-center">
           {/* 1. PLAY ONLINE */}
           <button
             onClick={onPlayOnline}
-            className="w-full py-2 sm:py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-[0_3px_12px_rgba(245,158,11,0.35)] border-2 border-yellow-200/90 flex items-center justify-between group transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer"
+            className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-950/15 flex items-center justify-center shadow-inner p-1">
-                <img src="/home screen in game icons/play online.png" alt="Play Online" className="w-full h-full object-contain aspect-square select-none pointer-events-none" />
-              </div>
-              <span className="tracking-wide text-left uppercase font-black">PLAY ONLINE</span>
-            </div>
-            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-950/20 text-slate-950">
-              Lobbies
-            </span>
+            <img
+              src="/home screen in game icons/btn_play_online.png"
+              alt="Play Online"
+              className="w-full h-auto object-contain select-none pointer-events-none"
+              draggable={false}
+            />
           </button>
 
-          {/* 2 & 3. CREATE ROOM & JOIN ROOM (Same Yellow Theme) */}
-          <div className="grid grid-cols-2 gap-1.5">
+          {/* 2 & 3. CREATE ROOM & JOIN ROOM */}
+          <div className="grid grid-cols-2 gap-1.5 w-full">
             <button
               onClick={onCreateRoom}
-              className="py-1.5 sm:py-2 px-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-[11px] sm:text-xs shadow-[0_3px_10px_rgba(245,158,11,0.3)] border-2 border-yellow-200/90 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+              className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
             >
-              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-slate-950/15 flex items-center justify-center p-0.5">
-                <img src="/home screen in game icons/create room.png" alt="Create Room" className="w-full h-full object-contain aspect-square select-none pointer-events-none" />
-              </div>
-              <span className="tracking-wide uppercase font-black leading-none">CREATE ROOM</span>
+              <img
+                src="/home screen in game icons/btn_create.png"
+                alt="Create Room"
+                className="w-full h-auto object-contain select-none pointer-events-none"
+                draggable={false}
+              />
             </button>
 
             <button
               onClick={onJoinRoom}
-              className="py-1.5 sm:py-2 px-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-[11px] sm:text-xs shadow-[0_3px_10px_rgba(245,158,11,0.3)] border-2 border-yellow-200/90 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+              className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
             >
-              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-slate-950/15 flex items-center justify-center p-0.5">
-                <img src="/home screen in game icons/join room.png" alt="Join Room" className="w-full h-full object-contain aspect-square select-none pointer-events-none" />
-              </div>
-              <span className="tracking-wide uppercase font-black leading-none">JOIN ROOM</span>
+              <img
+                src="/home screen in game icons/btn_join.png"
+                alt="Join Room"
+                className="w-full h-auto object-contain select-none pointer-events-none"
+                draggable={false}
+              />
             </button>
           </div>
 
-          {/* 4. PLAY WITH BOTS (Same Yellow Theme) */}
+          {/* 4. PLAY WITH BOTS */}
           <button
             onClick={() => setIsBotModalOpen(true)}
-            className="w-full py-2 sm:py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm shadow-[0_3px_12px_rgba(245,158,11,0.35)] border-2 border-yellow-200/90 flex items-center justify-between transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer"
+            className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
           >
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-slate-950/15 flex items-center justify-center shadow-inner p-1">
-                <img src="/home screen in game icons/play with bots.png" alt="Play with Bots" className="w-full h-full object-contain aspect-square select-none pointer-events-none" />
-              </div>
-              <span className="tracking-wide text-left uppercase font-black">PLAY WITH BOTS</span>
-            </div>
-            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-950/20 text-slate-950">
-              Solo
-            </span>
+            <img
+              src="/home screen in game icons/btn_play_bot.png"
+              alt="Play With Bot"
+              className="w-full h-auto object-contain select-none pointer-events-none"
+              draggable={false}
+            />
           </button>
         </div>
       </div>

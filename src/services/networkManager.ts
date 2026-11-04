@@ -12,7 +12,7 @@ export interface NetworkCallbacks {
   onVoiceSignal: (senderId: string, signal: unknown) => void;
   onUnoShout: (playerId: string, playerName: string) => void;
   onPeekResult?: (targetPlayerName: string, card: Card) => void;
-  onWalletUpdate?: (wallet: any) => void;
+  onWalletUpdate?: (wallet: any, levelUp?: any, xpGained?: number) => void;
 }
 
 class NetworkManager {
@@ -240,7 +240,7 @@ class NetworkManager {
               this.callbacks.onPeekResult?.(msg.targetPlayerName, msg.card);
               break;
             case 'WALLET_UPDATE':
-              this.callbacks.onWalletUpdate?.(msg.wallet);
+              this.callbacks.onWalletUpdate?.(msg.wallet, msg.levelUp, msg.xpGained);
               break;
             case 'ERROR':
               this.callbacks.onError?.(msg.message);

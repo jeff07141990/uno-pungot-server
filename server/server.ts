@@ -134,6 +134,21 @@ app.post('/api/economy/admin/adjust-balance', (req, res) => {
   }
 });
 
+// 7b. Add XP to player wallet
+app.post('/api/economy/add-xp', (req, res) => {
+  try {
+    const { playerId, xp, reason } = req.body;
+    if (!playerId || typeof xp !== 'number') {
+      res.status(400).json({ error: 'playerId and xp are required' });
+      return;
+    }
+    const result = economyManager.addInGameExperience(playerId, xp, reason || 'Activity');
+    res.json(result || { success: false });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 8. Admin configure item price or toggle enable/disable
 app.post('/api/economy/admin/config-item', (req, res) => {
   try {

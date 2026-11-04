@@ -229,9 +229,10 @@ export const App: React.FC = () => {
           // Record match to history once
           if (!hasRecordedCurrentGameRef.current && state.winnerId) {
             hasRecordedCurrentGameRef.current = true;
+            const currentUid = userIdRef.current || userId;
             const winner = state.players.find((p) => p.id === state.winnerId);
-            const userWon = state.winnerId === userId;
-            const userScore = state.players.find((p) => p.id === userId)?.score || 0;
+            const userWon = state.winnerId === currentUid;
+            const userScore = state.players.find((p) => p.id === currentUid)?.score || 0;
 
             historyService.recordMatch(
               {
@@ -248,14 +249,14 @@ export const App: React.FC = () => {
                 userWon,
                 userScore,
               },
-              userId
+              currentUid
             ).then(() => {
-              historyService.getPlayerStats(userId).then(setPlayerStats);
+              historyService.getPlayerStats(currentUid).then(setPlayerStats);
             });
 
             // Refresh authoritative wallet to reflect victory coin rewards & mission progress
             setTimeout(() => {
-              economyService.fetchWallet(userId, userName, userAvatar).then((data) => {
+              economyService.fetchWallet(currentUid, userName, userAvatar).then((data) => {
                 setWallet(data.wallet);
                 setCatalog(data.catalog);
                 setMissions(data.missions);
@@ -281,12 +282,15 @@ export const App: React.FC = () => {
       onPeekResult: (targetPlayerName, card) => {
         showToast(`👁️ PEEK RESULT: ${targetPlayerName} has [${card.color.toUpperCase()} ${card.type.toUpperCase()}]!`, 'power_general');
       },
-      onWalletUpdate: (updatedWallet) => {
+      onWalletUpdate: (updatedWallet, levelUp, xpGained) => {
         if (updatedWallet) {
           setWallet(updatedWallet);
           try {
             localStorage.setItem('uno_player_wallet', JSON.stringify(updatedWallet));
           } catch (_) {}
+          if (levelUp) {
+            showToast(`🎉 LEVEL UP! Umabot ka sa Level ${levelUp.newLevel}! (+₱${levelUp.bonus})`, 'game_win');
+          }
         }
       },
       onChat: (msg) => {
@@ -650,6 +654,7 @@ export const App: React.FC = () => {
             isOpen={publicState.phase === 'ended'}
             gameState={publicState}
             currentUserId={userId}
+            wallet={wallet}
             onPlayAgain={() => networkManager.restartGame(publicState.roomId, userId)}
             onLeave={handleLeaveRoom}
             onToast={showToast}

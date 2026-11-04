@@ -35,6 +35,7 @@ export interface InternalRoomState {
   unoTimeout: NodeJS.Timeout | null;
   extraTurnsRemaining?: { playerId: string; count: number } | null;
   payoutsProcessed?: boolean;
+  startGracePeriodUntil?: number;
   createdAt: number;
 }
 
@@ -127,6 +128,8 @@ export class RoomManager {
       ...options.houseRules,
     };
 
+    const hostWallet = economyManager.getOrCreateWallet(hostId, hostName, hostAvatar);
+
     const hostPlayer: PublicPlayer = {
       id: hostId,
       name: hostName || 'Host Player',
@@ -139,6 +142,8 @@ export class RoomManager {
       calledUno: false,
       score: 0,
       hasPaidEntry: false,
+      level: hostWallet.level || 1,
+      experience: hostWallet.experience || 0,
     };
 
     const initialPublicState: PublicGameState = {
@@ -248,6 +253,8 @@ export class RoomManager {
       };
     }
 
+    const playerWallet = economyManager.getOrCreateWallet(playerId, playerName, playerAvatar);
+
     const newPlayer: PublicPlayer = {
       id: playerId,
       name: playerName || `Player ${room.publicState.players.length + 1}`,
@@ -260,6 +267,8 @@ export class RoomManager {
       calledUno: false,
       score: 0,
       hasPaidEntry: false,
+      level: playerWallet.level || 1,
+      experience: playerWallet.experience || 0,
     };
 
     room.publicState.players.push(newPlayer);
@@ -470,7 +479,11 @@ export class RoomManager {
   /**
    * Start the game (Host only).
    */
-  public startGame(roomId: string, hostId: string): { success: boolean; message?: string } {
+  public startGame(
+    roomId: string,
+    hostId: string,
+    countdownMs: number = process.env.NODE_ENV === 'test' || typeof process !== 'undefined' && process.env.VITEST ? 0 : 10000
+  ): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, message: 'Room not found.' };
 
@@ -570,11 +583,18 @@ export class RoomManager {
     // Handle initial action card effect if any (e.g. Draw 2, Skip, Reverse)
     this.handleFirstCardEffect(room, initialDiscard);
 
-    this.startTurnTimer(room);
+    // Countdown Grace Period (default 10s in live play, 0s in test): ensure neither players nor bots make moves until countdown completes!
+    if (countdownMs > 0) {
+      room.startGracePeriodUntil = Date.now() + countdownMs;
+    } else {
+      room.startGracePeriodUntil = undefined;
+    }
+
+    this.startTurnTimer(room, countdownMs);
     this.broadcastState(roomId);
     this.broadcastToast(roomId, 'Cards dealt! Game on!', 'card_deal');
 
-    // Trigger bot if first player is bot
+    // Trigger bot if first player is bot (will respect 10s grace period)
     this.checkTriggerBot(roomId);
 
     return { success: true };
@@ -660,6 +680,10 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room || room.publicState.phase !== 'playing') {
       return { success: false, message: 'Game is not currently active.' };
+    }
+
+    if (room.startGracePeriodUntil && Date.now() < room.startGracePeriodUntil) {
+      return { success: false, message: 'Game is starting, please wait for the countdown to complete!' };
     }
 
     const { publicState } = room;
@@ -756,6 +780,31 @@ export class RoomManager {
     } else {
       activePlayer.calledUno = false;
       publicState.unoCallWindow = null;
+    }
+
+    // Award in-game card play XP for active human player
+    if (!activePlayer.isBot) {
+      const isAction = isWildCard || card.type === 'draw2' || card.type === 'skip' || card.type === 'reverse' || card.type === 'flip' || card.type === 'dare';
+      const xpAmt = isAction ? 8 : 4;
+      const expRes = economyManager.addInGameExperience(activePlayer.id, xpAmt, 'Card Played');
+      if (expRes) {
+        activePlayer.level = expRes.wallet.level;
+        activePlayer.experience = expRes.wallet.experience;
+        const client = room.sockets.get(activePlayer.id);
+        if (client && client.readyState === WebSocket.OPEN) {
+          client.send(
+            JSON.stringify({
+              type: 'WALLET_UPDATE',
+              wallet: expRes.wallet,
+              levelUp: expRes.leveledUp ? { oldLevel: expRes.oldLevel, newLevel: expRes.newLevel, bonus: expRes.bonusCoins } : undefined,
+              xpGained: xpAmt,
+            })
+          );
+        }
+        if (expRes.leveledUp) {
+          this.broadcastToast(roomId, `🎉 LEVEL UP! Si ${activePlayer.name} ay Level ${expRes.newLevel} na! (+₱${expRes.bonusCoins})`, 'game_win');
+        }
+      }
     }
 
     // Hand-empty / Survival Win check!
@@ -897,12 +946,21 @@ export class RoomManager {
           }
         }
 
-        const { payouts, updatedWallets } = economyManager.distributePrizePool(
+        const { payouts, updatedWallets, levelUps, xpGains } = economyManager.distributePrizePool(
           roomId,
           rankedPlayers,
           publicState.entryFee
         );
         publicState.payoutResults = payouts;
+
+        // Attach level and xpGained to publicState players
+        for (const p of publicState.players) {
+          if (updatedWallets[p.id]) {
+            p.level = updatedWallets[p.id].level;
+            p.experience = updatedWallets[p.id].experience;
+            p.xpGained = xpGains[p.id] || 0;
+          }
+        }
 
         // Send updated wallets directly to connected players
         for (const [pid, updatedWallet] of Object.entries(updatedWallets)) {
@@ -912,7 +970,17 @@ export class RoomManager {
               JSON.stringify({
                 type: 'WALLET_UPDATE',
                 wallet: updatedWallet,
+                levelUp: levelUps[pid],
+                xpGained: xpGains[pid] || 0,
               })
+            );
+          }
+          if (levelUps[pid]) {
+            const p = publicState.players.find((pl) => pl.id === pid);
+            this.broadcastToast(
+              roomId,
+              `🎉 LEVEL UP! Si ${p?.name || 'Player'} ay Level ${levelUps[pid].newLevel} na! (+₱${levelUps[pid].bonus})`,
+              'game_win'
             );
           }
         }
@@ -927,12 +995,46 @@ export class RoomManager {
         const hasBooster = Boolean(winnerId && publicState.activeCoinBoosters?.includes(winnerId));
 
         if (winnerId) {
-          const { winnerCoins, streak } = economyManager.awardMatchFinish(
+          const { winnerCoins, streak, updatedWallets, levelUps, xpGains } = economyManager.awardMatchFinish(
             winnerId,
             loser?.id || null,
             allHumanIds,
-            hasBooster
+            hasBooster,
+            publicState.finishOrder
           );
+
+          // Attach level and xpGained to publicState players
+          for (const p of publicState.players) {
+            if (updatedWallets[p.id]) {
+              p.level = updatedWallets[p.id].level;
+              p.experience = updatedWallets[p.id].experience;
+              p.xpGained = xpGains[p.id] || 0;
+            }
+          }
+
+          // Send updated wallets directly to connected players via WebSocket
+          for (const [pid, updatedWallet] of Object.entries(updatedWallets)) {
+            const client = room.sockets.get(pid);
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({
+                  type: 'WALLET_UPDATE',
+                  wallet: updatedWallet,
+                  levelUp: levelUps[pid],
+                  xpGained: xpGains[pid] || 0,
+                })
+              );
+            }
+            if (levelUps[pid]) {
+              const p = publicState.players.find((pl) => pl.id === pid);
+              this.broadcastToast(
+                roomId,
+                `🎉 LEVEL UP! Si ${p?.name || 'Player'} ay Level ${levelUps[pid].newLevel} na! (+₱${levelUps[pid].bonus})`,
+                'game_win'
+              );
+            }
+          }
+
           if (winnerCoins > 0) {
             coinToastSuffix = ` • 💰 Won ₱${winnerCoins}${hasBooster ? ' (2x Booster!)' : ''}${
               streak >= 2 ? ` (${streak}x Win Streak!)` : ''
@@ -1565,6 +1667,10 @@ export class RoomManager {
       return { success: false, message: 'Game is not active.' };
     }
 
+    if (room.startGracePeriodUntil && Date.now() < room.startGracePeriodUntil) {
+      return { success: false, message: 'Game is starting, please wait for the countdown to complete!' };
+    }
+
     const { publicState } = room;
     const activePlayer = publicState.players[publicState.activePlayerIndex];
 
@@ -1863,7 +1969,7 @@ export class RoomManager {
   /**
    * Turn timer management.
    */
-  private startTurnTimer(room: InternalRoomState) {
+  private startTurnTimer(room: InternalRoomState, delayMs: number = 0) {
     if (room.timerInterval) {
       clearInterval(room.timerInterval);
       room.timerInterval = null;
@@ -1875,7 +1981,7 @@ export class RoomManager {
       return;
     }
 
-    const deadline = Date.now() + houseRules.turnTimer * 1000;
+    const deadline = Date.now() + delayMs + houseRules.turnTimer * 1000;
     room.publicState.turnDeadline = deadline;
 
     room.timerInterval = setInterval(() => {
@@ -1908,9 +2014,12 @@ export class RoomManager {
 
     if (room.botTimeout) clearTimeout(room.botTimeout);
 
-    // Realistic bot delay: 1000ms - 1500ms (on turn 1, allow ~3.2s for card shuffle & deal animations to finish)
+    // Realistic bot delay: on turn 1, respect 10s countdown grace period before playing
     const isFirstTurn = room.publicState.turnCount === 1;
-    const delay = isFirstTurn ? 3200 + Math.random() * 400 : 1000 + Math.random() * 500;
+    let baseDelay = isFirstTurn ? 1000 + Math.random() * 500 : 1000 + Math.random() * 500;
+    if (room.startGracePeriodUntil && Date.now() < room.startGracePeriodUntil) {
+      baseDelay += Math.max(0, room.startGracePeriodUntil - Date.now());
+    }
 
     room.botTimeout = setTimeout(() => {
       const currentActive = room.publicState.players[room.publicState.activePlayerIndex];
@@ -1946,7 +2055,7 @@ export class RoomManager {
       } else {
         this.drawCard(roomId, activePlayer.id);
       }
-    }, delay);
+    }, baseDelay);
   }
 
   /**
@@ -2012,6 +2121,14 @@ export class RoomManager {
     if (player) {
       player.isDisconnected = true;
       room.sockets.delete(playerId);
+
+      // If disconnected during lobby phase and had paid entry fee, refund it back immediately
+      if (room.publicState.phase === 'lobby' && player.hasPaidEntry && room.publicState.entryFee > 0) {
+        player.hasPaidEntry = false;
+        player.isReady = false;
+        economyManager.refundEntryFee(playerId, roomId, room.publicState.entryFee);
+      }
+
       this.broadcastState(roomId);
       this.broadcastToast(roomId, `${player.name} disconnected.`, 'error');
 
@@ -2225,6 +2342,38 @@ export class RoomManager {
 
     const desc = `⚠️ DEADLOCK DECLARED! Walang playable cards! Bilangan ng baraha: 🏆 ${winnerPlayer.name} (${hand1.length < hand2.length ? hand1.length : hand2.length} cards) WINS! 💀 ${loserPlayer.name} (${hand1.length < hand2.length ? hand2.length : hand1.length} cards) is ANG PUNGOT!`;
     publicState.lastActionText = desc;
+
+    // Award deadlock XP & send wallet updates
+    const allHumanIds = publicState.players.filter((p) => !p.isBot).map((p) => p.id);
+    const { updatedWallets, levelUps, xpGains } = economyManager.awardMatchFinish(
+      winnerPlayer.id,
+      loserPlayer.id,
+      allHumanIds,
+      false,
+      publicState.finishOrder
+    );
+
+    for (const p of publicState.players) {
+      if (updatedWallets[p.id]) {
+        p.level = updatedWallets[p.id].level;
+        p.experience = updatedWallets[p.id].experience;
+        p.xpGained = xpGains[p.id] || 0;
+      }
+    }
+
+    for (const [pid, updatedWallet] of Object.entries(updatedWallets)) {
+      const client = room.sockets.get(pid);
+      if (client && client.readyState === WebSocket.OPEN) {
+        client.send(
+          JSON.stringify({
+            type: 'WALLET_UPDATE',
+            wallet: updatedWallet,
+            levelUp: levelUps[pid],
+            xpGained: xpGains[pid] || 0,
+          })
+        );
+      }
+    }
 
     this.broadcastState(roomId);
     this.broadcastToast(roomId, desc, 'game_win');

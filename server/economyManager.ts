@@ -418,10 +418,20 @@ export class EconomyManager {
     winnerId: string,
     loserId: string | null,
     allPlayerIds: string[],
-    hasCoinBooster: boolean = false
-  ): { winnerCoins: number; streak: number } {
+    hasCoinBooster: boolean = false,
+    finishOrder: string[] = []
+  ): {
+    winnerCoins: number;
+    streak: number;
+    updatedWallets: Record<string, PlayerWallet>;
+    levelUps: Record<string, { oldLevel: number; newLevel: number; bonus: number }>;
+    xpGains: Record<string, number>;
+  } {
     let winnerReward = 0;
     let currentStreak = 0;
+    const updatedWallets: Record<string, PlayerWallet> = {};
+    const levelUps: Record<string, { oldLevel: number; newLevel: number; bonus: number }> = {};
+    const xpGains: Record<string, number> = {};
 
     if (winnerId) {
       const winnerWallet = this.getOrCreateWallet(winnerId);
@@ -442,9 +452,14 @@ export class EconomyManager {
       }
 
       winnerWallet.balance += totalAward;
-      this.addExperience(winnerWallet, 100);
-      this.checkAchievements(winnerWallet);
+      const winnerXP = hasCoinBooster ? 240 : 120;
+      const lvlRes = this.addExperience(winnerWallet, winnerXP);
+      xpGains[winnerId] = winnerXP;
+      if (lvlRes.leveledUp) {
+        levelUps[winnerId] = { oldLevel: lvlRes.oldLevel, newLevel: lvlRes.newLevel, bonus: lvlRes.bonusCoins };
+      }
 
+      this.checkAchievements(winnerWallet);
       this.trackMissionProgress(winnerId, 'play_match', 1);
       this.trackMissionProgress(winnerId, 'win_match', 1);
       if (allPlayerIds.length > 1) {
@@ -462,6 +477,9 @@ export class EconomyManager {
       );
 
       winnerReward = totalAward;
+      if (!winnerId.startsWith('bot-')) {
+        updatedWallets[winnerId] = winnerWallet;
+      }
     }
 
     for (const pid of allPlayerIds) {
@@ -471,15 +489,38 @@ export class EconomyManager {
       if (pid === loserId) {
         wallet.totalLosses += 1;
       }
-      this.addExperience(wallet, 35);
+
+      // Standing-based XP
+      let xpEarned = 35;
+      const rankIndex = finishOrder.indexOf(pid);
+      if (pid === loserId) {
+        xpEarned = 25; // Pungot / Loser consolation
+      } else if (rankIndex === 1) {
+        xpEarned = 75; // 2nd place
+      } else if (rankIndex === 2) {
+        xpEarned = 50; // 3rd place
+      } else {
+        xpEarned = 35;
+      }
+
+      const lvlRes = this.addExperience(wallet, xpEarned);
+      xpGains[pid] = xpEarned;
+      if (lvlRes.leveledUp) {
+        levelUps[pid] = { oldLevel: lvlRes.oldLevel, newLevel: lvlRes.newLevel, bonus: lvlRes.bonusCoins };
+      }
+
       this.trackMissionProgress(pid, 'play_match', 1);
       if (allPlayerIds.length > 1) {
         this.trackMissionProgress(pid, 'play_friends', 1);
       }
+
+      if (!pid.startsWith('bot-')) {
+        updatedWallets[pid] = wallet;
+      }
     }
 
     this.persistDatabase();
-    return { winnerCoins: winnerReward, streak: currentStreak };
+    return { winnerCoins: winnerReward, streak: currentStreak, updatedWallets, levelUps, xpGains };
   }
 
   /**
@@ -564,34 +605,46 @@ export class EconomyManager {
     roomId: string,
     rankings: { playerId: string; name: string; avatar: string; rank: number }[],
     entryFee: number
-  ): { payouts: PrizePayoutResult[]; updatedWallets: Record<string, PlayerWallet> } {
+  ): {
+    payouts: PrizePayoutResult[];
+    updatedWallets: Record<string, PlayerWallet>;
+    levelUps: Record<string, { oldLevel: number; newLevel: number; bonus: number }>;
+    xpGains: Record<string, number>;
+  } {
     const totalPrizePool = entryFee * rankings.length;
     const payouts: PrizePayoutResult[] = [];
     const updatedWallets: Record<string, PlayerWallet> = {};
+    const levelUps: Record<string, { oldLevel: number; newLevel: number; bonus: number }> = {};
+    const xpGains: Record<string, number> = {};
 
     if (totalPrizePool <= 0 || rankings.length === 0) {
-      return { payouts, updatedWallets };
+      return { payouts, updatedWallets, levelUps, xpGains };
     }
 
     // Integer-safe percentages:
-    // 1st: 50%
-    // 2nd: 25%
-    // 3rd: 15%
-    // 4th: 7%
-    // 5th: Remainder (exact 3% with total = 100%)
-    const p1 = Math.floor(totalPrizePool * 0.50);
+    // Pungot (last place / 5th place) receives 0 coins (0%).
+    // Top 4 share the full 100% prize pool: 1st: 55%, 2nd: 25%, 3rd: 13%, 4th: 7%
+    const p1 = Math.floor(totalPrizePool * 0.55);
     const p2 = Math.floor(totalPrizePool * 0.25);
-    const p3 = Math.floor(totalPrizePool * 0.15);
-    const p4 = Math.floor(totalPrizePool * 0.07);
-    const p5 = totalPrizePool - (p1 + p2 + p3 + p4);
+    const p3 = Math.floor(totalPrizePool * 0.13);
+    const p4 = totalPrizePool - (p1 + p2 + p3);
+    const p5 = 0; // Pungot receives NO prize / 0 coins
 
     const prizeTable = [
-      { rank: 1, prize: p1, percentage: 50 },
+      { rank: 1, prize: p1, percentage: 55 },
       { rank: 2, prize: p2, percentage: 25 },
-      { rank: 3, prize: p3, percentage: 15 },
+      { rank: 3, prize: p3, percentage: 13 },
       { rank: 4, prize: p4, percentage: 7 },
-      { rank: 5, prize: p5, percentage: 3 },
+      { rank: 5, prize: p5, percentage: 0 },
     ];
+
+    const xpTable: Record<number, number> = {
+      1: 200,
+      2: 120,
+      3: 80,
+      4: 50,
+      5: 0,
+    };
 
     for (let i = 0; i < rankings.length; i++) {
       const playerRank = rankings[i];
@@ -610,26 +663,34 @@ export class EconomyManager {
         percentage: tier.percentage,
       });
 
-      // If player is human and won prize, credit wallet
-      if (!playerRank.playerId.startsWith('bot-') && tier.prize > 0) {
+      // If player is human, credit prize and award tournament XP
+      if (!playerRank.playerId.startsWith('bot-')) {
         const wallet = this.getOrCreateWallet(playerRank.playerId, playerRank.name, playerRank.avatar);
-        wallet.balance += tier.prize;
+        if (tier.prize > 0) {
+          wallet.balance += tier.prize;
+          this.recordTransaction(
+            playerRank.playerId,
+            'MATCH_PRIZE_PAYOUT',
+            tier.prize,
+            wallet.balance,
+            `🏆 Rank #${playerRank.rank} Prize Payout (${tier.percentage}%) from Room ${roomId} (+₱${tier.prize})`
+          );
+        }
+
+        const xpAward = xpTable[playerRank.rank] || 30;
+        const lvlRes = this.addExperience(wallet, xpAward);
+        xpGains[playerRank.playerId] = xpAward;
+        if (lvlRes.leveledUp) {
+          levelUps[playerRank.playerId] = { oldLevel: lvlRes.oldLevel, newLevel: lvlRes.newLevel, bonus: lvlRes.bonusCoins };
+        }
+
         wallet.updatedAt = Date.now();
-
-        this.recordTransaction(
-          playerRank.playerId,
-          'MATCH_PRIZE_PAYOUT',
-          tier.prize,
-          wallet.balance,
-          `🏆 Rank #${playerRank.rank} Prize Payout (${tier.percentage}%) from Room ${roomId} (+₱${tier.prize})`
-        );
-
         updatedWallets[playerRank.playerId] = wallet;
       }
     }
 
     this.persistDatabase();
-    return { payouts, updatedWallets };
+    return { payouts, updatedWallets, levelUps, xpGains };
   }
 
   public getDailyMissions(playerId: string): DailyMission[] {
@@ -715,21 +776,68 @@ export class EconomyManager {
     };
   }
 
-  private addExperience(wallet: PlayerWallet, xp: number) {
-    wallet.experience += xp;
+  public addExperience(wallet: PlayerWallet, xp: number): {
+    leveledUp: boolean;
+    oldLevel: number;
+    newLevel: number;
+    bonusCoins: number;
+    newExperience: number;
+  } {
+    if (xp <= 0) {
+      return {
+        leveledUp: false,
+        oldLevel: wallet.level,
+        newLevel: wallet.level,
+        bonusCoins: 0,
+        newExperience: wallet.experience,
+      };
+    }
+
+    const oldLevel = wallet.level || 1;
+    wallet.experience = Math.max(0, (wallet.experience || 0) + xp);
     const newLevel = Math.max(1, Math.floor(Math.sqrt(wallet.experience / 100)) + 1);
-    if (newLevel > wallet.level) {
+    let bonusCoins = 0;
+    let leveledUp = false;
+
+    if (newLevel > oldLevel) {
+      leveledUp = true;
       wallet.level = newLevel;
-      const bonus = 50 * newLevel;
-      wallet.balance += bonus;
+      bonusCoins = 100 * newLevel;
+      wallet.balance += bonusCoins;
+      wallet.updatedAt = Date.now();
       this.recordTransaction(
         wallet.playerId,
-        'ADMIN_GRANT',
-        bonus,
+        'LEVEL_UP_REWARD',
+        bonusCoins,
         wallet.balance,
-        `Level Up! Umabot sa Level ${newLevel}! (+₱${bonus})`
+        `Level Up! Umabot sa Level ${newLevel}! (+₱${bonusCoins} Level Bonus)`
       );
     }
+
+    this.checkAchievements(wallet);
+    return {
+      leveledUp,
+      oldLevel,
+      newLevel,
+      bonusCoins,
+      newExperience: wallet.experience,
+    };
+  }
+
+  public addInGameExperience(
+    playerId: string,
+    xp: number,
+    reason: string = 'Gameplay'
+  ): { wallet: PlayerWallet; leveledUp: boolean; oldLevel: number; newLevel: number; bonusCoins: number } | null {
+    if (!playerId || playerId.startsWith('bot-')) return null;
+    const wallet = this.getOrCreateWallet(playerId);
+    const result = this.addExperience(wallet, xp);
+    wallet.updatedAt = Date.now();
+    this.persistDatabase();
+    return {
+      wallet,
+      ...result,
+    };
   }
 
   private checkAchievements(wallet: PlayerWallet) {

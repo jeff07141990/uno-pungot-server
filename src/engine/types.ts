@@ -70,6 +70,9 @@ export interface PublicPlayer {
   finishRank?: number | null;
   isFinished?: boolean;
   hasPaidEntry?: boolean;
+  level?: number;
+  experience?: number;
+  xpGained?: number;
 }
 
 export type GamePhase = 'lobby' | 'playing' | 'ended';
@@ -175,6 +178,7 @@ export type TransactionType =
   | 'MATCH_ENTRY_FEE'
   | 'MATCH_ENTRY_REFUND'
   | 'MATCH_PRIZE_PAYOUT'
+  | 'LEVEL_UP_REWARD'
   | 'ADMIN_GRANT'
   | 'ADMIN_DEDUCT';
 
@@ -256,6 +260,8 @@ export type SoundEffectType =
   | 'power_flip'
   | 'power_draw5'
   | 'power_general'
+  | 'power_swap'
+  | 'power_skip2'
   | 'vs_impact'
   | 'countdown_tick'
   | 'match_start';

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Shield, Timer, Layers, Shuffle, Flame, Sparkles, RefreshCw, Zap } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { EntryFeeAmount, GameVariant, HouseRules } from '../../engine/types';
 
 interface CreateRoomModalProps {
@@ -19,9 +19,8 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   onClose,
   onCreate,
 }) => {
-  const [roomName, setRoomName] = useState('');
   const [variant, setVariant] = useState<GameVariant>('classic');
-  const [entryFee, setEntryFee] = useState<EntryFeeAmount>(0);
+  const [entryFee, setEntryFee] = useState<EntryFeeAmount>(100);
   const [isPrivate, setIsPrivate] = useState(false);
   const [turnTimer, setTurnTimer] = useState<0 | 15 | 30 | 60>(30);
   const [startingHandSize, setStartingHandSize] = useState<number>(7);
@@ -29,13 +28,14 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const [sevenZero, setSevenZero] = useState<boolean>(false);
   const [wildDraw4Challenge, setWildDraw4Challenge] = useState<boolean>(true);
   const [allowSpectators, setAllowSpectators] = useState<boolean>(true);
+  const [showHouseRules, setShowHouseRules] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     onCreate({
-      roomName: roomName.trim() || 'Custom Match',
+      roomName: 'Custom Match',
       isPrivate,
       variant,
       entryFee,
@@ -50,330 +50,337 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
     });
   };
 
-  const VARIANTS: { id: GameVariant; name: string; icon: string; desc: string; badge: string; color: string }[] = [
-    {
-      id: 'classic',
-      name: 'Classic UNO',
-      icon: '🎴',
-      desc: 'Standard color and number matching with full house rules.',
-      badge: 'Classic',
-      color: 'border-amber-400 bg-amber-500/10 text-amber-300',
-    },
-    {
-      id: 'all_wild',
-      name: 'UNO All Wild',
-      icon: '🌈',
-      desc: '100% Wild cards! Targeted Draw 2, Skip Two, and Forced Swap.',
-      badge: 'High Chaos',
-      color: 'border-purple-400 bg-purple-500/10 text-purple-300',
-    },
-    {
-      id: 'flip',
-      name: 'UNO Flip!',
-      icon: '🔄',
-      desc: 'Double-sided cards! Flips between Light Side and brutal Dark Side.',
-      badge: 'Dark Side',
-      color: 'border-cyan-400 bg-cyan-500/10 text-cyan-300',
-    },
-    {
-      id: 'dare',
-      name: 'UNO Dare',
-      icon: '⚡',
-      desc: 'Dare Draw 2 cards: Accept fun dares or take penalty cards!',
-      badge: 'Party Fun',
-      color: 'border-red-400 bg-red-500/10 text-red-300',
-    },
+  const VARIANTS: { id: GameVariant | 'no_mercy' | 'dos'; name: string; image: string; comingSoon?: boolean; glowColor: string }[] = [
+    { id: 'classic', name: 'Classic', image: '/uno cards buttons/classic.png', glowColor: 'shadow-[0_0_20px_rgba(239,68,68,0.9)] ring-amber-400' },
+    { id: 'all_wild', name: 'All Wild', image: '/uno cards buttons/all wild.png', glowColor: 'shadow-[0_0_20px_rgba(168,85,247,0.9)] ring-amber-400' },
+    { id: 'flip', name: 'Flip!', image: '/uno cards buttons/FLIP.png', glowColor: 'shadow-[0_0_20px_rgba(6,182,212,0.9)] ring-amber-400' },
+    { id: 'dare', name: 'Dare', image: '/uno cards buttons/DARE.png', glowColor: 'shadow-[0_0_20px_rgba(245,158,11,0.9)] ring-amber-400' },
+    { id: 'no_mercy', name: 'No Mercy', image: '/uno cards buttons/NO MERCY.png', comingSoon: true, glowColor: '' },
+    { id: 'dos', name: 'DOS', image: '/uno cards buttons/DOS.png', comingSoon: true, glowColor: '' },
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center select-none overflow-hidden p-2 sm:p-4 bg-slate-950 text-white">
+      {/* Background Image: modal background.jpg */}
+      <img
+        src="/play online modal and buttons/modal background.jpg"
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
+        draggable={false}
+      />
+      {/* Subtle overlay for optimal contrast and readability */}
+      <div className="absolute inset-0 bg-[#06041c]/40 backdrop-blur-[1px] pointer-events-none" />
+
+      {/* Main Container - Authentic "Play Online" Style */}
+      <div className="relative z-10 w-full max-w-5xl max-h-[96vh] flex flex-col justify-between overflow-hidden">
+        
+        {/* Top Header Controls: Close Button */}
+        <div className="flex items-center justify-between pb-1 shrink-0 px-2">
           <div className="flex items-center gap-2">
-            <Plus className="w-5 h-5 text-amber-400" />
-            <h2 className="text-xl font-black text-white tracking-wide">CREATE ROOM</h2>
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-300/90 drop-shadow">
+              UNO ONLINE LOBBY
+            </span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
-          {/* Room Name */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 block mb-1">Room Name</label>
-            <input
-              type="text"
-              value={roomName}
-              maxLength={24}
-              onChange={(e) => setRoomName(e.target.value)}
-              placeholder="e.g. Pungot Championship"
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white font-bold text-sm focus:outline-none focus:border-amber-400"
-            />
-          </div>
-
-          {/* Game Variant Selector */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 block mb-2">
-              Select UNO Variant
-            </label>
-            <div className="grid grid-cols-2 gap-2.5">
-              {VARIANTS.map((v) => (
-                <button
-                  key={v.id}
-                  type="button"
-                  onClick={() => setVariant(v.id)}
-                  className={`p-3 rounded-2xl border text-left transition-all relative ${
-                    variant === v.id
-                      ? `${v.color} border-2 shadow-lg scale-[1.02]`
-                      : 'bg-slate-950/70 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xl">{v.icon}</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300">
-                      {v.badge}
-                    </span>
-                  </div>
-                  <div className="font-bold text-xs text-white">{v.name}</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">{v.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Virtual Coin Entry Fee & Five-Place Prize Pool Selection */}
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-amber-500/15 via-purple-900/20 to-slate-950 border-2 border-amber-400/50 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
-                <span>💰</span>
-                <span>Entry Fee & 5-Tier Prize Pool</span>
-              </label>
-              {entryFee > 0 && (
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950">
-                  ₱{entryFee}/player
-                </span>
-              )}
-            </div>
-
-            {/* Entry Fee Buttons */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-              {([0, 100, 200, 300, 400, 500] as EntryFeeAmount[]).map((fee) => (
-                <button
-                  key={fee}
-                  type="button"
-                  onClick={() => setEntryFee(fee)}
-                  className={`py-2 px-1 rounded-xl text-xs font-black transition-all ${
-                    entryFee === fee
-                      ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 shadow-[0_0_12px_rgba(250,204,21,0.6)] scale-105 border-2 border-white'
-                      : 'bg-slate-950/80 text-slate-300 border border-slate-800 hover:border-amber-400/60'
-                  }`}
-                >
-                  {fee === 0 ? 'Free' : `₱${fee}`}
-                </button>
-              ))}
-            </div>
-
-            {/* Prize Pool Breakdown Preview */}
-            {entryFee > 0 ? (
-              <div className="bg-slate-950/80 p-2.5 rounded-xl border border-amber-400/30 text-[10px] space-y-1">
-                <div className="font-bold text-amber-200 flex justify-between border-b border-slate-800 pb-1">
-                  <span>🏆 5-Place Prize Distribution:</span>
-                  <span className="font-black text-yellow-300">Total: ₱{entryFee * 5} (100%)</span>
-                </div>
-                <div className="grid grid-cols-5 gap-1 text-center pt-1 font-semibold text-slate-300">
-                  <div className="p-1 rounded bg-amber-500/20 border border-amber-400/40">
-                    <span className="text-amber-300 block font-black">1st (50%)</span>
-                    <span>₱{Math.floor(entryFee * 5 * 0.5)}</span>
-                  </div>
-                  <div className="p-1 rounded bg-blue-500/20 border border-blue-400/40">
-                    <span className="text-blue-300 block font-black">2nd (25%)</span>
-                    <span>₱{Math.floor(entryFee * 5 * 0.25)}</span>
-                  </div>
-                  <div className="p-1 rounded bg-purple-500/20 border border-purple-400/40">
-                    <span className="text-purple-300 block font-black">3rd (15%)</span>
-                    <span>₱{Math.floor(entryFee * 5 * 0.15)}</span>
-                  </div>
-                  <div className="p-1 rounded bg-emerald-500/20 border border-emerald-400/40">
-                    <span className="text-emerald-300 block font-black">4th (7%)</span>
-                    <span>₱{Math.floor(entryFee * 5 * 0.07)}</span>
-                  </div>
-                  <div className="p-1 rounded bg-rose-500/20 border border-rose-400/40">
-                    <span className="text-rose-300 block font-black">5th (3%)</span>
-                    <span>₱{entryFee * 5 - (Math.floor(entryFee * 5 * 0.5) + Math.floor(entryFee * 5 * 0.25) + Math.floor(entryFee * 5 * 0.15) + Math.floor(entryFee * 5 * 0.07))}</span>
-                  </div>
-                </div>
-                <p className="text-[9px] text-amber-300/80 italic text-center pt-0.5">
-                  *Top 5 places lang ang may premyo (50%, 25%, 15%, 7%, 3%). Ang 6th place pataas ay walang matatanggap. Ang kabuuang premyo ay nakabase sa kabuuang pusta ng mga sumali.
-                </p>
-              </div>
-            ) : (
-              <p className="text-[10px] text-slate-400 italic">
-                Casual / Free Match: Walang entry fee. Standard coin victory reward (+₱200) ang ipagkakaloob.
-              </p>
-            )}
-          </div>
-
-          {/* Universal Defeat Rule Notice */}
-          <div className="p-2.5 rounded-xl bg-red-950/40 border border-red-500/30 flex items-center gap-2 text-[11px] text-red-300">
-            <span className="text-base">💀</span>
-            <div>
-              <strong className="text-red-400">Pungot Defeat Rule Active:</strong> Across all variants, the last player with cards will lose the match!
-            </div>
-          </div>
-
-          {/* Privacy Toggle */}
-          <div className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-            <div>
-              <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Room Visibility</span>
-              </div>
-              <div className="text-[11px] text-slate-400">
-                {isPrivate ? 'Private (Invite or code only)' : 'Public (Visible in room list)'}
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            {/* House Rules & Privacy Pill */}
+            <button
+              type="button"
+              onClick={() => setShowHouseRules(true)}
+              className="px-2.5 py-1 rounded-xl bg-purple-900/60 hover:bg-purple-800/80 border border-purple-400/50 text-[10px] sm:text-xs font-black text-purple-200 transition active:scale-95 cursor-pointer shadow"
+            >
+              ⚙️ House Rules
+            </button>
             <button
               type="button"
               onClick={() => setIsPrivate(!isPrivate)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition border ${
+              className={`px-2.5 py-1 rounded-xl border text-[10px] sm:text-xs font-black transition active:scale-95 cursor-pointer shadow ${
                 isPrivate
-                  ? 'bg-purple-600/30 text-purple-300 border-purple-500'
-                  : 'bg-emerald-600/30 text-emerald-300 border-emerald-500'
+                  ? 'bg-purple-600/60 text-purple-200 border-purple-400'
+                  : 'bg-emerald-600/60 text-emerald-200 border-emerald-400'
               }`}
             >
-              {isPrivate ? 'Private' : 'Public'}
+              {isPrivate ? '🔒 Private Room' : '🌐 Public Room'}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-full bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700 hover:border-red-500 transition cursor-pointer shadow-lg"
+              title="Close"
+            >
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
+        </div>
 
-          {/* Turn Timer */}
-          <div>
-            <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-1.5">
-              <Timer className="w-3.5 h-3.5 text-amber-400" />
-              <span>Turn Timer</span>
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {([0, 15, 30, 60] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTurnTimer(t)}
-                  className={`py-2 rounded-xl text-xs font-bold border transition ${
-                    turnTimer === t
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 font-black'
-                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
-                  }`}
-                >
-                  {t === 0 ? 'Off' : `${t}s`}
-                </button>
-              ))}
+        {/* Center Content: Two Columns separated by Gold Divider */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-5 items-center px-1 sm:px-3 py-1"
+        >
+          {/* ================= LEFT SIDE: GAME SELECT (3x2 Grid) ================= */}
+          <div className="md:col-span-5 flex flex-col justify-center">
+            {/* Title: GAME SELECT in bold white with black stroke font */}
+            <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wider text-white mb-2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
+              <span>GAME SELECT</span>
+            </h2>
+
+            {/* 3x2 Grid of Uno Cards */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+              {VARIANTS.map((v) => {
+                const isSelected = variant === v.id;
+                const isComingSoon = v.comingSoon;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    disabled={isComingSoon}
+                    onClick={() => !isComingSoon && setVariant(v.id as GameVariant)}
+                    className={`relative rounded-xl transition-all duration-200 focus:outline-none flex flex-col items-center ${
+                      isComingSoon
+                        ? 'opacity-40 cursor-not-allowed'
+                        : 'cursor-pointer hover:scale-105 active:scale-95'
+                    } ${
+                      isSelected && !isComingSoon
+                        ? 'scale-105 z-20'
+                        : 'hover:brightness-110 z-10'
+                    }`}
+                  >
+                    {/* Card container with white border & rounded corners */}
+                    <div
+                      className={`relative w-full aspect-[2/3] rounded-xl overflow-hidden transition-all duration-200 ${
+                        isSelected && !isComingSoon
+                          ? 'ring-3 ring-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-[1.03]'
+                          : 'shadow-lg border-2 border-white/90 hover:border-amber-300'
+                      }`}
+                    >
+                      <img
+                        src={v.image}
+                        alt={v.name}
+                        className="w-full h-full object-cover select-none pointer-events-none"
+                        draggable={false}
+                      />
+                      {/* Coming Soon badge */}
+                      {isComingSoon && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px]">
+                          <img
+                            src="/uno cards buttons/COMING SOON.png"
+                            alt="Coming Soon"
+                            className="w-[85%] h-auto drop-shadow-lg"
+                            draggable={false}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Starting Hand Size */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-400" />
-                <span>Starting Hand Size</span>
-              </label>
-              <span className="text-xs font-mono font-bold text-amber-400">{startingHandSize} Cards</span>
-            </div>
-            <input
-              type="range"
-              min="3"
-              max="10"
-              value={startingHandSize}
-              onChange={(e) => setStartingHandSize(parseInt(e.target.value, 10))}
-              className="w-full accent-amber-500 h-2 bg-slate-950 rounded-lg cursor-pointer"
-            />
+          {/* ================= VERTICAL GOLD DIVIDER ================= */}
+          <div className="hidden md:flex md:col-span-1 justify-center h-full items-center">
+            <div className="w-[2.5px] h-[80%] bg-gradient-to-b from-amber-400/20 via-amber-400 to-amber-400/20 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
           </div>
 
-          {/* House Rules Toggles (applicable to Classic and Dare) */}
-          {variant !== 'all_wild' && (
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                House Rules
-              </span>
-
-              {/* Stacking */}
-              <div className="flex items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-800">
-                <div>
-                  <div className="text-xs font-bold text-white flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5 text-red-400" />
-                    Stacking (+2 on +2, +4 on +4/+2)
-                  </div>
-                  <div className="text-[10px] text-slate-400">Pass draw penalties to the next player</div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={stacking}
-                  onChange={(e) => setStacking(e.target.checked)}
-                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+          {/* ================= RIGHT SIDE: ENTRY FEE, TIMER, CARDS ================= */}
+          <div className="md:col-span-6 flex flex-col justify-center gap-3 sm:gap-4">
+            
+            {/* 1. ENTRY FEE SECTION */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/play online modal and buttons/icon_coins.png"
+                  alt="Entry Fee"
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow"
                 />
+                <span className="text-sm sm:text-base font-black uppercase text-white tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  ENTRY FEE
+                </span>
+                {entryFee === 0 && (
+                  <span className="ml-auto text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 border border-emerald-400/50">
+                    Free Match
+                  </span>
+                )}
               </div>
 
-              {/* Seven-Zero Rule */}
-              {variant === 'classic' && (
-                <div className="flex items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-800">
-                  <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1">
-                      <Shuffle className="w-3.5 h-3.5 text-yellow-400" />
-                      Seven-Zero Rule
-                    </div>
-                    <div className="text-[10px] text-slate-400">7 swaps hands, 0 rotates all hands</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={sevenZero}
-                    onChange={(e) => setSevenZero(e.target.checked)}
-                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                  />
-                </div>
-              )}
-
-              {/* WD4 Challenge */}
-              {variant === 'classic' && (
-                <div className="flex items-center justify-between p-2.5 bg-slate-950 rounded-xl border border-slate-800">
-                  <div>
-                    <div className="text-xs font-bold text-white flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-purple-400" />
-                      Wild Draw Four Challenge
-                    </div>
-                    <div className="text-[10px] text-slate-400">Allow players to challenge illegal +4 plays</div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={wildDraw4Challenge}
-                    onChange={(e) => setWildDraw4Challenge(e.target.checked)}
-                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                  />
-                </div>
-              )}
+              {/* 3D Glossy Gold Buttons for Entry Fee: 0, 100, 200, 300, 400, 500 */}
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                {([0, 100, 200, 300, 400, 500] as EntryFeeAmount[]).map((fee) => {
+                  const isSelected = entryFee === fee;
+                  return (
+                    <button
+                      key={fee}
+                      type="button"
+                      onClick={() => setEntryFee(fee)}
+                      className={`relative py-1.5 sm:py-2 px-1 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all duration-150 cursor-pointer text-center select-none ${
+                        isSelected
+                          ? 'bg-gradient-to-b from-[#FFF275] via-[#FFC000] to-[#E68A00] text-slate-950 shadow-[0_4px_14px_rgba(245,158,11,0.8),inset_0_2px_3px_rgba(255,255,255,0.9)] border-2 border-white scale-105 z-10'
+                          : 'bg-gradient-to-b from-[#D49300] via-[#A86F00] to-[#784E00] text-amber-100/90 shadow-[0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.3)] border border-amber-600/70 hover:brightness-125'
+                      }`}
+                    >
+                      <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
+                        {fee === 0 ? 'Free' : fee}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          )}
 
-          <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="py-2.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md transition"
-            >
-              Create & Open Lobby
-            </button>
+            {/* 2. TIMER SECTION */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/play online modal and buttons/icon_timer.png"
+                  alt="Timer"
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow"
+                />
+                <span className="text-sm sm:text-base font-black uppercase text-white tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  TIMER
+                </span>
+              </div>
+
+              {/* 3D Glossy Gold Buttons for Timer: OFF, 15s, 30s, 60s */}
+              <div className="grid grid-cols-4 gap-2">
+                {([0, 15, 30, 60] as const).map((t) => {
+                  const isSelected = turnTimer === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTurnTimer(t)}
+                      className={`relative py-1.5 sm:py-2 px-2 rounded-xl font-black text-xs sm:text-sm tracking-wide transition-all duration-150 cursor-pointer text-center select-none ${
+                        isSelected
+                          ? 'bg-gradient-to-b from-[#FFF275] via-[#FFC000] to-[#E68A00] text-slate-950 shadow-[0_4px_14px_rgba(245,158,11,0.8),inset_0_2px_3px_rgba(255,255,255,0.9)] border-2 border-white scale-105 z-10'
+                          : 'bg-gradient-to-b from-[#D49300] via-[#A86F00] to-[#784E00] text-amber-100/90 shadow-[0_2px_6px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.3)] border border-amber-600/70 hover:brightness-125'
+                      }`}
+                    >
+                      <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]">
+                        {t === 0 ? 'OFF' : `${t}s`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. CARDS SECTION */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <img
+                  src="/play online modal and buttons/icon_cards.png"
+                  alt="Cards"
+                  className="w-8 h-8 sm:w-10 sm:h-10 object-contain drop-shadow"
+                />
+                <span className="text-sm sm:text-base font-black uppercase text-white tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                  CARDS
+                </span>
+              </div>
+
+              {/* Gold Progress/Slider Track matching the reference */}
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1 h-5 sm:h-6 bg-slate-950/80 rounded-full p-1 border-2 border-amber-400/80 shadow-[inset_0_2px_6px_rgba(0,0,0,0.8)] flex items-center">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-300 rounded-full shadow-[0_0_12px_rgba(251,191,36,0.8)] transition-all duration-150"
+                    style={{ width: `${((startingHandSize - 3) / 7) * 100}%` }}
+                  />
+                  <input
+                    type="range"
+                    min="3"
+                    max="10"
+                    value={startingHandSize}
+                    onChange={(e) => setStartingHandSize(parseInt(e.target.value, 10))}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer z-10"
+                  />
+                </div>
+
+                {/* Round Badge with current card count */}
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-b from-[#1b1040] to-[#0d0728] border-2 border-amber-400 flex items-center justify-center font-black text-sm sm:text-base text-white shadow-[0_0_12px_rgba(251,191,36,0.6)] shrink-0">
+                  {startingHandSize}
+                </div>
+              </div>
+            </div>
+
+            {/* BOTTOM CREATE BUTTON - Exact Glossy Style */}
+            <div className="pt-2 flex items-center justify-center sm:justify-end gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-xs sm:text-sm border border-slate-700 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-7 py-2.5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_4px_20px_rgba(251,191,36,0.7),inset_0_2px_4px_rgba(255,255,255,0.9)] border-2 border-white hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>CREATE LOBBY</span>
+              </button>
+            </div>
           </div>
         </form>
       </div>
+
+      {/* House Rules Modal */}
+      {showHouseRules && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fadeIn p-3">
+          <div className="w-full max-w-sm bg-gradient-to-b from-[#1a0f44] to-[#0c0529] rounded-3xl border-2 border-amber-400/60 shadow-[0_0_30px_rgba(0,0,0,0.9)] overflow-hidden">
+            <div className="flex items-center justify-between p-3.5 border-b border-purple-500/30">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">House Rules</h3>
+              <button
+                onClick={() => setShowHouseRules(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3.5 space-y-2">
+              <button
+                type="button"
+                onClick={() => setStacking(!stacking)}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer ${
+                  stacking ? 'bg-amber-500/20 border-amber-400/80 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400'
+                }`}
+              >
+                <span className="text-xs font-black">Stacking (+2/+4)</span>
+                {stacking && <Check className="w-4 h-4 text-amber-400" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSevenZero(!sevenZero)}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer ${
+                  sevenZero ? 'bg-amber-500/20 border-amber-400/80 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400'
+                }`}
+              >
+                <span className="text-xs font-black">7-0 Swap Hands</span>
+                {sevenZero && <Check className="w-4 h-4 text-amber-400" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWildDraw4Challenge(!wildDraw4Challenge)}
+                className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer ${
+                  wildDraw4Challenge ? 'bg-amber-500/20 border-amber-400/80 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400'
+                }`}
+              >
+                <span className="text-xs font-black">WD4 Challenge</span>
+                {wildDraw4Challenge && <Check className="w-4 h-4 text-amber-400" />}
+              </button>
+            </div>
+
+            <div className="p-3 border-t border-purple-500/30 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowHouseRules(false)}
+                className="px-5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black text-xs shadow hover:scale-105 active:scale-95 transition"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

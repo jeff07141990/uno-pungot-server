@@ -294,8 +294,10 @@ export const GameTable: React.FC<GameTableProps> = ({
     switch (card.type) {
       case 'skip':
       case 'skip_all':
-      case 'skip2':
         soundManager.play('power_skip');
+        break;
+      case 'skip2':
+        soundManager.play('power_skip2');
         break;
       case 'reverse':
         soundManager.play('power_reverse');
@@ -310,10 +312,17 @@ export const GameTable: React.FC<GameTableProps> = ({
         soundManager.play('power_wild4');
         break;
       case 'wild':
-        soundManager.play('power_wild');
+        if (gameState.variant === 'all_wild') {
+          soundManager.play('power_general');
+        } else {
+          soundManager.play('power_wild');
+        }
         break;
       case 'flip':
         soundManager.play('power_flip');
+        break;
+      case 'forced_swap':
+        soundManager.play('power_swap');
         break;
       default:
         soundManager.play('power_general');
@@ -800,6 +809,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     // When card lands on the table
     setTimeout(() => {
       setIsDiscardLanding(true);
+      soundManager.play('card_play');
       setTimeout(() => setIsDiscardLanding(false), 300);
       setFlyingCard(null);
     }, 360);
@@ -868,7 +878,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   }, [players, startIntroPhase, currentUserId]);
 
   const handleCardClick = (card: Card) => {
-    if (startIntroPhase !== 'done') return;
+    if (isVsIntroActive || startIntroPhase !== 'done') return;
     if (!isYourTurn) {
       soundManager.play('error');
       return;
@@ -972,7 +982,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   const handleDraw = (target?: number | React.MouseEvent | unknown) => {
     const targetCardIndex = typeof target === 'number' ? target : undefined;
-    if (startIntroPhase !== 'done') return;
+    if (isVsIntroActive || startIntroPhase !== 'done') return;
     if (!isYourTurn) {
       soundManager.play('error');
       return;

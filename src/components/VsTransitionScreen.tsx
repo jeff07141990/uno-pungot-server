@@ -35,7 +35,7 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
   const [animStage, setAnimStage] = useState<
     'background' | 'cards_vs' | 'players' | 'settings' | 'countdown' | 'start' | 'exiting'
   >('cards_vs');
-  const [countdownNum, setCountdownNum] = useState<number | 'START'>(5);
+  const [countdownNum, setCountdownNum] = useState<number | 'START'>(10);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundManager.getMuted());
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
@@ -141,8 +141,8 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
     return arc[idx % arc.length];
   };
 
-  // Snappy, Fast Timeline with NO DELAYS:
-  // Immediate avatar display, fast punchy 3-2-1-START countdown, then seamlessly jump into match
+  // 10-Second Authoritative Tournament Countdown:
+  // 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, then START! -> exit to GameTable
   const onFinishRef = React.useRef(onFinish);
   onFinishRef.current = onFinish;
 
@@ -151,66 +151,48 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
     soundManager.play('vs_impact');
     setAnimStage('players');
 
-    // 0.8s: Countdown 5
-    const t5 = setTimeout(() => {
-      setAnimStage('countdown');
-      setCountdownNum(5);
-      soundManager.play('countdown_tick');
-    }, 800);
+    const timers: NodeJS.Timeout[] = [];
 
-    // 1.6s: Countdown 4
-    const t4 = setTimeout(() => {
-      setCountdownNum(4);
-      soundManager.play('countdown_tick');
-    }, 1600);
+    // Schedule 10 down to 1 (one per second)
+    for (let i = 10; i >= 1; i--) {
+      const delayMs = (10 - i) * 1000;
+      timers.push(
+        setTimeout(() => {
+          setAnimStage('countdown');
+          setCountdownNum(i);
+          soundManager.play('countdown_tick');
+        }, delayMs)
+      );
+    }
 
-    // 2.4s: Countdown 3
-    const t3 = setTimeout(() => {
-      setCountdownNum(3);
-      soundManager.play('countdown_tick');
-    }, 2400);
+    // 10.0s: START!
+    timers.push(
+      setTimeout(() => {
+        setCountdownNum('START');
+        setAnimStage('start');
+        soundManager.play('match_start');
+      }, 10000)
+    );
 
-    // 3.2s: Countdown 2
-    const t2 = setTimeout(() => {
-      setCountdownNum(2);
-      soundManager.play('countdown_tick');
-    }, 3200);
+    // 10.5s: Smooth fade exit
+    timers.push(
+      setTimeout(() => {
+        setAnimStage('exiting');
+      }, 10500)
+    );
 
-    // 4.0s: Countdown 1
-    const t1 = setTimeout(() => {
-      setCountdownNum(1);
-      soundManager.play('countdown_tick');
-    }, 4000);
-
-    // 4.7s: START!
-    const tStart = setTimeout(() => {
-      setCountdownNum('START');
-      setAnimStage('start');
-      soundManager.play('match_start');
-    }, 4700);
-
-    // 5.1s: Smooth fade exit
-    const tExit = setTimeout(() => {
-      setAnimStage('exiting');
-    }, 5100);
-
-    // 5.4s: Finish & transition directly into GameTable (5s total duration)
-    const tFinish = setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      onFinishRef.current();
-    }, 5400);
+    // 10.8s: Finish & transition directly into GameTable
+    timers.push(
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.pause();
+        }
+        onFinishRef.current();
+      }, 10800)
+    );
 
     return () => {
-      clearTimeout(t5);
-      clearTimeout(t4);
-      clearTimeout(t3);
-      clearTimeout(t2);
-      clearTimeout(t1);
-      clearTimeout(tStart);
-      clearTimeout(tExit);
-      clearTimeout(tFinish);
+      timers.forEach(clearTimeout);
     };
   }, []);
 

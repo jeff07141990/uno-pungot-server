@@ -356,6 +356,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                         <span className="font-bold text-sm text-white truncate max-w-[110px]">
                           {player.name}
                         </span>
+                        {player.level ? (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
+                            Lv.{player.level}
+                          </span>
+                        ) : null}
                         {player.isHost && (
                           <span title="Host"><Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" /></span>
                         )}
