@@ -68,12 +68,12 @@ export const PlayWithBotsModal: React.FC<PlayWithBotsModalProps> = ({
           
           {/* ================= LEFT SIDE: GAME SELECT (3x2 Grid) ================= */}
           <div className="md:col-span-5 flex flex-col justify-center">
-            <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wider text-white mb-2 drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
+            <h2 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-white mb-1.5 drop-shadow-[0_3px_6px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
               <span>GAME SELECT</span>
             </h2>
 
-            {/* 3x2 Grid of Uno Cards */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+            {/* 3x2 Grid of Uno Cards - perfectly sized */}
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 max-w-[320px] sm:max-w-none">
               {VARIANTS.map((v) => {
                 const isSelected = variant === v.id;
                 const isComingSoon = v.comingSoon;
@@ -93,11 +93,24 @@ export const PlayWithBotsModal: React.FC<PlayWithBotsModalProps> = ({
                         : 'hover:brightness-110 z-10'
                     }`}
                   >
+                    {/* Rotating light beam wrapper for selected card */}
+                    {isSelected && !isComingSoon && (
+                      <div className="absolute -inset-[3px] rounded-xl overflow-hidden pointer-events-none z-0">
+                        <div
+                          className="w-[200%] h-[200%] -top-1/2 -left-1/2 absolute anim-rotating-light"
+                          style={{
+                            background:
+                              'conic-gradient(from 0deg, transparent 0deg, #facc15 60deg, #ffffff 120deg, #38bdf8 180deg, transparent 240deg, #facc15 360deg)',
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <div
-                      className={`relative w-full aspect-[2/3] rounded-xl overflow-hidden transition-all duration-200 ${
+                      className={`relative w-full aspect-[2/3] rounded-xl overflow-hidden transition-all duration-200 z-10 ${
                         isSelected && !isComingSoon
-                          ? 'ring-3 ring-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-[1.03]'
-                          : 'shadow-lg border-2 border-white/90 hover:border-amber-300'
+                          ? 'shadow-[0_0_20px_rgba(250,204,21,0.95)] border-2 border-white'
+                          : 'shadow-md border border-white/80 hover:border-amber-300'
                       }`}
                     >
                       <img

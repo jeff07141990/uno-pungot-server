@@ -1006,3 +1006,18 @@
   animation: vsAvatarSlideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Rotating Light Beam Effect for Selected Game Variant Card */
+@keyframes cardLightRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.anim-rotating-light {
+  animation: cardLightRotate 3s linear infinite;
+}
+
+
