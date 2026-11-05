@@ -943,60 +943,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
               <div className="w-4 h-4 rounded-full bg-slate-950 shadow"></div>
             </button>
           </div>
-
-          {/* Fullscreen Mode */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-            <div>
-              <div className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                {isFullscreen ? <Minimize2 className="w-4 h-4 text-purple-400" /> : <Maximize2 className="w-4 h-4 text-purple-400" />}
-                Fullscreen Mode
-              </div>
-              <div className="text-xs text-slate-400">Expand gameplay to entire screen</div>
-            </div>
-            <button
-              onClick={handleToggleFullscreen}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition"
-            >
-              {isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-            </button>
-          </div>
-
-          {/* Live Room Server Address (For Mobile APK & Remote Multiplayer) */}
-          <div className="pt-3 border-t border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-bold text-amber-300 flex items-center gap-2">
-                  <span>🌐</span>
-                  Multiplayer Server URL (Live Room)
-                </div>
-                <div className="text-xs text-slate-400">
-                  IP o Domain address ng server para makasali ang ibang players gamit ang APK
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={serverAddress}
-                onChange={(e) => setServerAddress(e.target.value)}
-                placeholder="http://192.168.1.80:3001 o https://inyong-server.com"
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-amber-400"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    localStorage.setItem('uno_custom_server', serverAddress.trim());
-                    alert('Nai-save ang Server Address! Magre-reload ang koneksyon.');
-                    window.location.reload();
-                  } catch {}
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow cursor-pointer active:scale-95 transition whitespace-nowrap"
-              >
-                I-save
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Footer */}
