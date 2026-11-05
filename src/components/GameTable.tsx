@@ -622,9 +622,9 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
-    // Safety check: If match is already beyond turn 1 (e.g. joined in progress or bots already played),
-    // ensure table is immediately set to 'done' so it never freezes on shuffling
-    if (gameState.turnCount > 1) {
+    // Safety check: If user is a spectator OR match is already beyond turn 1 (or joined in progress),
+    // ensure table is immediately set to 'done' so spectator instantly sees the live ongoing match like live TV!
+    if (isSpectator || gameState.turnCount > 1) {
       if (startIntroPhase !== 'done') {
         introTimersRef.current.forEach(clearTimeout);
         introTimersRef.current = [];
@@ -719,12 +719,16 @@ export const GameTable: React.FC<GameTableProps> = ({
     score: 0,
   };
 
-  // Map opponents into relative positions relative to the current player
-  // Next in order is left, then top, then right
-  const otherPlayers: PublicPlayer[] = [];
-  for (let i = 1; i < players.length; i++) {
-    const idx = (effectiveMyIndex + i) % players.length;
-    otherPlayers.push(players[idx]);
+  // Map opponents into relative positions:
+  // If spectator, show ALL players in the game seated around the poker table!
+  const otherPlayers: PublicPlayer[] = isSpectator
+    ? [...players]
+    : [];
+  if (!isSpectator) {
+    for (let i = 1; i < players.length; i++) {
+      const idx = (effectiveMyIndex + i) % players.length;
+      otherPlayers.push(players[idx]);
+    }
   }
 
   // Active opponents who have not finished yet
@@ -1884,24 +1888,25 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* SOUTH (BOTTOM) AREA: Local Player HUD (or Spectator Controls) & 3D CALL UNO Buzzer */}
       <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pb-1 sm:pb-3 z-40 shrink-0">
         {isSpectator ? (
-          /* SPECTATOR MODE HUD */
-          <div className="bg-black/60 backdrop-blur-md border border-purple-500/40 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xl animate-fadeIn">
+          /* LIVE TV BROADCAST SPECTATOR HUD */
+          <div className="bg-slate-950/80 backdrop-blur-md border border-purple-500/50 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xl animate-fadeIn">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-lg sm:text-xl shadow-lg border border-purple-300">
-                🍿
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-600 flex items-center justify-center text-lg sm:text-xl shadow-lg border border-purple-300">
+                📺
               </div>
               <div className="flex flex-col text-left">
                 <div className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)] animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                    LIVE TV
+                  </span>
                   <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider flex items-center gap-1">
                     <Eye className="w-3.5 h-3.5 text-purple-400" />
-                    SPECTATOR MODE
-                  </span>
-                  <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
-                    Live View
+                    SPECTATING GAME
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-300 mt-0.5">
-                  Nanonood ka lamang sa laban. Pwede kang mag-chat at mag-react!
+                  Live in-progress game viewing. Makipag-chat at mag-react habang nanonood!
                 </span>
               </div>
             </div>

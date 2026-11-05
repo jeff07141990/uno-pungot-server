@@ -41,7 +41,10 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
           </div>
           <span className="font-extrabold text-white text-sm tracking-wide flex items-center gap-1.5 drop-shadow">
             <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-            LIVE AVAILABLE ROOMS
+            LIVE TV AVAILABLE ROOMS
+          </span>
+          <span className="text-[10px] bg-red-600/90 text-white font-black px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(239,68,68,0.8)] uppercase tracking-wider animate-pulse">
+            TV
           </span>
           <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
             {rooms.length}
