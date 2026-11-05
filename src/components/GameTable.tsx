@@ -339,11 +339,31 @@ export const GameTable: React.FC<GameTableProps> = ({
       case 'reverse':
         soundManager.play('power_reverse');
         break;
-      case 'draw2':
       case 'targeted_draw2':
-        soundManager.play('power_draw2');
+        soundManager.play('power_targeted_draw2');
         break;
+      case 'draw2':
       case 'wild4':
+        if (gameState.pendingDrawPenalty > 0) {
+          const p = gameState.pendingDrawPenalty;
+          if (p === 6) soundManager.play('power_draw6');
+          else if (p === 8) soundManager.play('power_draw8');
+          else if (p === 10) soundManager.play('power_draw10');
+          else if (p === 12) soundManager.play('power_draw12');
+          else if (p === 14) soundManager.play('power_draw14');
+          else if (p === 16) soundManager.play('power_draw16');
+          else if (p === 18) soundManager.play('power_draw18');
+          else if (p === 20) soundManager.play('power_draw20');
+          else if (p === 22) soundManager.play('power_draw22');
+          else if (p >= 24) soundManager.play('power_draw24');
+          else if (p === 4) soundManager.play('power_wild4');
+          else soundManager.play('power_draw2');
+        } else if (card.type === 'draw2') {
+          soundManager.play('power_draw2');
+        } else {
+          soundManager.play('power_wild4');
+        }
+        break;
       case 'draw5':
       case 'wild_draw_color':
         soundManager.play('power_wild4');
@@ -858,9 +878,29 @@ export const GameTable: React.FC<GameTableProps> = ({
       setIsDiscardLanding(true);
       if (card.type === 'forced_swap' || card.type === 'power_swap' || (houseRules.sevenZero && card.type === 'number' && card.value === 7)) {
         soundManager.play('power_swap');
-      } else if (card.type === 'targeted_draw2' || card.type === 'draw2') {
-        soundManager.play('power_draw2');
-      } else if (card.type === 'wild4' || card.type === 'draw5' || card.type === 'wild_draw_color') {
+      } else if (card.type === 'targeted_draw2') {
+        soundManager.play('power_targeted_draw2');
+      } else if (card.type === 'draw2' || card.type === 'wild4') {
+        if (gameState.pendingDrawPenalty > 0) {
+          const p = gameState.pendingDrawPenalty;
+          if (p === 6) soundManager.play('power_draw6');
+          else if (p === 8) soundManager.play('power_draw8');
+          else if (p === 10) soundManager.play('power_draw10');
+          else if (p === 12) soundManager.play('power_draw12');
+          else if (p === 14) soundManager.play('power_draw14');
+          else if (p === 16) soundManager.play('power_draw16');
+          else if (p === 18) soundManager.play('power_draw18');
+          else if (p === 20) soundManager.play('power_draw20');
+          else if (p === 22) soundManager.play('power_draw22');
+          else if (p >= 24) soundManager.play('power_draw24');
+          else if (p === 4) soundManager.play('power_wild4');
+          else soundManager.play('power_draw2');
+        } else if (card.type === 'draw2') {
+          soundManager.play('power_draw2');
+        } else {
+          soundManager.play('power_wild4');
+        }
+      } else if (card.type === 'draw5' || card.type === 'wild_draw_color') {
         soundManager.play('power_wild4');
       } else if (card.type === 'skip' || card.type === 'skip_all') {
         soundManager.play('power_skip');

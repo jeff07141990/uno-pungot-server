@@ -155,6 +155,39 @@ class SoundManager {
         case 'power_draw2':
           this.playPowerDraw2(ctx);
           break;
+        case 'power_targeted_draw2':
+          this.playPowerTargetedDraw2(ctx);
+          break;
+        case 'power_draw6':
+          this.playPowerStackedDraw(ctx, 6);
+          break;
+        case 'power_draw8':
+          this.playPowerStackedDraw(ctx, 8);
+          break;
+        case 'power_draw10':
+          this.playPowerStackedDraw(ctx, 10);
+          break;
+        case 'power_draw12':
+          this.playPowerStackedDraw(ctx, 12);
+          break;
+        case 'power_draw14':
+          this.playPowerStackedDraw(ctx, 14);
+          break;
+        case 'power_draw16':
+          this.playPowerStackedDraw(ctx, 16);
+          break;
+        case 'power_draw18':
+          this.playPowerStackedDraw(ctx, 18);
+          break;
+        case 'power_draw20':
+          this.playPowerStackedDraw(ctx, 20);
+          break;
+        case 'power_draw22':
+          this.playPowerStackedDraw(ctx, 22);
+          break;
+        case 'power_draw24':
+          this.playPowerStackedDraw(ctx, 24);
+          break;
         case 'power_wild4':
         case 'power_draw5':
           this.playPowerWild4(ctx);
@@ -310,9 +343,10 @@ class SoundManager {
     });
   }
 
-  // 5. WILD: Play draw color card the power card.wav, fallback to synthesized chime
+  // 5. WILD: Play Colored Wild.mp3, fallback to draw color card the power card.wav or synthesized chime
   private playPowerWild(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/draw color card the power card.wav', 0.9);
+    const played = this.playAudioFile('/sound effects/Colored Wild.mp3', 0.95) ||
+                   this.playAudioFile('/sound effects/draw color card the power card.wav', 0.9);
     if (played) return;
 
     const now = ctx.currentTime;
@@ -374,9 +408,10 @@ class SoundManager {
     osc.stop(now + 0.16);
   }
 
-  // 8. DOUBLE SKIP: Play douple skip.wav, fallback to dual skip buzzers
+  // 8. DOUBLE SKIP: Play Double Skip.mp3, fallback to douple skip.wav
   private playPowerDoubleSkip(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/douple skip.wav', 0.9);
+    const played = this.playAudioFile('/sound effects/Double Skip.mp3', 0.95) ||
+                   this.playAudioFile('/sound effects/douple skip.wav', 0.9);
     if (played) return;
     this.playPowerSkip(ctx);
     setTimeout(() => {
@@ -386,9 +421,10 @@ class SoundManager {
     }, 120);
   }
 
-  // 9. SWAP CARD: Play swap card.wav, fallback to frequency sweep
+  // 9. SWAP CARD: Play Card Swap.mp3, fallback to swap card.wav
   private playPowerSwap(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/swap card.wav', 0.9);
+    const played = this.playAudioFile('/sound effects/Card Swap.mp3', 0.95) ||
+                   this.playAudioFile('/sound effects/swap card.wav', 0.9);
     if (played) return;
 
     const now = ctx.currentTime;
@@ -407,6 +443,29 @@ class SoundManager {
     gain.connect(ctx.destination);
     osc.start(now);
     osc.stop(now + 0.3);
+  }
+
+  // 10. TARGETED DRAW 2: Play Targeted Draw 2.mp3, fallback to draw 2.mp3
+  private playPowerTargetedDraw2(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/Targeted Draw 2.mp3', 0.95) ||
+                   this.playAudioFile('/sound effects/draw 2.mp3', 0.9);
+    if (played) return;
+    this.playPowerDraw2(ctx);
+  }
+
+  // 11. ACCUMULATED STACKED DRAW CARDS (Draw 6, 8, 10, 12, 14, 16, 18, 20, 22, 24)
+  public playPowerStackedDraw(ctx: AudioContext, count: number) {
+    // Map directly to uploaded accumulated voice/impact files
+    const exactFile = `/sound effects/Draw ${count}.mp3`;
+    const played = this.playAudioFile(exactFile, 1.0);
+    if (played) return;
+
+    // Fallback if higher than 24 or missing
+    if (count >= 4) {
+      this.playPowerWild4(ctx);
+    } else {
+      this.playPowerDraw2(ctx);
+    }
   }
 
   private playCardPlay(_ctx: AudioContext) {

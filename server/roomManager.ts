@@ -1098,6 +1098,25 @@ export class RoomManager {
   }
 
   /**
+   * Helper to determine exact stacked draw sound effect based on total accumulated penalty cards.
+   */
+  private getStackedDrawSound(totalPenalty: number): SoundEffectType {
+    if (totalPenalty <= 2) return 'power_draw2';
+    if (totalPenalty === 4) return 'power_wild4';
+    if (totalPenalty === 6) return 'power_draw6';
+    if (totalPenalty === 8) return 'power_draw8';
+    if (totalPenalty === 10) return 'power_draw10';
+    if (totalPenalty === 12) return 'power_draw12';
+    if (totalPenalty === 14) return 'power_draw14';
+    if (totalPenalty === 16) return 'power_draw16';
+    if (totalPenalty === 18) return 'power_draw18';
+    if (totalPenalty === 20) return 'power_draw20';
+    if (totalPenalty === 22) return 'power_draw22';
+    if (totalPenalty >= 24) return 'power_draw24';
+    return 'power_wild4';
+  }
+
+  /**
    * Resolve card actions affecting the active player queue.
    */
   private resolveCardEffect(
@@ -1137,9 +1156,11 @@ export class RoomManager {
     else if (card.type === 'draw2') {
       if (publicState.houseRules.stacking) {
         publicState.pendingDrawPenalty += 2;
+        sound = this.getStackedDrawSound(publicState.pendingDrawPenalty);
         actionDescription += ` (Pending Penalty: +${publicState.pendingDrawPenalty})`;
         publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
       } else {
+        sound = 'power_draw2';
         const nextIdx = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
         const nextPlayer = publicState.players[nextIdx];
         const nextHand = room.playerHands.get(nextPlayer.id) ?? [];
@@ -1159,9 +1180,11 @@ export class RoomManager {
       // (This supports full cumulative stacking: +2 +4 +2 +4 = 12 cards, etc.)
       if (publicState.houseRules.stacking) {
         publicState.pendingDrawPenalty += 4;
+        sound = this.getStackedDrawSound(publicState.pendingDrawPenalty);
         actionDescription += ` (Pending Penalty: +${publicState.pendingDrawPenalty})`;
         publicState.activePlayerIndex = nextIdx;
       } else if (publicState.variant !== 'all_wild' && publicState.houseRules.wildDraw4Challenge && !nextPlayer.isBot) {
+        sound = 'power_wild4';
         // In All Wild variant, all cards are wild so there is NO bluffing/challenging!
         publicState.pendingChallenge = {
           challengerId: nextPlayer.id,
@@ -1170,6 +1193,7 @@ export class RoomManager {
         };
         actionDescription += ` — Wild Draw Four! ${nextPlayer.name} may challenge.`;
       } else {
+        sound = 'power_wild4';
         const nextHand = room.playerHands.get(nextPlayer.id) ?? [];
         const drawn = this.drawFromPile(room, 4);
         nextHand.push(...drawn);
@@ -1274,7 +1298,7 @@ export class RoomManager {
     }
     // 11. Targeted Draw 2
     else if (card.type === 'targeted_draw2') {
-      sound = 'power_draw2';
+      sound = 'power_targeted_draw2';
       const defaultTargetId = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)].id;
       const targetId = targetPlayerId || defaultTargetId;
       const targetPlayer = publicState.players.find((p) => p.id === targetId);
@@ -1683,7 +1707,7 @@ export class RoomManager {
     room.publicState.lastActionText = desc;
     this.startTurnTimer(room);
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, desc, 'power_draw2');
+    this.broadcastToast(roomId, desc, 'power_targeted_draw2');
 
     this.checkTriggerBot(roomId);
     return { success: true };
