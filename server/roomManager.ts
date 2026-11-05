@@ -2241,7 +2241,7 @@ export class RoomManager {
       this.broadcastState(roomId);
       this.broadcastToast(roomId, `${player.name} disconnected.`, 'error');
 
-      // If everyone disconnected or host left in lobby, handle cleanup after delay
+      // If everyone disconnected or host left in lobby, handle cleanup after delay (3 minutes grace period for weak mobile internet)
       const allDisconnected = room.publicState.players.every((p) => p.isBot || p.isDisconnected);
       if (allDisconnected) {
         setTimeout(() => {
@@ -2249,7 +2249,7 @@ export class RoomManager {
           if (check && check.publicState.players.every((p) => p.isBot || p.isDisconnected)) {
             this.cleanupRoom(roomId);
           }
-        }, 60000); // 1 minute cleanup grace period
+        }, 180000); // 3 minutes cleanup grace period
       }
     }
   }

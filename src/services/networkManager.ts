@@ -281,13 +281,14 @@ class NetworkManager {
     if (this.reconnectTimeout) return;
 
     this.reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(1.5, this.reconnectAttempts), 8000);
+    // Aggressive retry for mobile & weak networks: max 4s backoff so players reconnect promptly
+    const delay = Math.min(1000 * Math.pow(1.3, this.reconnectAttempts), 4000);
 
     this.setStatus('reconnecting');
     this.reconnectTimeout = window.setTimeout(() => {
       this.reconnectTimeout = null;
       if (this.currentRoomId && this.currentPlayer) {
-        this.connect(this.currentRoomId, this.currentPlayer);
+        this.connect(this.currentRoomId, this.currentPlayer, this.isSpectator);
       }
     }, delay);
   }
