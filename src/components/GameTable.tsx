@@ -1148,22 +1148,23 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Center top: empty space so view is ultra clean */}
         <div className="flex-1" />
 
-        {/* Top-Right: Sound & Settings auto-hidden, ONLY Exit button is displayed */}
+        {/* Top-Right: Sound toggle ALWAYS visible in upper-right corner as requested, Settings still in menu, Exit button always visible */}
         <div className="flex items-center gap-2 pointer-events-auto">
+          {/* Always Visible Volume On/Off Button */}
+          <button
+            onClick={onToggleMute}
+            className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
+            title={isMuted ? 'I-on ang Tunog (Unmute Sound)' : 'I-off ang Tunog (Mute Sound)'}
+          >
+            <img
+              src={isMuted ? "/home screen in game icons/sound off.png" : "/home screen in game icons/sound on.png"}
+              alt={isMuted ? "Sound Off" : "Sound On"}
+              className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+            />
+          </button>
+
           {showTopBarMenu && (
             <div className="flex items-center gap-2 animate-fadeIn">
-              <button
-                onClick={onToggleMute}
-                className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
-                title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
-              >
-                <img
-                  src={isMuted ? "/home screen in game icons/sound off.png" : "/home screen in game icons/sound on.png"}
-                  alt="Sound"
-                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                />
-              </button>
-
               <button
                 onClick={() => onOpenSettings?.()}
                 className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
@@ -2253,15 +2254,15 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Color Picker for Wild Cards */}
+      {/* Color Picker for Wild Cards - High z-index (z-[70]) so nothing can cover or overlap it */}
       {selectedWildCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-          <div className="bg-slate-900 border-2 border-slate-700 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-            <h3 className="text-lg font-black text-white mb-1">CHOOSE COLOR</h3>
-            <p className="text-xs text-slate-400 mb-5">
-              {isDarkSide ? 'Pick a Dark Side color' : 'Pick the active color for your Wild card'}
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn pointer-events-auto">
+          <div className="bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-6 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.9)]">
+            <h3 className="text-xl font-black text-amber-300 mb-1 tracking-wide">PUMILI NG KULAY</h3>
+            <p className="text-xs text-slate-300 mb-5 font-semibold">
+              {isDarkSide ? 'Piliin ang Dark Side kulay' : 'Piliin ang magiging kulay ng Wild card'}
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 mb-4">
               {(isDarkSide
                 ? (['teal', 'orange', 'purple', 'pink'] as CardColor[])
                 : (['red', 'blue', 'yellow', 'green'] as CardColor[])
@@ -2269,38 +2270,46 @@ export const GameTable: React.FC<GameTableProps> = ({
                 <button
                   key={col}
                   onClick={() => handleSelectColor(col)}
-                  className={`py-4 rounded-xl text-white font-black text-base uppercase shadow-lg border-2 transition hover:scale-105 active:scale-95 ${
+                  className={`py-4 rounded-xl text-white font-black text-base uppercase shadow-lg border-2 transition hover:scale-105 active:scale-95 cursor-pointer ${
                     col === 'red'
-                      ? 'bg-red-600 border-red-400'
+                      ? 'bg-red-600 border-red-300 ring-2 ring-red-500/50'
                       : col === 'blue'
-                      ? 'bg-blue-600 border-blue-400'
+                      ? 'bg-blue-600 border-blue-300 ring-2 ring-blue-500/50'
                       : col === 'yellow'
-                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-black'
+                      ? 'bg-amber-400 border-amber-200 text-slate-950 font-black ring-2 ring-yellow-400/50'
                       : col === 'green'
-                      ? 'bg-emerald-600 border-emerald-400'
+                      ? 'bg-emerald-600 border-emerald-300 ring-2 ring-emerald-500/50'
                       : col === 'teal'
-                      ? 'bg-teal-600 border-teal-400'
+                      ? 'bg-teal-600 border-teal-300 ring-2 ring-teal-500/50'
                       : col === 'orange'
-                      ? 'bg-orange-600 border-orange-400'
+                      ? 'bg-orange-600 border-orange-300 ring-2 ring-orange-500/50'
                       : col === 'purple'
-                      ? 'bg-purple-600 border-purple-400'
-                      : 'bg-pink-600 border-pink-400'
+                      ? 'bg-purple-600 border-purple-300 ring-2 ring-purple-500/50'
+                      : 'bg-pink-600 border-pink-300 ring-2 ring-pink-500/50'
                   }`}
                 >
                   {col}
                 </button>
               ))}
             </div>
+
+            {/* Cancel Button if player wants to change their mind */}
+            <button
+              onClick={() => setSelectedWildCard(null)}
+              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+            >
+              ✕ Huwag Muna (Cancel)
+            </button>
           </div>
         </div>
       )}
 
       {/* Seven Hand Swap Target Selection */}
       {selectedSevenCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
           <div className="bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
             <h3 className="text-lg font-black text-white mb-1">SEVEN RULE</h3>
-            <p className="text-xs text-slate-400 mb-4">Choose a player to swap hands with</p>
+            <p className="text-xs text-slate-400 mb-4">Pumili ng kalaro na ipagpapalit ang baraha</p>
             <div className="space-y-2">
               {activeOpponents.map((opp) => (
                 <button
@@ -2324,7 +2333,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       {/* Targeted Action Modal (Targeted Draw 2 & Forced Swap for Uno All Wild) */}
       {selectedTargetCard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
           <div className="bg-slate-900 border-2 border-purple-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
             <h3 className="text-lg font-black text-white mb-1">
               {selectedTargetCard.type === 'forced_swap' ? 'FORCED HAND SWAP' : 'TARGETED DRAW 2'}
@@ -2355,9 +2364,14 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* KEEP OR PLAY PROMPT: Borderless floating PNG card + action buttons directly in player's POV center */}
-      {gameState.pendingKeepOrPlay && gameState.pendingKeepOrPlay.playerId === currentUserId && (
-        <div className="fixed bottom-24 sm:bottom-32 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fadeIn flex flex-col items-center">
+      {/* KEEP OR PLAY PROMPT: Borderless floating PNG card + action buttons.
+          Hidden whenever color selection or target selection is in progress to avoid any overlapping! */}
+      {gameState.pendingKeepOrPlay &&
+        gameState.pendingKeepOrPlay.playerId === currentUserId &&
+        !selectedWildCard &&
+        !selectedSevenCard &&
+        !selectedTargetCard && (
+        <div className="fixed bottom-28 sm:bottom-36 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-fadeIn flex flex-col items-center">
           <div className="pointer-events-auto flex flex-col items-center gap-2">
             {/* Raw PNG Drawn Card with 3D Pop and Soft Glow */}
             <div className="relative transform hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)] filter hover:drop-shadow-[0_0_20px_rgba(250,204,21,0.9)] animate-bounce-slow">
