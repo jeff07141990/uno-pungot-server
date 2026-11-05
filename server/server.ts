@@ -317,7 +317,7 @@ wss.on('connection', (ws: WebSocket) => {
             roomManager.executeSevenSwap(room, playerId, targetPlayerId);
             room.publicState.activePlayerIndex = (room.publicState.activePlayerIndex + room.publicState.direction + room.publicState.players.length) % room.publicState.players.length;
             roomManager.broadcastState(roomId);
-            roomManager.broadcastToast(roomId, 'Hands swapped!', 'card_play');
+            roomManager.broadcastToast(roomId, 'Hands swapped!', 'power_swap');
           }
           break;
         }

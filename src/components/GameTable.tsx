@@ -291,8 +291,9 @@ export const GameTable: React.FC<GameTableProps> = ({
         bgColor = 'from-amber-600 via-red-500 to-rose-800';
         break;
       case 'forced_swap':
+      case 'power_swap':
         title = '🔀 FORCED SWAP!';
-        subtitle = `${playerName} swapped entire hand!`;
+        subtitle = `${playerName} swapped cards with opponent!`;
         icon = '🔀';
         bgColor = 'from-cyan-600 via-blue-600 to-indigo-900';
         break;
@@ -303,6 +304,15 @@ export const GameTable: React.FC<GameTableProps> = ({
         icon = '🎭';
         bgColor = 'from-purple-600 via-indigo-600 to-slate-900';
         break;
+      case 'number':
+        if (houseRules.sevenZero && card.value === 7) {
+          title = '🔀 SEVEN RULE (SWAP)!';
+          subtitle = `${playerName} swapped entire hand!`;
+          icon = '🔀';
+          bgColor = 'from-cyan-600 via-blue-600 to-indigo-900';
+          break;
+        }
+        return;
       default:
         return;
     }
@@ -349,7 +359,13 @@ export const GameTable: React.FC<GameTableProps> = ({
         soundManager.play('power_flip');
         break;
       case 'forced_swap':
+      case 'power_swap':
         soundManager.play('power_swap');
+        break;
+      case 'number':
+        if (houseRules.sevenZero && card.value === 7) {
+          soundManager.play('power_swap');
+        }
         break;
       default:
         soundManager.play('power_general');
@@ -840,7 +856,21 @@ export const GameTable: React.FC<GameTableProps> = ({
     // When card lands on the table
     setTimeout(() => {
       setIsDiscardLanding(true);
-      soundManager.play('card_play');
+      if (card.type === 'forced_swap' || card.type === 'power_swap' || (houseRules.sevenZero && card.type === 'number' && card.value === 7)) {
+        soundManager.play('power_swap');
+      } else if (card.type === 'targeted_draw2' || card.type === 'draw2') {
+        soundManager.play('power_draw2');
+      } else if (card.type === 'wild4' || card.type === 'draw5' || card.type === 'wild_draw_color') {
+        soundManager.play('power_wild4');
+      } else if (card.type === 'skip' || card.type === 'skip_all') {
+        soundManager.play('power_skip');
+      } else if (card.type === 'skip2') {
+        soundManager.play('power_skip2');
+      } else if (card.type === 'reverse' || card.type === 'power_reverse') {
+        soundManager.play('power_reverse');
+      } else {
+        soundManager.play('card_play');
+      }
       setTimeout(() => setIsDiscardLanding(false), 300);
       setFlyingCard(null);
     }, 360);

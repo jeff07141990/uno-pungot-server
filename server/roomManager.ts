@@ -1274,7 +1274,7 @@ export class RoomManager {
     }
     // 11. Targeted Draw 2
     else if (card.type === 'targeted_draw2') {
-      sound = 'card_draw';
+      sound = 'power_draw2';
       const defaultTargetId = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)].id;
       const targetId = targetPlayerId || defaultTargetId;
       const targetPlayer = publicState.players.find((p) => p.id === targetId);
@@ -1287,7 +1287,7 @@ export class RoomManager {
     }
     // 12. Forced Swap
     else if (card.type === 'forced_swap') {
-      sound = 'card_deal';
+      sound = 'power_swap';
       const defaultTargetId = publicState.players[this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1)].id;
       const targetId = targetPlayerId || defaultTargetId;
       this.executeSevenSwap(room, activePlayer.id, targetId);
@@ -1327,6 +1327,7 @@ export class RoomManager {
     }
     // 14. Seven-Zero Rule
     else if (publicState.houseRules.sevenZero && card.type === 'number' && card.value === 7) {
+      sound = 'power_swap';
       if (targetPlayerId && targetPlayerId !== activePlayer.id) {
         this.executeSevenSwap(room, activePlayer.id, targetPlayerId);
         actionDescription += ` — ${activePlayer.name} swapped hands!`;
@@ -1352,7 +1353,7 @@ export class RoomManager {
       }
       publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
     } else if (card.type === 'power_swap') {
-      sound = 'card_deal';
+      sound = 'power_swap';
       const validOpponents = publicState.players.filter(
         (p) => p.id !== activePlayer.id && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
       );
@@ -1682,7 +1683,7 @@ export class RoomManager {
     room.publicState.lastActionText = desc;
     this.startTurnTimer(room);
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, desc, 'card_draw');
+    this.broadcastToast(roomId, desc, 'power_draw2');
 
     this.checkTriggerBot(roomId);
     return { success: true };
