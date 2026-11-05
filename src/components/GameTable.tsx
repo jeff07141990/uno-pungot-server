@@ -2257,7 +2257,16 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* Color Picker for Wild Cards - High z-index (z-[70]) so nothing can cover or overlap it */}
       {selectedWildCard && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn pointer-events-auto">
-          <div className="bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-6 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.9)]">
+          <div className="relative bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-6 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.9)]">
+            {/* Top-right X button */}
+            <button
+              onClick={() => setSelectedWildCard(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              title="Isara (Cancel)"
+            >
+              ✕
+            </button>
+
             <h3 className="text-xl font-black text-amber-300 mb-1 tracking-wide">PUMILI NG KULAY</h3>
             <p className="text-xs text-slate-300 mb-5 font-semibold">
               {isDarkSide ? 'Piliin ang Dark Side kulay' : 'Piliin ang magiging kulay ng Wild card'}
@@ -2307,15 +2316,24 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* Seven Hand Swap Target Selection */}
       {selectedSevenCard && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
-          <div className="bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-            <h3 className="text-lg font-black text-white mb-1">SEVEN RULE</h3>
+          <div className="relative bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+            {/* Top-right X button */}
+            <button
+              onClick={() => setSelectedSevenCard(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              title="Isara (Cancel)"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-lg font-black text-white mb-1">SEVEN RULE (SWAP)</h3>
             <p className="text-xs text-slate-400 mb-4">Pumili ng kalaro na ipagpapalit ang baraha</p>
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {activeOpponents.map((opp) => (
                 <button
                   key={opp.id}
                   onClick={() => handleSelectSevenTarget(opp.id)}
-                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition"
+                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
@@ -2327,6 +2345,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setSelectedSevenCard(null)}
+              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+            >
+              ✕ Huwag Muna (Cancel)
+            </button>
           </div>
         </div>
       )}
@@ -2334,21 +2360,30 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* Targeted Action Modal (Targeted Draw 2 & Forced Swap for Uno All Wild) */}
       {selectedTargetCard && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
-          <div className="bg-slate-900 border-2 border-purple-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+          <div className="relative bg-slate-900 border-2 border-purple-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
+            {/* Top-right X button */}
+            <button
+              onClick={() => setSelectedTargetCard(null)}
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              title="Isara (Cancel)"
+            >
+              ✕
+            </button>
+
             <h3 className="text-lg font-black text-white mb-1">
               {selectedTargetCard.type === 'forced_swap' ? 'FORCED HAND SWAP' : 'TARGETED DRAW 2'}
             </h3>
             <p className="text-xs text-slate-400 mb-4">
               {selectedTargetCard.type === 'forced_swap'
-                ? 'Select an active opponent to swap hands with'
-                : 'Select an active opponent who must draw 2 cards'}
+                ? 'Pumili ng kalaro na ipagpapalit ang iyong baraha'
+                : 'Pumili ng kalaro na papabunutin ng 2 baraha'}
             </p>
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {activeOpponents.map((opp) => (
                 <button
                   key={opp.id}
                   onClick={() => handleSelectActionTarget(opp.id)}
-                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition"
+                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
@@ -2360,6 +2395,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setSelectedTargetCard(null)}
+              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+            >
+              ✕ Huwag Muna (Cancel)
+            </button>
           </div>
         </div>
       )}
