@@ -161,8 +161,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         />
       </div>
 
+      {/* Very Top Running Transparent Live TV Ticker Bar */}
+      {onSpectateRoom && (
+        <div className="fixed top-0 left-0 right-0 z-40 pointer-events-auto">
+          <LiveAvailableRooms
+            rooms={publicRooms}
+            isLoading={isLoadingRooms}
+            onRefresh={onRefreshRooms || (() => {})}
+            onJoin={(roomId) => onJoinRoom(roomId)}
+            onSpectate={(roomId) => onSpectateRoom(roomId)}
+          />
+        </div>
+      )}
+
       {/* Top Navbar */}
-      <div className="w-full flex items-center justify-between z-30 shrink-0 gap-2">
+      <div className="w-full flex items-center justify-between z-30 shrink-0 gap-2 mt-7 sm:mt-8">
         {/* Left Side: Profile Pill & Virtual Coin Wallet Pill */}
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden">
           {/* Profile Pill */}
@@ -336,19 +349,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Floating Available Rooms Display Button & Modal */}
-      {onSpectateRoom && (
-        <div className="flex absolute right-3 top-14 sm:right-4 sm:top-16 md:right-12 md:top-14 z-30 pointer-events-auto">
-          <LiveAvailableRooms
-            rooms={publicRooms}
-            isLoading={isLoadingRooms}
-            onRefresh={onRefreshRooms || (() => {})}
-            onJoin={(roomId) => onJoinRoom(roomId)}
-            onSpectate={(roomId) => onSpectateRoom(roomId)}
-          />
-        </div>
-      )}
 
       {/* Floating Bottom-Right Quick Action Icons (Shop, Missions, Leaderboards, Fullscreen, Exit) - No box, clean floating icons */}
       <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2.5 sm:gap-3">

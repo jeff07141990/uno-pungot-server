@@ -1006,18 +1006,24 @@
   animation: vsAvatarSlideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Rotating Light Beam Effect for Selected Game Variant Card */
-@keyframes cardLightRotate {
+/* Marquee Animation for Live TV Ticker */
+@keyframes marqueeScroll {
   0% {
-    transform: rotate(0deg);
+    transform: translateX(100%);
   }
   100% {
-    transform: rotate(360deg);
+    transform: translateX(-100%);
   }
 }
 
-.anim-rotating-light {
-  animation: cardLightRotate 3s linear infinite;
+.animate-marquee {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marqueeScroll 22s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 
