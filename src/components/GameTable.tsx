@@ -15,10 +15,12 @@ import {
   Mic,
   MicOff,
   ShoppingBag,
+  Eye,
 } from 'lucide-react';
 import {
   Card,
   CardColor,
+  ChatMessage,
   PublicGameState,
   PublicPlayer,
   SoundEffectType,
@@ -55,6 +57,7 @@ interface GameTableProps {
   onUsePowerUp?: (powerUpId: PowerUpId, targetPlayerId?: string, chosenColor?: CardColor) => void;
   onOpenShop?: () => void;
   isVsIntroActive?: boolean;
+  messages?: ChatMessage[];
 }
 
 const UnoCallout: React.FC<{ isSelf?: boolean }> = ({ isSelf = false }) => {
@@ -116,7 +119,31 @@ export const GameTable: React.FC<GameTableProps> = ({
   onUsePowerUp,
   onOpenShop,
   isVsIntroActive = false,
+  messages = [],
 }) => {
+  const isSpectator = !gameState.players.some((p) => p.id === currentUserId);
+  const [activeChatPrompt, setActiveChatPrompt] = useState<{ id: string; senderName: string; text: string; avatar: string } | null>(null);
+
+  // Auto-prompt recent chat message in corner of game table for 4 seconds
+  const lastProcessedChatIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+    const latest = messages[messages.length - 1];
+    if (latest && latest.id !== lastProcessedChatIdRef.current) {
+      lastProcessedChatIdRef.current = latest.id;
+      setActiveChatPrompt({
+        id: latest.id,
+        senderName: latest.senderName,
+        text: latest.text,
+        avatar: latest.senderAvatar || '💬',
+      });
+      const timer = setTimeout(() => {
+        setActiveChatPrompt((curr) => (curr?.id === latest.id ? null : curr));
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
+
   const [selectedWildCard, setSelectedWildCard] = useState<Card | null>(null);
   const [selectedSevenCard, setSelectedSevenCard] = useState<Card | null>(null);
   const [selectedTargetCard, setSelectedTargetCard] = useState<Card | null>(null);
@@ -996,7 +1023,9 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   // Dedicated Shout UNO handler for buzzer press
   const handleCallUnoClick = () => {
-    soundManager.play('uno_call');
+    // NOTE: Do NOT play uno_call here — the useEffect watching calledUno state fires
+    // immediately after onCallUno() updates the game state, which already plays the sound.
+    // Playing it here too caused the double-shout bug.
     triggerUnoCallout(currentUserId);
     onCallUno();
   };
@@ -1852,267 +1881,317 @@ export const GameTable: React.FC<GameTableProps> = ({
         )}
       </div>
 
-      {/* SOUTH (BOTTOM) AREA: Local Player HUD, Interactive Hand & 3D CALL UNO Buzzer */}
+      {/* SOUTH (BOTTOM) AREA: Local Player HUD (or Spectator Controls) & 3D CALL UNO Buzzer */}
       <div className="w-full max-w-6xl mx-auto px-2 sm:px-4 pb-1 sm:pb-3 z-40 shrink-0">
-        <div className="flex items-end justify-between gap-1 sm:gap-4">
-          {/* Bottom-Left: Avatar Box & Yellow Chat Button */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            <div className="flex flex-col items-center relative">
-              {activeUnoShouts.some((s) => s.playerId === selfPlayer.id) && <UnoCallout isSelf={true} />}
-              <div
-                className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-xl transition-all duration-300 relative ${
-                  isYourTurn
-                    ? 'w-11 h-11 sm:w-16 sm:h-16 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
-                    : activeUnoShouts.some((s) => s.playerId === selfPlayer.id)
-                    ? 'w-9 h-9 sm:w-12 sm:h-12 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-2 border-yellow-300'
-                    : speakingPlayerIds.has(selfPlayer.id)
-                    ? 'w-9 h-9 sm:w-12 sm:h-12 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.9)] animate-pulse'
-                    : 'w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border border-amber-300'
-                }`}
-              >
-                <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-lg sm:text-2xl">
-                  <AvatarDisplay avatar={selfPlayer.avatar || '🤖'} />
-                </div>
-
-                {/* Speaking Mic Badge */}
-                {speakingPlayerIds.has(selfPlayer.id) && (
-                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[8px] shadow z-50 animate-bounce">
-                    🎙️
-                  </div>
-                )}
-
-                {/* Turn Timer Countdown Badge on Self Avatar */}
-                {isYourTurn && secondsRemaining !== null && (
-                  <div className="absolute -top-3 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[9px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
-                    <span>⏱️</span>
-                    <span>{secondsRemaining}s</span>
-                  </div>
-                )}
+        {isSpectator ? (
+          /* SPECTATOR MODE HUD */
+          <div className="bg-black/60 backdrop-blur-md border border-purple-500/40 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between shadow-2xl animate-fadeIn">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-lg sm:text-xl shadow-lg border border-purple-300">
+                🍿
               </div>
-              <span
-                className={`text-[9px] sm:text-xs font-bold mt-0.5 px-2 py-0.2 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
-                  isYourTurn
-                    ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.8)] scale-105 font-black'
-                    : 'bg-slate-950/90 text-white border-slate-800'
-                }`}
-              >
-                {selfPlayer.name}
-              </span>
+              <div className="flex flex-col text-left">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5 text-purple-400" />
+                    SPECTATOR MODE
+                  </span>
+                  <span className="text-[10px] bg-purple-500/20 text-purple-300 font-bold px-2 py-0.5 rounded-full border border-purple-500/30">
+                    Live View
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-300 mt-0.5">
+                  Nanonood ka lamang sa laban. Pwede kang mag-chat at mag-react!
+                </span>
+              </div>
             </div>
 
-            {/* Circular Yellow Chat Button */}
-            <div className="flex flex-col items-center">
+            <div className="flex items-center gap-2">
+              {/* Room Chat Button */}
               <button
                 onClick={onOpenChat}
-                className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                title="Room Chat"
+                className="relative px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
               >
-                <img
-                  src="/home screen in game icons/chats.png"
-                  alt="Chat"
-                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                />
+                <MessageSquare className="w-4 h-4 fill-current" />
+                <span>Chat</span>
                 {unreadChatCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
+                  <span className="w-4 h-4 rounded-full bg-red-600 text-[9px] font-black text-white flex items-center justify-center">
                     {unreadChatCount}
                   </span>
                 )}
               </button>
-            </div>
 
-            {/* Circular Open Mic Button - Official Uploaded Game Icon */}
-            <div className="flex flex-col items-center">
+              {/* Exit Room Button */}
               <button
-                onClick={handleToggleMic}
-                className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                title={
-                  !isVoiceConnected
-                    ? 'Buksan ang Mikropono (Enable Mic)'
-                    : isVoiceMuted
-                    ? 'Naka-Mute ang Mic (Pindutin para magsalita)'
-                    : 'Bukas ang Mic (Nagsasalita / Live)'
-                }
+                onClick={() => setShowLeaveConfirm(true)}
+                className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 border border-white/20 active:scale-95 transition"
               >
-                <img
-                  src={isVoiceMuted || !isVoiceConnected ? "/home screen in game icons/mic off.png" : "/home screen in game icons/mic on.png"}
-                  alt="Mic"
-                  className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                />
-
-                {/* Pulsing indicator when speaking */}
-                {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-ping" />
-                )}
+                <LogOut className="w-4 h-4" />
+                <span>Umalis</span>
               </button>
             </div>
+          </div>
+        ) : (
+          <div className="flex items-end justify-between gap-1 sm:gap-4">
+            {/* Bottom-Left: Avatar Box & Yellow Chat Button */}
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <div className="flex flex-col items-center relative">
+                {activeUnoShouts.some((s) => s.playerId === selfPlayer.id) && <UnoCallout isSelf={true} />}
+                <div
+                  className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-xl transition-all duration-300 relative ${
+                    isYourTurn
+                      ? 'w-11 h-11 sm:w-16 sm:h-16 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
+                      : activeUnoShouts.some((s) => s.playerId === selfPlayer.id)
+                      ? 'w-9 h-9 sm:w-12 sm:h-12 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-2 border-yellow-300'
+                      : speakingPlayerIds.has(selfPlayer.id)
+                      ? 'w-9 h-9 sm:w-12 sm:h-12 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.9)] animate-pulse'
+                      : 'w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border border-amber-300'
+                  }`}
+                >
+                  <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-lg sm:text-2xl">
+                    <AvatarDisplay avatar={selfPlayer.avatar || '🤖'} />
+                  </div>
 
-            {/* Circular Yellow Tindahan / Power-Up Shop Button - Official Uploaded Game Icon */}
-            {onOpenShop && (
+                  {/* Speaking Mic Badge */}
+                  {speakingPlayerIds.has(selfPlayer.id) && (
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[8px] shadow z-50 animate-bounce">
+                      🎙️
+                    </div>
+                  )}
+
+                  {/* Turn Timer Countdown Badge on Self Avatar */}
+                  {isYourTurn && secondsRemaining !== null && (
+                    <div className="absolute -top-3 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[9px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
+                      <span>⏱️</span>
+                      <span>{secondsRemaining}s</span>
+                    </div>
+                  )}
+                </div>
+                <span
+                  className={`text-[9px] sm:text-xs font-bold mt-0.5 px-2 py-0.2 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
+                    isYourTurn
+                      ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.8)] scale-105 font-black'
+                      : 'bg-slate-950/90 text-white border-slate-800'
+                  }`}
+                >
+                  {selfPlayer.name}
+                </span>
+              </div>
+
+              {/* Circular Yellow Chat Button */}
               <div className="flex flex-col items-center">
                 <button
-                  onClick={onOpenShop}
+                  onClick={onOpenChat}
                   className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                  title="Buksan ang Tindahan (Power-Up Shop)"
+                  title="Room Chat"
                 >
                   <img
-                    src="/home screen in game icons/shop.png"
-                    alt="Shop"
+                    src="/home screen in game icons/chats.png"
+                    alt="Chat"
                     className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
                   />
+                  {unreadChatCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
+                      {unreadChatCount}
+                    </span>
+                  )}
                 </button>
               </div>
-            )}
-          </div>
 
-          {/* Bottom-Center: Interactive Player Hand or Finished Banner */}
-          <div className="flex-1 min-w-0 max-w-4xl flex flex-col items-center">
-            {selfPlayer.isFinished ? (
-              <div className="py-3 px-6 bg-gradient-to-r from-amber-500/25 via-emerald-500/25 to-amber-500/25 border-2 border-amber-400/80 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-bounce">
-                <span className="text-2xl">
-                  {selfPlayer.finishRank === 1 ? '🥇🏆' : '🥈🎉'}
-                </span>
-                <span className="text-sm font-black text-yellow-300 uppercase tracking-wide">
-                  {selfPlayer.finishRank === 1
-                    ? '🏆 1ST PLACE — IKAW ANG PANALO!'
-                    : `🎉 LIGTAS KA! RANK ${selfPlayer.finishRank || 2}`}
-                </span>
-                <span className="text-[10px] text-slate-300 font-semibold mt-0.5">
-                  Tapos ka na! Panoorin ang laban kung sino ang magiging Pungot! 🍿
-                </span>
+              {/* Circular Open Mic Button - Official Uploaded Game Icon */}
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={handleToggleMic}
+                  className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+                  title={
+                    !isVoiceConnected
+                      ? 'Buksan ang Mikropono (Enable Mic)'
+                      : isVoiceMuted
+                      ? 'Naka-Mute ang Mic (Pindutin para magsalita)'
+                      : 'Bukas ang Mic (Nagsasalita / Live)'
+                  }
+                >
+                  <img
+                    src={isVoiceMuted || !isVoiceConnected ? "/home screen in game icons/mic off.png" : "/home screen in game icons/mic on.png"}
+                    alt="Mic"
+                    className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                  />
+
+                  {/* Pulsing indicator when speaking */}
+                  {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-ping" />
+                  )}
+                </button>
               </div>
-            ) : (
-              /* Player's Card Fan - Auto-squeezing radial arch with NO scrollbars and NO box clipping */
-              <div
-                id="player-hand-container"
-                className="w-full overflow-visible py-2 flex items-center justify-center select-none no-scrollbar min-h-[96px] sm:min-h-[120px]"
-              >
-                {/* Empty Hand Placeholder while dealing cards */}
-                {(startIntroPhase === 'shuffling' || startIntroPhase === 'moving_to_side' || (startIntroPhase === 'dealing_hands' && dealtCount === 0)) && (
-                  <div className="py-2 px-5 rounded-2xl border border-dashed border-amber-400/40 bg-slate-950/60 text-slate-400 text-xs font-bold animate-pulse flex items-center gap-2">
-                    <span className="text-base">🎴</span>
-                    <span>Naghahanda... Ipapamahagi ang mga baraha</span>
-                  </div>
-                )}
 
-                {(() => {
-                  const visibleHand =
-                    startIntroPhase === 'done' || startIntroPhase === 'dealing'
-                      ? yourHand
-                      : startIntroPhase === 'dealing_hands'
-                      ? yourHand.slice(0, dealtCount)
-                      : [];
+              {/* Circular Yellow Tindahan / Power-Up Shop Button - Official Uploaded Game Icon */}
+              {onOpenShop && (
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={onOpenShop}
+                    className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+                    title="Buksan ang Tindahan (Power-Up Shop)"
+                  >
+                    <img
+                      src="/home screen in game icons/shop.png"
+                      alt="Shop"
+                      className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
 
-                  return visibleHand.map((card, idx) => {
-                    const playable =
-                      startIntroPhase === 'done' &&
-                      isYourTurn &&
-                      isCardPlayable(
-                        card,
-                        topDiscard,
-                        currentColor,
-                        pendingDrawPenalty,
-                        houseRules.stacking,
-                        gameState.variant
+            {/* Bottom-Center: Interactive Player Hand or Finished Banner */}
+            <div className="flex-1 min-w-0 max-w-4xl flex flex-col items-center">
+              {selfPlayer.isFinished ? (
+                <div className="py-3 px-6 bg-gradient-to-r from-amber-500/25 via-emerald-500/25 to-amber-500/25 border-2 border-amber-400/80 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-bounce">
+                  <span className="text-2xl">
+                    {selfPlayer.finishRank === 1 ? '🥇🏆' : '🥈🎉'}
+                  </span>
+                  <span className="text-sm font-black text-yellow-300 uppercase tracking-wide">
+                    {selfPlayer.finishRank === 1
+                      ? '🏆 1ST PLACE — IKAW ANG PANALO!'
+                      : `🎉 LIGTAS KA! RANK ${selfPlayer.finishRank || 2}`}
+                  </span>
+                  <span className="text-[10px] text-slate-300 font-semibold mt-0.5">
+                    Tapos ka na! Panoorin ang laban kung sino ang magiging Pungot! 🍿
+                  </span>
+                </div>
+              ) : (
+                /* Player's Card Fan - Auto-squeezing radial arch with NO scrollbars and NO box clipping */
+                <div
+                  id="player-hand-container"
+                  className="w-full overflow-visible py-2 flex items-center justify-center select-none no-scrollbar min-h-[96px] sm:min-h-[120px]"
+                >
+                  {/* Empty Hand Placeholder while dealing cards */}
+                  {(startIntroPhase === 'shuffling' || startIntroPhase === 'moving_to_side' || (startIntroPhase === 'dealing_hands' && dealtCount === 0)) && (
+                    <div className="py-2 px-5 rounded-2xl border border-dashed border-amber-400/40 bg-slate-950/60 text-slate-400 text-xs font-bold animate-pulse flex items-center gap-2">
+                      <span className="text-base">🎴</span>
+                      <span>Naghahanda... Ipapamahagi ang mga baraha</span>
+                    </div>
+                  )}
+
+                  {(() => {
+                    const visibleHand =
+                      startIntroPhase === 'done' || startIntroPhase === 'dealing'
+                        ? yourHand
+                        : startIntroPhase === 'dealing_hands'
+                        ? yourHand.slice(0, dealtCount)
+                        : [];
+
+                    return visibleHand.map((card, idx) => {
+                      const playable =
+                        startIntroPhase === 'done' &&
+                        isYourTurn &&
+                        isCardPlayable(
+                          card,
+                          topDiscard,
+                          currentColor,
+                          pendingDrawPenalty,
+                          houseRules.stacking,
+                          gameState.variant
+                        );
+
+                      const total = visibleHand.length;
+                      const mid = (total - 1) / 2;
+                      const rel = idx - mid;
+
+                      // Dynamic card sizing: scale dynamically based on screen width and hand count
+                      const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+                      const cardSize: 'xs' | 'sm' | 'md' = isSmallScreen 
+                        ? (total > 12 ? 'xs' : total > 7 ? 'sm' : 'md')
+                        : (total > 20 ? 'xs' : total > 12 ? 'sm' : 'md');
+
+                      // Dynamic step angles so cards don't rotate too wildly when count is large
+                      const stepAngle = total > 18 ? 0.8 : total > 12 ? 1.4 : total > 7 ? 2.2 : 3.0;
+                      const rot = rel * stepAngle;
+                      const archY = Math.pow(Math.abs(rel), 1.2) * (total > 12 ? 0.9 : 1.3);
+
+                      // Continuous dynamic overlap margin
+                      const baseWidth = cardSize === 'xs' ? 36 : cardSize === 'sm' ? 56 : 76;
+                      const maxContainerWidth = typeof window !== 'undefined' ? Math.max(window.innerWidth - 180, 240) : 500;
+                      const requiredWidth = total * baseWidth;
+                      let overlapMargin = 0;
+                      if (idx > 0 && requiredWidth > maxContainerWidth) {
+                        const excess = requiredWidth - maxContainerWidth;
+                        const neededNegativePerCard = excess / (total - 1);
+                        overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.82);
+                      } else if (idx > 0) {
+                        overlapMargin = total > 6 ? -24 : total > 4 ? -16 : -8;
+                      }
+
+                      return (
+                        <div
+                          key={card.id}
+                          id={`player-card-${card.id}`}
+                          className="transition-all duration-200 origin-bottom hover:!rotate-0 hover:!-translate-y-10 hover:scale-125 hover:z-50 cursor-pointer shrink-0"
+                          style={{
+                            zIndex: idx,
+                            marginLeft: `${Math.round(overlapMargin)}px`,
+                            transform: `rotate(${rot}deg) translateY(${archY}px)`,
+                          }}
+                        >
+                          <CardView
+                            card={card}
+                            isPlayable={playable}
+                            size={cardSize}
+                            onClick={() => handleCardClick(card)}
+                          />
+                        </div>
                       );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
 
-                    const total = visibleHand.length;
-                    const mid = (total - 1) / 2;
-                    const rel = idx - mid;
+            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button (With Real Human Shout & Penalty Warning!) */}
+            <div className="flex flex-col items-center relative">
+              {/* Warning indicator if player has 1 card and has not called UNO */}
+              {yourHand.length === 1 && !selfPlayer.calledUno && (
+                <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
+                  <span className="animate-ping">⚠️</span>
+                  <span>PINDUTIN ANG UNO! Baka ka hulihin (+1 Penalty Card)!</span>
+                </div>
+              )}
+              {/* Reminder indicator when holding 2 cards */}
+              {yourHand.length === 2 && (
+                <div className="absolute -top-8 right-0 whitespace-nowrap bg-amber-500/95 text-slate-950 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-yellow-200 shadow animate-pulse z-40">
+                  💡 Pindutin ang UNO bago mag-1 card!
+                </div>
+              )}
+              {/* Success indicator when already called UNO */}
+              {yourHand.length === 1 && selfPlayer.calledUno && (
+                <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
+                  <span>✅</span>
+                  <span>LIGTAS! Nagsabi ka na ng UNO!</span>
+                </div>
+              )}
 
-                    // Dynamic card sizing: scale dynamically based on screen width and hand count
-                    const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
-                    const cardSize: 'xs' | 'sm' | 'md' = isSmallScreen 
-                      ? (total > 12 ? 'xs' : total > 7 ? 'sm' : 'md')
-                      : (total > 20 ? 'xs' : total > 12 ? 'sm' : 'md');
-
-                    // Dynamic step angles so cards don't rotate too wildly when count is large
-                    const stepAngle = total > 18 ? 0.8 : total > 12 ? 1.4 : total > 7 ? 2.2 : 3.0;
-                    const rot = rel * stepAngle;
-                    const archY = Math.pow(Math.abs(rel), 1.2) * (total > 12 ? 0.9 : 1.3);
-
-                    // Continuous dynamic overlap margin
-                    const baseWidth = cardSize === 'xs' ? 36 : cardSize === 'sm' ? 56 : 76;
-                    const maxContainerWidth = typeof window !== 'undefined' ? Math.max(window.innerWidth - 180, 240) : 500;
-                    const requiredWidth = total * baseWidth;
-                    let overlapMargin = 0;
-                    if (idx > 0 && requiredWidth > maxContainerWidth) {
-                      const excess = requiredWidth - maxContainerWidth;
-                      const neededNegativePerCard = excess / (total - 1);
-                      overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.82);
-                    } else if (idx > 0) {
-                      overlapMargin = total > 6 ? -24 : total > 4 ? -16 : -8;
-                    }
-
-                    return (
-                      <div
-                        key={card.id}
-                        id={`player-card-${card.id}`}
-                        className="transition-all duration-200 origin-bottom hover:!rotate-0 hover:!-translate-y-10 hover:scale-125 hover:z-50 cursor-pointer shrink-0"
-                        style={{
-                          zIndex: idx,
-                          marginLeft: `${Math.round(overlapMargin)}px`,
-                          transform: `rotate(${rot}deg) translateY(${archY}px)`,
-                        }}
-                      >
-                        <CardView
-                          card={card}
-                          isPlayable={playable}
-                          size={cardSize}
-                          onClick={() => handleCardClick(card)}
-                        />
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            )}
-          </div>
-
-          {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button (With Real Human Shout & Penalty Warning!) */}
-          <div className="flex flex-col items-center relative">
-            {/* Warning indicator if player has 1 card and has not called UNO */}
-            {yourHand.length === 1 && !selfPlayer.calledUno && (
-              <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
-                <span className="animate-ping">⚠️</span>
-                <span>PINDUTIN ANG UNO! Baka ka hulihin (+1 Penalty Card)!</span>
-              </div>
-            )}
-            {/* Reminder indicator when holding 2 cards */}
-            {yourHand.length === 2 && (
-              <div className="absolute -top-8 right-0 whitespace-nowrap bg-amber-500/95 text-slate-950 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-yellow-200 shadow animate-pulse z-40">
-                💡 Pindutin ang UNO bago mag-1 card!
-              </div>
-            )}
-            {/* Success indicator when already called UNO */}
-            {yourHand.length === 1 && selfPlayer.calledUno && (
-              <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
-                <span>✅</span>
-                <span>LIGTAS! Nagsabi ka na ng UNO!</span>
-              </div>
-            )}
-
-            <div
-              onClick={handleCallUnoClick}
-              className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
-                yourHand.length === 1 && !selfPlayer.calledUno
-                  ? 'animate-bounce ring-2 sm:ring-4 ring-red-500 shadow-[0_0_20px_rgba(239,68,68,0.9)]'
-                  : yourHand.length <= 2
-                  ? 'animate-bounce ring-2 sm:ring-4 ring-yellow-400'
-                  : ''
-              }`}
-              title="Shout UNO!"
-            >
-              <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
-                <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
-                  CALL
-                </span>
-                <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                  UNO
-                </span>
+              <div
+                onClick={handleCallUnoClick}
+                className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
+                  yourHand.length === 1 && !selfPlayer.calledUno
+                    ? 'animate-bounce ring-2 sm:ring-4 ring-red-500 shadow-[0_0_20px_rgba(239,68,68,0.9)]'
+                    : yourHand.length <= 2
+                    ? 'animate-bounce ring-2 sm:ring-4 ring-yellow-400'
+                    : ''
+                }`}
+                title="Shout UNO!"
+              >
+                <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
+                  <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
+                    CALL
+                  </span>
+                  <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                    UNO
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Leave Match Confirmation Modal */}
@@ -2330,6 +2409,42 @@ export const GameTable: React.FC<GameTableProps> = ({
           <CardView isBack={true} size="md" className="shadow-2xl" />
         </div>
       ))}
+
+      {/* CORNER IN-GAME CHAT PROMPT: Floating notification bubble in the table corner */}
+      {activeChatPrompt && (
+        <div className="fixed bottom-20 left-4 sm:bottom-24 sm:left-6 z-50 pointer-events-auto animate-fadeIn max-w-[280px] sm:max-w-xs transition-all duration-300">
+          <div
+            onClick={onOpenChat}
+            className="cursor-pointer bg-slate-900/95 hover:bg-slate-800/95 border-2 border-amber-400/80 rounded-2xl p-2.5 shadow-2xl backdrop-blur-md flex items-start gap-2.5 active:scale-95 transition"
+            title="I-click para buksan ang chat"
+          >
+            <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center shrink-0 overflow-hidden text-sm">
+              <AvatarDisplay avatar={activeChatPrompt.avatar} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-black text-amber-300 truncate">
+                  {activeChatPrompt.senderName}
+                </span>
+                <span className="text-[9px] text-slate-400 shrink-0 font-medium">ngayon</span>
+              </div>
+              <p className="text-xs text-white break-words line-clamp-2 mt-0.5 leading-tight">
+                {activeChatPrompt.text}
+              </p>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveChatPrompt(null);
+              }}
+              className="text-slate-400 hover:text-white text-xs p-0.5 shrink-0"
+              title="Isara"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

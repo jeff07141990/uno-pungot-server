@@ -484,13 +484,13 @@
       "playerId": "p1",
       "playerName": "Player",
       "playerAvatar": "🦊",
-      "balance": 15950,
-      "totalWins": 33,
+      "balance": 26450,
+      "totalWins": 55,
       "totalLosses": 0,
-      "winStreak": 33,
-      "bestWinStreak": 33,
-      "level": 7,
-      "experience": 4368,
+      "winStreak": 55,
+      "bestWinStreak": 55,
+      "level": 9,
+      "experience": 7656,
       "lastDailyClaimDate": null,
       "inventory": {
         "shield": 0,
@@ -512,7 +512,7 @@
         "uno_legend"
       ],
       "createdAt": 1793680381795,
-      "updatedAt": 1793806637655
+      "updatedAt": 1793888747558
     },
     "test_player_1793680391429": {
       "playerId": "test_player_1793680391429",
@@ -1444,9 +1444,1198 @@
       ],
       "createdAt": 1793806637458,
       "updatedAt": 1793806637458
+    },
+    "test_xp_1793808672310": {
+      "playerId": "test_xp_1793808672310",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793808672311,
+      "updatedAt": 1793808672312
+    },
+    "p1_1793808672313": {
+      "playerId": "p1_1793808672313",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793808672313,
+      "updatedAt": 1793808672314
+    },
+    "p2_1793808672313": {
+      "playerId": "p2_1793808672313",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793808672319,
+      "updatedAt": 1793808672319
+    },
+    "test_xp_1793837154057": {
+      "playerId": "test_xp_1793837154057",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793837154057,
+      "updatedAt": 1793837154058
+    },
+    "p1_1793837154059": {
+      "playerId": "p1_1793837154059",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793837154059,
+      "updatedAt": 1793837154060
+    },
+    "p2_1793837154059": {
+      "playerId": "p2_1793837154059",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793837154064,
+      "updatedAt": 1793837154064
+    },
+    "test_xp_1793838827629": {
+      "playerId": "test_xp_1793838827629",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793838827629,
+      "updatedAt": 1793838827631
+    },
+    "p1_1793838827631": {
+      "playerId": "p1_1793838827631",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793838827631,
+      "updatedAt": 1793838827633
+    },
+    "p2_1793838827631": {
+      "playerId": "p2_1793838827631",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793838827638,
+      "updatedAt": 1793838827638
+    },
+    "test_xp_1793840805214": {
+      "playerId": "test_xp_1793840805214",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793840805214,
+      "updatedAt": 1793840805216
+    },
+    "p1_1793840805216": {
+      "playerId": "p1_1793840805216",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793840805216,
+      "updatedAt": 1793840805218
+    },
+    "p2_1793840805216": {
+      "playerId": "p2_1793840805216",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793840805224,
+      "updatedAt": 1793840805224
+    },
+    "test_xp_1793850517728": {
+      "playerId": "test_xp_1793850517728",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793850517728,
+      "updatedAt": 1793850517730
+    },
+    "p1_1793850517730": {
+      "playerId": "p1_1793850517730",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793850517730,
+      "updatedAt": 1793850517732
+    },
+    "p2_1793850517730": {
+      "playerId": "p2_1793850517730",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793850517738,
+      "updatedAt": 1793850517738
+    },
+    "test_xp_1793885801857": {
+      "playerId": "test_xp_1793885801857",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793885801857,
+      "updatedAt": 1793885801859
+    },
+    "p1_1793885801860": {
+      "playerId": "p1_1793885801860",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793885801860,
+      "updatedAt": 1793885801861
+    },
+    "p2_1793885801860": {
+      "playerId": "p2_1793885801860",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793885801867,
+      "updatedAt": 1793885801867
+    },
+    "test_xp_1793888747333": {
+      "playerId": "test_xp_1793888747333",
+      "playerName": "XP Tester",
+      "playerAvatar": "⚡",
+      "balance": 1200,
+      "totalWins": 0,
+      "totalLosses": 0,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793888747333,
+      "updatedAt": 1793888747335
+    },
+    "p1_1793888747336": {
+      "playerId": "p1_1793888747336",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1400,
+      "totalWins": 1,
+      "totalLosses": 0,
+      "winStreak": 1,
+      "bestWinStreak": 1,
+      "level": 2,
+      "experience": 120,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard",
+        "first_blood"
+      ],
+      "createdAt": 1793888747336,
+      "updatedAt": 1793888747338
+    },
+    "p2_1793888747336": {
+      "playerId": "p2_1793888747336",
+      "playerName": "Player",
+      "playerAvatar": "🦊",
+      "balance": 1000,
+      "totalWins": 0,
+      "totalLosses": 1,
+      "winStreak": 0,
+      "bestWinStreak": 0,
+      "level": 1,
+      "experience": 25,
+      "lastDailyClaimDate": null,
+      "inventory": {
+        "shield": 1,
+        "swap": 0,
+        "reverse": 0,
+        "color": 0,
+        "extra_turn": 0,
+        "peek": 1,
+        "booster": 0,
+        "reflect": 0
+      },
+      "achievements": [
+        "welcome_aboard"
+      ],
+      "createdAt": 1793888747344,
+      "updatedAt": 1793888747344
     }
   },
   "transactions": [
+    {
+      "id": "tx_1793888747560_3mq5x",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 26450,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793888747560
+    },
+    {
+      "id": "tx_1793888747549_8asvd",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 26050,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793888747549
+    },
+    {
+      "id": "tx_1793888747540_kznou",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 25650,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793888747540
+    },
+    {
+      "id": "tx_1793888747344_oain6",
+      "playerId": "p2_1793888747336",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793888747344
+    },
+    {
+      "id": "tx_1793888747344_b6z19",
+      "playerId": "p1_1793888747336",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793888747344
+    },
+    {
+      "id": "tx_1793888747338_iil3m",
+      "playerId": "p1_1793888747336",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793888747338
+    },
+    {
+      "id": "tx_1793888747336_tdhrp",
+      "playerId": "p1_1793888747336",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793888747336
+    },
+    {
+      "id": "tx_1793888747335_0kh46",
+      "playerId": "test_xp_1793888747333",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793888747335
+    },
+    {
+      "id": "tx_1793888747333_dl239",
+      "playerId": "test_xp_1793888747333",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793888747333
+    },
+    {
+      "id": "tx_1793885802071_7fv2v",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 25250,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793885802071
+    },
+    {
+      "id": "tx_1793885802064_vdx4f",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 24850,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793885802064
+    },
+    {
+      "id": "tx_1793885802056_g2osl",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 24450,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793885802056
+    },
+    {
+      "id": "tx_1793885801867_u7ii6",
+      "playerId": "p2_1793885801860",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793885801867
+    },
+    {
+      "id": "tx_1793885801867_8aegn",
+      "playerId": "p1_1793885801860",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793885801867
+    },
+    {
+      "id": "tx_1793885801861_95nul",
+      "playerId": "p1_1793885801860",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793885801861
+    },
+    {
+      "id": "tx_1793885801860_5a8xz",
+      "playerId": "p1_1793885801860",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793885801860
+    },
+    {
+      "id": "tx_1793885801859_wzc9q",
+      "playerId": "test_xp_1793885801857",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793885801859
+    },
+    {
+      "id": "tx_1793885801857_quezm",
+      "playerId": "test_xp_1793885801857",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793885801857
+    },
+    {
+      "id": "tx_1793850517927_u970o",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 24050,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793850517927
+    },
+    {
+      "id": "tx_1793850517922_l1xr8",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 23650,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793850517922
+    },
+    {
+      "id": "tx_1793850517915_7d2xv",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 23250,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793850517915
+    },
+    {
+      "id": "tx_1793850517915_yt831",
+      "playerId": "p1",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 900,
+      "balanceAfter": 23250,
+      "description": "Level Up! Umabot sa Level 9! (+₱900 Level Bonus)",
+      "timestamp": 1793850517915
+    },
+    {
+      "id": "tx_1793850517738_h0lfg",
+      "playerId": "p2_1793850517730",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793850517738
+    },
+    {
+      "id": "tx_1793850517738_dgmse",
+      "playerId": "p1_1793850517730",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793850517738
+    },
+    {
+      "id": "tx_1793850517732_4yej7",
+      "playerId": "p1_1793850517730",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793850517732
+    },
+    {
+      "id": "tx_1793850517730_hc0sg",
+      "playerId": "p1_1793850517730",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793850517730
+    },
+    {
+      "id": "tx_1793850517730_fb6qm",
+      "playerId": "test_xp_1793850517728",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793850517730
+    },
+    {
+      "id": "tx_1793850517728_lyo18",
+      "playerId": "test_xp_1793850517728",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793850517728
+    },
+    {
+      "id": "tx_1793850507768_nf0vc",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 21950,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793850507768
+    },
+    {
+      "id": "tx_1793840805412_nwq45",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 21550,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793840805412
+    },
+    {
+      "id": "tx_1793840805407_eojmw",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 21150,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793840805407
+    },
+    {
+      "id": "tx_1793840805400_ir5lk",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 20750,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793840805400
+    },
+    {
+      "id": "tx_1793840805224_egikr",
+      "playerId": "p2_1793840805216",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793840805224
+    },
+    {
+      "id": "tx_1793840805224_2kxl2",
+      "playerId": "p1_1793840805216",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793840805224
+    },
+    {
+      "id": "tx_1793840805218_vwyvr",
+      "playerId": "p1_1793840805216",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793840805218
+    },
+    {
+      "id": "tx_1793840805216_tepji",
+      "playerId": "p1_1793840805216",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793840805216
+    },
+    {
+      "id": "tx_1793840805216_cxt9c",
+      "playerId": "test_xp_1793840805214",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793840805216
+    },
+    {
+      "id": "tx_1793840805214_9o141",
+      "playerId": "test_xp_1793840805214",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793840805214
+    },
+    {
+      "id": "tx_1793838827811_cjhvy",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 20350,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793838827811
+    },
+    {
+      "id": "tx_1793838827806_54q2m",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 19950,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793838827806
+    },
+    {
+      "id": "tx_1793838827799_hrtww",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 19550,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793838827799
+    },
+    {
+      "id": "tx_1793838827638_ak925",
+      "playerId": "p2_1793838827631",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793838827638
+    },
+    {
+      "id": "tx_1793838827638_cqnzd",
+      "playerId": "p1_1793838827631",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793838827638
+    },
+    {
+      "id": "tx_1793838827633_jwzgz",
+      "playerId": "p1_1793838827631",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793838827633
+    },
+    {
+      "id": "tx_1793838827631_9ee81",
+      "playerId": "p1_1793838827631",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793838827631
+    },
+    {
+      "id": "tx_1793838827631_0p8j0",
+      "playerId": "test_xp_1793838827629",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793838827631
+    },
+    {
+      "id": "tx_1793838827629_aenly",
+      "playerId": "test_xp_1793838827629",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793838827629
+    },
+    {
+      "id": "tx_1793837154279_ijn3o",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 19150,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793837154279
+    },
+    {
+      "id": "tx_1793837154274_ky6mm",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 18750,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793837154274
+    },
+    {
+      "id": "tx_1793837154269_5op2u",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 18350,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793837154269
+    },
+    {
+      "id": "tx_1793837154264_qzfy8",
+      "playerId": "p1",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 800,
+      "balanceAfter": 18350,
+      "description": "Level Up! Umabot sa Level 8! (+₱800 Level Bonus)",
+      "timestamp": 1793837154264
+    },
+    {
+      "id": "tx_1793837154064_vv9zh",
+      "playerId": "p2_1793837154059",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793837154064
+    },
+    {
+      "id": "tx_1793837154063_2fufl",
+      "playerId": "p1_1793837154059",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793837154063
+    },
+    {
+      "id": "tx_1793837154060_mb82p",
+      "playerId": "p1_1793837154059",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793837154060
+    },
+    {
+      "id": "tx_1793837154059_jvayy",
+      "playerId": "p1_1793837154059",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793837154059
+    },
+    {
+      "id": "tx_1793837154058_xccox",
+      "playerId": "test_xp_1793837154057",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793837154058
+    },
+    {
+      "id": "tx_1793837154057_p4mio",
+      "playerId": "test_xp_1793837154057",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793837154057
+    },
+    {
+      "id": "tx_1793808672563_hdejx",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 17150,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793808672563
+    },
+    {
+      "id": "tx_1793808672559_ajrxt",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 16750,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793808672559
+    },
+    {
+      "id": "tx_1793808672551_cos0c",
+      "playerId": "p1",
+      "type": "MATCH_VICTORY",
+      "amount": 400,
+      "balanceAfter": 16350,
+      "description": "1st Place Victory Reward! (+₱200 + ₱200 Streak Bonus)",
+      "timestamp": 1793808672551
+    },
+    {
+      "id": "tx_1793808672319_0a54c",
+      "playerId": "p2_1793808672313",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793808672319
+    },
+    {
+      "id": "tx_1793808672319_k97gr",
+      "playerId": "p1_1793808672313",
+      "type": "MATCH_VICTORY",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "1st Place Victory Reward! (+₱200)",
+      "timestamp": 1793808672319
+    },
+    {
+      "id": "tx_1793808672314_7av3t",
+      "playerId": "p1_1793808672313",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1400,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793808672314
+    },
+    {
+      "id": "tx_1793808672313_w6tis",
+      "playerId": "p1_1793808672313",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793808672313
+    },
+    {
+      "id": "tx_1793808672312_7tuzv",
+      "playerId": "test_xp_1793808672310",
+      "type": "LEVEL_UP_REWARD",
+      "amount": 200,
+      "balanceAfter": 1200,
+      "description": "Level Up! Umabot sa Level 2! (+₱200 Level Bonus)",
+      "timestamp": 1793808672312
+    },
+    {
+      "id": "tx_1793808672311_b9uzp",
+      "playerId": "test_xp_1793808672310",
+      "type": "WELCOME_BONUS",
+      "amount": 1000,
+      "balanceAfter": 1000,
+      "description": "Welcome to UNO Pungot! ₱1,000 starting gift.",
+      "timestamp": 1793808672311
+    },
     {
       "id": "tx_1793806637656_9uejo",
       "playerId": "p1",
@@ -3286,7 +4475,7 @@
         "currentCount": 1,
         "isCompleted": true,
         "isClaimed": false,
-        "dateKey": "2026-11-04"
+        "dateKey": "2026-11-05"
       },
       "win_match": {
         "id": "win_match",
@@ -3297,7 +4486,7 @@
         "currentCount": 1,
         "isCompleted": true,
         "isClaimed": false,
-        "dateKey": "2026-11-04"
+        "dateKey": "2026-11-05"
       },
       "use_powerup": {
         "id": "use_powerup",
@@ -3308,7 +4497,7 @@
         "currentCount": 0,
         "isCompleted": false,
         "isClaimed": false,
-        "dateKey": "2026-11-04"
+        "dateKey": "2026-11-05"
       },
       "play_friends": {
         "id": "play_friends",
@@ -3319,7 +4508,7 @@
         "currentCount": 0,
         "isCompleted": false,
         "isClaimed": false,
-        "dateKey": "2026-11-04"
+        "dateKey": "2026-11-05"
       }
     },
     "p1_1793780885410": {
@@ -3964,6 +5153,650 @@
         "isCompleted": true,
         "isClaimed": false,
         "dateKey": "2026-11-04"
+      }
+    },
+    "p1_1793808672313": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      }
+    },
+    "p2_1793808672313": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-04"
+      }
+    },
+    "p1_1793837154059": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793837154059": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p1_1793838827631": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793838827631": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p1_1793840805216": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793840805216": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p1_1793850517730": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793850517730": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p1_1793885801860": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793885801860": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p1_1793888747336": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      }
+    },
+    "p2_1793888747336": {
+      "play_match": {
+        "id": "play_match",
+        "title": "Play 1 Match",
+        "description": "Complete 1 match against players or bots.",
+        "rewardCoins": 50,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "win_match": {
+        "id": "win_match",
+        "title": "Victory Champion",
+        "description": "Win 1 match (empty all your cards first).",
+        "rewardCoins": 100,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "use_powerup": {
+        "id": "use_powerup",
+        "title": "Tactical Master",
+        "description": "Use at least 1 Power-Up in any active game.",
+        "rewardCoins": 60,
+        "targetCount": 1,
+        "currentCount": 0,
+        "isCompleted": false,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
+      },
+      "play_friends": {
+        "id": "play_friends",
+        "title": "Multiplayer Fun",
+        "description": "Play a match with online human players.",
+        "rewardCoins": 80,
+        "targetCount": 1,
+        "currentCount": 1,
+        "isCompleted": true,
+        "isClaimed": false,
+        "dateKey": "2026-11-05"
       }
     }
   },

@@ -511,7 +511,7 @@ class SoundManager {
 
   private playUnoCall(ctx: AudioContext) {
     // PRIMARY: Play the actual UNO shout audio file (scaled down to pleasant volume level)
-    const played = this.playAudioFile('/sound effects/uno shout.mp3', 0.45);
+    const played = this.playAudioFile('/sound effects/uno.mp3', 0.75);
     if (played) return;
 
     // FALLBACK: If audio file failed, use synthesized sounds

@@ -30,6 +30,7 @@ export interface InternalRoomState {
   discardPile: Card[];
   playerHands: Map<string, Card[]>; // Secret hand for each player
   sockets: Map<string, WebSocket>; // Live socket connection for each player
+  spectators?: Map<string, { id: string; name: string; avatar: string; ws: WebSocket }>; // Spectators watching match
   timerInterval: NodeJS.Timeout | null;
   botTimeout: NodeJS.Timeout | null;
   unoTimeout: NodeJS.Timeout | null;
@@ -68,6 +69,7 @@ export class RoomManager {
     playerCount: number;
     maxPlayers: number;
     phase: string;
+    spectatorCount?: number;
   }[] {
     const list: {
       roomId: string;
@@ -78,6 +80,7 @@ export class RoomManager {
       phase: string;
       entryFee: number;
       prizePool: number;
+      spectatorCount?: number;
     }[] = [];
 
     for (const [id, room] of this.rooms.entries()) {
@@ -91,6 +94,7 @@ export class RoomManager {
           phase: room.publicState.phase,
           entryFee: room.publicState.entryFee,
           prizePool: room.publicState.prizePool,
+          spectatorCount: room.spectators?.size || 0,
         });
       }
     }
@@ -187,6 +191,7 @@ export class RoomManager {
       discardPile: [],
       playerHands: new Map<string, Card[]>(),
       sockets: new Map<string, WebSocket>(),
+      spectators: new Map<string, { id: string; name: string; avatar: string; ws: WebSocket }>(),
       timerInterval: null,
       botTimeout: null,
       unoTimeout: null,
@@ -240,8 +245,27 @@ export class RoomManager {
       return { success: true };
     }
 
+    // If game has already started, admit the user as SPECTATOR (Manonood)!
     if (room.publicState.phase !== 'lobby') {
-      return { success: false, message: 'Game has already started in this room.' };
+      if (!room.spectators) {
+        room.spectators = new Map();
+      }
+      const specName = playerName || 'Spectator';
+      const specAvatar = playerAvatar || '🍿';
+      room.spectators.set(playerId, { id: playerId, name: specName, avatar: specAvatar, ws });
+
+      // Update spectator list on public state
+      room.publicState.spectators = Array.from(room.spectators.values()).map((s) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+      }));
+      room.publicState.spectatorCount = room.spectators.size;
+
+      // Broadcast new state so players see spectator arrived
+      this.broadcastState(roomId);
+      this.broadcastToast(roomId, `🍿 ${specName} is now spectating the match!`, 'turn_alert');
+      return { success: true };
     }
 
     const isEntryFeeRoom = room.publicState.entryFee > 0;
@@ -1130,8 +1154,14 @@ export class RoomManager {
       const nextIdx = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
       const nextPlayer = publicState.players[nextIdx];
 
-      // In All Wild variant, all cards are wild so there is NO bluffing/challenging!
-      if (publicState.variant !== 'all_wild' && publicState.houseRules.wildDraw4Challenge && !nextPlayer.isBot) {
+      // If Stacking rule is enabled: add +4 to pendingDrawPenalty and pass the turn to the next player
+      // (This supports full cumulative stacking: +2 +4 +2 +4 = 12 cards, etc.)
+      if (publicState.houseRules.stacking) {
+        publicState.pendingDrawPenalty += 4;
+        actionDescription += ` (Pending Penalty: +${publicState.pendingDrawPenalty})`;
+        publicState.activePlayerIndex = nextIdx;
+      } else if (publicState.variant !== 'all_wild' && publicState.houseRules.wildDraw4Challenge && !nextPlayer.isBot) {
+        // In All Wild variant, all cards are wild so there is NO bluffing/challenging!
         publicState.pendingChallenge = {
           challengerId: nextPlayer.id,
           playedBy: activePlayer.id,
@@ -1139,18 +1169,12 @@ export class RoomManager {
         };
         actionDescription += ` — Wild Draw Four! ${nextPlayer.name} may challenge.`;
       } else {
-        if (publicState.houseRules.stacking) {
-          publicState.pendingDrawPenalty += 4;
-          actionDescription += ` (Pending Penalty: +${publicState.pendingDrawPenalty})`;
-          publicState.activePlayerIndex = nextIdx;
-        } else {
-          const nextHand = room.playerHands.get(nextPlayer.id) ?? [];
-          const drawn = this.drawFromPile(room, 4);
-          nextHand.push(...drawn);
-          nextPlayer.cardCount = nextHand.length;
-          actionDescription += ` — ${nextPlayer.name} draws 4 and loses turn!`;
-          publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 2);
-        }
+        const nextHand = room.playerHands.get(nextPlayer.id) ?? [];
+        const drawn = this.drawFromPile(room, 4);
+        nextHand.push(...drawn);
+        nextPlayer.cardCount = nextHand.length;
+        actionDescription += ` — ${nextPlayer.name} draws 4 and loses turn!`;
+        publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 2);
       }
     }
     // 5. Flip
@@ -1526,12 +1550,15 @@ export class RoomManager {
     let desc = '';
     let sound: SoundEffectType = 'card_draw';
 
+    const penaltyBase = room.publicState.pendingDrawPenalty > 0 ? room.publicState.pendingDrawPenalty : 4;
+
     if (!doChallenge) {
-      // Challenger accepted the penalty (draws 4)
-      const drawn = this.drawFromPile(room, 4);
+      // Challenger accepted the penalty
+      const drawn = this.drawFromPile(room, penaltyBase);
       challengerHand.push(...drawn);
       if (challenger) challenger.cardCount = challengerHand.length;
-      desc = `${challenger?.name} accepted the +4 penalty and forfeited their turn.`;
+      desc = `${challenger?.name} accepted the +${penaltyBase} penalty and forfeited their turn.`;
+      room.publicState.pendingDrawPenalty = 0;
       room.publicState.activePlayerIndex = this.getNextActivePlayerIndex(
         room,
         room.publicState.activePlayerIndex,
@@ -1544,20 +1571,23 @@ export class RoomManager {
       const wasBluffing = hasColorInHand(playedByHand, prevColor);
 
       if (wasBluffing) {
-        // Challenge SUCCESS: playedBy was bluffing and must draw 4!
-        const drawn = this.drawFromPile(room, 4);
+        // Challenge SUCCESS: playedBy was bluffing and must draw penaltyBase!
+        const drawn = this.drawFromPile(room, penaltyBase);
         playedByHand.push(...drawn);
         if (playedByPlayer) playedByPlayer.cardCount = playedByHand.length;
-        desc = `CHALLENGE WON! ${playedByPlayer?.name} had ${prevColor.toUpperCase()} cards and draws 4 cards as penalty!`;
+        desc = `CHALLENGE WON! ${playedByPlayer?.name} had ${prevColor.toUpperCase()} cards and draws ${penaltyBase} cards as penalty!`;
         sound = 'uno_penalty';
+        room.publicState.pendingDrawPenalty = 0;
         // Challenger plays normally
       } else {
-        // Challenge FAILED: challenger draws 4 + 2 = 6 cards!
-        const drawn = this.drawFromPile(room, 6);
+        // Challenge FAILED: challenger draws penaltyBase + 2 cards!
+        const totalFailedPenalty = penaltyBase + 2;
+        const drawn = this.drawFromPile(room, totalFailedPenalty);
         challengerHand.push(...drawn);
         if (challenger) challenger.cardCount = challengerHand.length;
-        desc = `CHALLENGE FAILED! ${playedByPlayer?.name} had no ${prevColor.toUpperCase()} cards! ${challenger?.name} draws 6 cards!`;
+        desc = `CHALLENGE FAILED! ${playedByPlayer?.name} had no ${prevColor.toUpperCase()} cards! ${challenger?.name} draws ${totalFailedPenalty} cards!`;
         sound = 'uno_penalty';
+        room.publicState.pendingDrawPenalty = 0;
         // Challenger loses turn
         room.publicState.activePlayerIndex = this.getNextActivePlayerIndex(
           room,
@@ -2065,14 +2095,24 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    const sender = room.publicState.players.find((p) => p.id === senderId);
-    if (!sender) return;
+    let sender = room.publicState.players.find((p) => p.id === senderId);
+    let senderName = sender?.name;
+    let senderAvatar = sender?.avatar;
+
+    // Check if sender is a spectator
+    if (!sender && room.spectators?.has(senderId)) {
+      const spec = room.spectators.get(senderId)!;
+      senderName = `[Spectator] ${spec.name}`;
+      senderAvatar = spec.avatar;
+    }
+
+    if (!senderName) return;
 
     const msg: ChatMessage = {
       id: `chat-${Date.now()}-${Math.random()}`,
       senderId,
-      senderName: sender.name,
-      senderAvatar: sender.avatar,
+      senderName,
+      senderAvatar: senderAvatar || '💬',
       text: text.slice(0, 200), // Protect against spam length
       timestamp: Date.now(),
     };
@@ -2081,6 +2121,13 @@ export class RoomManager {
     for (const ws of room.sockets.values()) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(payload);
+      }
+    }
+    if (room.spectators) {
+      for (const spec of room.spectators.values()) {
+        if (spec.ws.readyState === WebSocket.OPEN) {
+          spec.ws.send(payload);
+        }
       }
     }
   }
@@ -2092,12 +2139,18 @@ export class RoomManager {
     const room = this.rooms.get(roomId);
     if (!room) return;
 
-    const sender = room.publicState.players.find((p) => p.id === senderId);
-    if (!sender) return;
+    let sender = room.publicState.players.find((p) => p.id === senderId);
+    let senderName = sender?.name;
+
+    if (!sender && room.spectators?.has(senderId)) {
+      senderName = room.spectators.get(senderId)!.name;
+    }
+
+    if (!senderName) return;
 
     const event: ReactionEvent = {
       senderId,
-      senderName: sender.name,
+      senderName,
       emoji,
       timestamp: Date.now(),
     };
@@ -2108,6 +2161,13 @@ export class RoomManager {
         ws.send(payload);
       }
     }
+    if (room.spectators) {
+      for (const spec of room.spectators.values()) {
+        if (spec.ws.readyState === WebSocket.OPEN) {
+          spec.ws.send(payload);
+        }
+      }
+    }
   }
 
   /**
@@ -2116,6 +2176,19 @@ export class RoomManager {
   public handleDisconnect(roomId: string, playerId: string) {
     const room = this.rooms.get(roomId);
     if (!room) return;
+
+    // Check if spectator disconnected
+    if (room.spectators?.has(playerId)) {
+      room.spectators.delete(playerId);
+      room.publicState.spectators = Array.from(room.spectators.values()).map((s) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+      }));
+      room.publicState.spectatorCount = room.spectators.size;
+      this.broadcastState(roomId);
+      return;
+    }
 
     const player = room.publicState.players.find((p) => p.id === playerId);
     if (player) {
@@ -2176,6 +2249,22 @@ export class RoomManager {
         );
       }
     }
+
+    // Also send SYNC_STATE to spectators (with empty hand)
+    if (room.spectators) {
+      for (const [specId, spec] of room.spectators.entries()) {
+        if (spec.ws.readyState === WebSocket.OPEN) {
+          spec.ws.send(
+            JSON.stringify({
+              type: 'SYNC_STATE',
+              publicState: room.publicState,
+              yourHand: [],
+              yourPlayerId: specId,
+            })
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -2194,6 +2283,14 @@ export class RoomManager {
     for (const ws of room.sockets.values()) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(payload);
+      }
+    }
+
+    if (room.spectators) {
+      for (const spec of room.spectators.values()) {
+        if (spec.ws.readyState === WebSocket.OPEN) {
+          spec.ws.send(payload);
+        }
       }
     }
   }

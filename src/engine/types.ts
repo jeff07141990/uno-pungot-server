@@ -146,6 +146,8 @@ export interface PublicGameState {
   prizePool: number;
   isEntryFeeLocked: boolean;
   payoutResults?: PrizePayoutResult[];
+  spectatorCount?: number;
+  spectators?: { id: string; name: string; avatar: string }[];
 }
 
 export type PowerUpId =

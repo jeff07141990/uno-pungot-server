@@ -6,6 +6,8 @@ import {
   PowerUpItem,
 } from '../engine/types';
 import { networkManager } from './networkManager';
+import { deviceStorage } from './deviceStorage';
+import { getLevelFromXP } from '../utils/levelUtils';
 
 class EconomyService {
   private cachedWallet: PlayerWallet | null = null;
@@ -22,12 +24,28 @@ class EconomyService {
     this.listeners.forEach((cb) => cb());
   }
 
+  /**
+   * Persist wallet to Native Preferences (Android SharedPreferences) & localStorage.
+   * Guarantees wallet & level data survives app updates, device restarts, and WebView cache resets.
+   */
+  public saveWalletToStorage(wallet: PlayerWallet): void {
+    try {
+      const json = JSON.stringify(wallet);
+      deviceStorage.setItem('uno_player_wallet', json);
+      deviceStorage.setItem('uno_player_wallet_backup', json);
+    } catch {}
+  }
+
   public getCachedWallet(): PlayerWallet | null {
     if (this.cachedWallet) return this.cachedWallet;
     try {
-      const local = localStorage.getItem('uno_player_wallet');
+      // Read primary first, fall back to backup key
+      const local =
+        deviceStorage.getItemSync('uno_player_wallet') ||
+        deviceStorage.getItemSync('uno_player_wallet_backup');
       if (local) {
         this.cachedWallet = JSON.parse(local);
+        if (this.cachedWallet) this.saveWalletToStorage(this.cachedWallet);
       }
     } catch {}
     return this.cachedWallet;
@@ -59,16 +77,33 @@ class EconomyService {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
 
-      this.cachedWallet = data.wallet;
+      // --- HYDRATION GUARD ---
+      // If the server returned a "fresh" wallet (level 1, default balance ≤ 1000) but the
+      // device already has a richer saved wallet for the SAME player, prefer the local
+      // copy. This protects the player's progress across app updates / server restarts.
+      const serverWallet: PlayerWallet = data.wallet;
+      const localWallet = this.getCachedWallet();
+      const isServerFresh =
+        serverWallet.level <= 1 &&
+        serverWallet.balance <= 1000 &&
+        serverWallet.totalWins === 0;
+      const localIsBetter =
+        localWallet &&
+        localWallet.playerId === playerId &&
+        (localWallet.level > 1 ||
+          localWallet.balance > 1000 ||
+          localWallet.totalWins > 0);
+
+      const walletToUse: PlayerWallet =
+        isServerFresh && localIsBetter ? localWallet! : serverWallet;
+
+      this.cachedWallet = walletToUse;
       this.cachedCatalog = data.catalog;
       this.cachedMissions = data.missions || [];
 
-      try {
-        localStorage.setItem('uno_player_wallet', JSON.stringify(data.wallet));
-      } catch {}
-
+      this.saveWalletToStorage(walletToUse);
       this.notify();
-      return data;
+      return { wallet: walletToUse, catalog: data.catalog, missions: data.missions || [] };
     } catch (err) {
       console.warn('Economy API unavailable, loading offline local wallet fallback:', err);
       // Fallback local wallet
@@ -101,7 +136,7 @@ class EconomyService {
           updatedAt: Date.now(),
         };
         this.cachedWallet = wallet;
-        localStorage.setItem('uno_player_wallet', JSON.stringify(wallet));
+        this.saveWalletToStorage(wallet);
       }
       return {
         wallet,
@@ -125,7 +160,7 @@ class EconomyService {
       const data = await res.json();
       if (data.wallet) {
         this.cachedWallet = data.wallet;
-        localStorage.setItem('uno_player_wallet', JSON.stringify(data.wallet));
+        this.saveWalletToStorage(data.wallet);
         this.notify();
       }
       return data;
@@ -148,7 +183,7 @@ class EconomyService {
       const data = await res.json();
       if (data.wallet) {
         this.cachedWallet = data.wallet;
-        localStorage.setItem('uno_player_wallet', JSON.stringify(data.wallet));
+        this.saveWalletToStorage(data.wallet);
         this.notify();
       }
       return data;
@@ -170,7 +205,7 @@ class EconomyService {
       const data = await res.json();
       if (data.wallet) {
         this.cachedWallet = data.wallet;
-        localStorage.setItem('uno_player_wallet', JSON.stringify(data.wallet));
+        this.saveWalletToStorage(data.wallet);
         this.notify();
       }
       return data;
@@ -239,6 +274,127 @@ class EconomyService {
     } catch {
       return { success: false };
     }
+  }
+  /**
+   * Directly award experience locally (guaranteed offline progression).
+   * Automatically calculates level up, awards level bonus coins, and permanently saves to device storage.
+   */
+  public addLocalExperience(xpAmount: number): { wallet: PlayerWallet; leveledUp: boolean; newLevel: number; bonus: number } {
+    let wallet = this.getCachedWallet() || {
+      playerId: 'local_player',
+      playerName: 'Player',
+      playerAvatar: '🦊',
+      balance: 1000,
+      totalWins: 0,
+      totalLosses: 0,
+      winStreak: 0,
+      bestWinStreak: 0,
+      level: 1,
+      experience: 0,
+      lastDailyClaimDate: null,
+      inventory: {
+        shield: 1,
+        swap: 0,
+        reverse: 0,
+        color: 0,
+        extra_turn: 0,
+        peek: 1,
+        booster: 0,
+        reflect: 0,
+      },
+      achievements: ['welcome_aboard'],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    const oldLevel = wallet.level || 1;
+    const newXP = (wallet.experience || 0) + Math.max(0, xpAmount);
+    const calculatedLevel = getLevelFromXP(newXP);
+    const leveledUp = calculatedLevel > oldLevel;
+    let bonusCoins = 0;
+
+    if (leveledUp) {
+      bonusCoins = 100 * (calculatedLevel + 1);
+    }
+
+    const updatedWallet: PlayerWallet = {
+      ...wallet,
+      experience: newXP,
+      level: calculatedLevel,
+      balance: wallet.balance + bonusCoins,
+      updatedAt: Date.now(),
+    };
+
+    this.cachedWallet = updatedWallet;
+    this.saveWalletToStorage(updatedWallet);
+    this.notify();
+
+    return {
+      wallet: updatedWallet,
+      leveledUp,
+      newLevel: calculatedLevel,
+      bonus: bonusCoins,
+    };
+  }
+
+  /**
+   * Directly record match outcome and award coins locally (works 100% offline).
+   */
+  public addLocalMatchResult(won: boolean, coinsReward: number = 200, xpReward: number = 120): PlayerWallet {
+    let wallet = this.getCachedWallet() || {
+      playerId: 'local_player',
+      playerName: 'Player',
+      playerAvatar: '🦊',
+      balance: 1000,
+      totalWins: 0,
+      totalLosses: 0,
+      winStreak: 0,
+      bestWinStreak: 0,
+      level: 1,
+      experience: 0,
+      lastDailyClaimDate: null,
+      inventory: {
+        shield: 1,
+        swap: 0,
+        reverse: 0,
+        color: 0,
+        extra_turn: 0,
+        peek: 1,
+        booster: 0,
+        reflect: 0,
+      },
+      achievements: ['welcome_aboard'],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    const currentWins = (wallet.totalWins || 0) + (won ? 1 : 0);
+    const currentLosses = (wallet.totalLosses || 0) + (won ? 0 : 1);
+    const currentStreak = won ? (wallet.winStreak || 0) + 1 : 0;
+    const bestStreak = Math.max(wallet.bestWinStreak || 0, currentStreak);
+    const addedCoins = won ? coinsReward : 20; // 20 coins consolation for participation
+
+    const newXP = (wallet.experience || 0) + (won ? xpReward : 35);
+    const newLevel = getLevelFromXP(newXP);
+    const levelBonus = newLevel > wallet.level ? 100 * (newLevel + 1) : 0;
+
+    const updatedWallet: PlayerWallet = {
+      ...wallet,
+      balance: wallet.balance + addedCoins + levelBonus,
+      totalWins: currentWins,
+      totalLosses: currentLosses,
+      winStreak: currentStreak,
+      bestWinStreak: bestStreak,
+      experience: newXP,
+      level: newLevel,
+      updatedAt: Date.now(),
+    };
+
+    this.cachedWallet = updatedWallet;
+    this.saveWalletToStorage(updatedWallet);
+    this.notify();
+
+    return updatedWallet;
   }
 }
 

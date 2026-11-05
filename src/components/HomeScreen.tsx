@@ -27,6 +27,7 @@ import {
 import { ConnectionStatus } from '../services/networkManager';
 import { GameVariant, PlayerWallet } from '../engine/types';
 import { PlayWithBotsModal } from './Modals/PlayWithBotsModal';
+import { LiveAvailableRooms } from './LiveAvailableRooms';
 
 interface HomeScreenProps {
   playerName: string;
@@ -49,12 +50,17 @@ interface HomeScreenProps {
   onExitGame: () => void;
   onPlayOnline: () => void;
   onCreateRoom: () => void;
-  onJoinRoom: () => void;
+  onJoinRoom: (roomId?: string) => void;
   onPlayWithBots: (botCount: number, variant: GameVariant) => void;
   onOpenHowToPlay: () => void;
   onOpenSettings: () => void;
   onOpenProfile: () => void;
   onOpenMatchHistory: () => void;
+  // Available live public rooms
+  publicRooms?: any[];
+  isLoadingRooms?: boolean;
+  onRefreshRooms?: () => void;
+  onSpectateRoom?: (roomId: string) => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -81,10 +87,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenSettings,
   onOpenProfile,
   onOpenMatchHistory,
+  publicRooms = [],
+  isLoadingRooms = false,
+  onRefreshRooms,
+  onSpectateRoom,
 }) => {
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Auto-refresh public rooms every 5 seconds while on HomeScreen
+  useEffect(() => {
+    if (onRefreshRooms) {
+      onRefreshRooms();
+      const interval = setInterval(() => {
+        onRefreshRooms();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [onRefreshRooms]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -289,7 +310,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </button>
 
             <button
-              onClick={onJoinRoom}
+              onClick={() => onJoinRoom()}
               className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
             >
               <img
@@ -315,6 +336,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Floating Center/Right Available Rooms Display Widget */}
+      {onSpectateRoom && (
+        <div className="hidden sm:flex absolute right-4 top-16 md:right-12 md:top-14 z-30 pointer-events-auto">
+          <LiveAvailableRooms
+            rooms={publicRooms}
+            isLoading={isLoadingRooms}
+            onRefresh={onRefreshRooms || (() => {})}
+            onJoin={(roomId) => onJoinRoom(roomId)}
+            onSpectate={(roomId) => onSpectateRoom(roomId)}
+          />
+        </div>
+      )}
 
       {/* Floating Bottom-Right Quick Action Icons (Shop, Missions, Leaderboards, Fullscreen, Exit) - No box, clean floating icons */}
       <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2.5 sm:gap-3">

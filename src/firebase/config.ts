@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, Auth, User } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
+import { deviceStorage } from '../services/deviceStorage';
 
 interface FirebaseState {
   app: FirebaseApp | null;
@@ -57,11 +58,19 @@ export async function getOrCreateGuestSession(): Promise<{ uid: string; isAnonym
     }
   }
 
-  // Fallback: persistent local user ID
-  let localUid = localStorage.getItem('uno_guest_uid');
+  // Fallback: persistent local user ID stored across Native SharedPreferences & localStorage
+  let localUid = await deviceStorage.getItem('uno_guest_uid');
+  if (!localUid) {
+    localUid = await deviceStorage.getItem('uno_persistent_uid');
+  }
+
   if (!localUid) {
     localUid = 'usr_' + Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
-    localStorage.setItem('uno_guest_uid', localUid);
   }
+
+  // Always write to both keys in native preferences and localStorage
+  await deviceStorage.setItem('uno_guest_uid', localUid);
+  await deviceStorage.setItem('uno_persistent_uid', localUid);
+
   return { uid: localUid, isAnonymous: true };
 }

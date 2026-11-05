@@ -103,6 +103,62 @@ describe('Card Playability and Matching Rules', () => {
     // Normal cards not allowed during stacking penalty
     expect(isCardPlayable({ id: 'n1', color: 'red', type: 'number', value: 2 }, topDraw2, 'red', 2, true)).toBe(false);
   });
+
+  it('correctly stacks cumulative draw penalty (e.g. +2 +4 +2 +4 = 12 cards)', () => {
+    const rm = new RoomManager();
+    const roomId = rm.createRoom('p1', 'Player 1', '🦊', {
+      houseRules: { stacking: true, wildDraw4Challenge: false }
+    });
+    rm.addBot(roomId, 'p1'); // p2
+    rm.addBot(roomId, 'p1'); // p3
+    rm.addBot(roomId, 'p1'); // p4
+
+    const room = rm.getRoom(roomId)!;
+    rm.startGame(roomId, 'p1');
+
+    // Setup active state at player 0
+    room.publicState.activePlayerIndex = 0;
+    room.publicState.currentColor = 'red';
+    room.publicState.pendingDrawPenalty = 0;
+
+    // Card 1: P1 plays Draw 2 (+2) -> penalty = 2
+    const c1: Card = { id: 'c_d2_1', color: 'red', type: 'draw2' };
+    room.playerHands.get('p1')!.push(c1);
+    expect(rm.playCard(roomId, 'p1', c1.id).success).toBe(true);
+    expect(room.publicState.pendingDrawPenalty).toBe(2);
+
+    // Card 2: P2 plays Wild Draw 4 (+4) -> penalty = 6
+    const p2Id = room.publicState.players[1].id;
+    const c2: Card = { id: 'c_wd4_1', color: 'wild', type: 'wild4' };
+    room.playerHands.get(p2Id)!.push(c2);
+    expect(rm.playCard(roomId, p2Id, c2.id, 'yellow').success).toBe(true);
+    expect(room.publicState.pendingDrawPenalty).toBe(6);
+
+    // Card 3: P3 plays Draw 2 (+2) -> penalty = 8
+    const p3Id = room.publicState.players[2].id;
+    const c3: Card = { id: 'c_d2_2', color: 'yellow', type: 'draw2' };
+    room.playerHands.get(p3Id)!.push(c3);
+    expect(rm.playCard(roomId, p3Id, c3.id).success).toBe(true);
+    expect(room.publicState.pendingDrawPenalty).toBe(8);
+
+    // Card 4: P4 plays Wild Draw 4 (+4) -> penalty = 12
+    const p4Id = room.publicState.players[3].id;
+    const c4: Card = { id: 'c_wd4_2', color: 'wild', type: 'wild4' };
+    room.playerHands.get(p4Id)!.push(c4);
+    expect(rm.playCard(roomId, p4Id, c4.id, 'blue').success).toBe(true);
+    expect(room.publicState.pendingDrawPenalty).toBe(12);
+
+    // Now turn is back to P1, who has no stack card and must draw
+    expect(room.publicState.activePlayerIndex).toBe(0);
+    const p1HandBefore = room.playerHands.get('p1')!.length;
+    const drawRes = rm.drawCard(roomId, 'p1');
+    expect(drawRes.success).toBe(true);
+
+    // P1 must draw all 12 penalty cards!
+    expect(room.playerHands.get('p1')!.length).toBe(p1HandBefore + 12);
+    // Penalty is now cleared
+    expect(room.publicState.pendingDrawPenalty).toBe(0);
+  });
 });
 
 describe('Turn Order and Direction', () => {

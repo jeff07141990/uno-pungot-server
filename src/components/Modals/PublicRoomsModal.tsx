@@ -91,14 +91,25 @@ export const PublicRoomsModal: React.FC<PublicRoomsModalProps> = ({
                   </div>
                 </div>
 
-                <button
-                  disabled={room.phase !== 'lobby' || room.playerCount >= room.maxPlayers}
-                  onClick={() => onJoinRoom(room.roomId)}
-                  className="py-2 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 disabled:opacity-40 text-slate-950 font-black text-xs shadow flex items-center gap-1 active:scale-95 transition"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Join</span>
-                </button>
+                {room.phase === 'lobby' ? (
+                  <button
+                    disabled={room.playerCount >= room.maxPlayers}
+                    onClick={() => onJoinRoom(room.roomId)}
+                    className="py-2 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 disabled:opacity-40 text-slate-950 font-black text-xs shadow flex items-center gap-1 active:scale-95 transition"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Join</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onJoinRoom(room.roomId)}
+                    className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 hover:from-purple-500 hover:to-indigo-400 text-white font-black text-xs shadow-[0_0_12px_rgba(168,85,247,0.5)] border border-purple-400/60 flex items-center gap-1 active:scale-95 transition cursor-pointer"
+                    title="Panoorin ang laban (Spectate Live Match)"
+                  >
+                    <span>🍿</span>
+                    <span>Panoorin</span>
+                  </button>
+                )}
               </div>
             ))
           )}

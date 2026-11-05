@@ -14,6 +14,8 @@ import { soundManager } from './audio/soundManager';
 import { voiceManager } from './services/voiceManager';
 import { getOrCreateGuestSession } from './firebase/config';
 import { historyService, PlayerStats } from './services/historyService';
+import { localGameEngine } from './services/localGameEngine';
+import { deviceStorage } from './services/deviceStorage';
 
 import { HomeScreen } from './components/HomeScreen';
 import { LobbyView } from './components/LobbyView';
@@ -195,8 +197,41 @@ export const App: React.FC = () => {
     return () => unsubscribeEconomy();
   }, []);
 
-  // 2. Setup network callbacks
+  // 2. Setup network & local offline engine callbacks
   useEffect(() => {
+    localGameEngine.setCallbacks({
+      onSyncState: (state, hand, yourPlayerId) => {
+        if (yourPlayerId) {
+          setUserId(yourPlayerId);
+          userIdRef.current = yourPlayerId;
+        }
+        setPublicState(state);
+        setYourHand([...hand]);
+
+        if (state.phase === 'playing') {
+          if (previousPhaseRef.current !== 'playing') {
+            setShowVsScreen(true);
+            try {
+              soundManager.play('turn_alert');
+            } catch (_) {}
+          }
+          setView('game');
+        } else if (state.phase === 'ended') {
+          setShowVsScreen(false);
+          setView('game');
+        }
+        previousPhaseRef.current = state.phase;
+      },
+      onToast: (text, sound) => {
+        showToast(text, sound);
+      },
+      onUnoShout: (shoutingPlayerId) => {
+        try {
+          soundManager.play('uno_call');
+        } catch (_) {}
+      },
+    });
+
     networkManager.setCallbacks({
       onStatusChange: (status) => {
         setConnectionStatus(status);
@@ -286,7 +321,9 @@ export const App: React.FC = () => {
         if (updatedWallet) {
           setWallet(updatedWallet);
           try {
-            localStorage.setItem('uno_player_wallet', JSON.stringify(updatedWallet));
+            const json = JSON.stringify(updatedWallet);
+            localStorage.setItem('uno_player_wallet', json);
+            localStorage.setItem('uno_player_wallet_backup', json);
           } catch (_) {}
           if (levelUp) {
             showToast(`🎉 LEVEL UP! Umabot ka sa Level ${levelUp.newLevel}! (+₱${levelUp.bonus})`, 'game_win');
@@ -415,14 +452,33 @@ export const App: React.FC = () => {
   };
 
   const handlePlayWithBots = async (botCount: number, variant: GameVariant = 'classic') => {
+    const activeUid = userId || localStorage.getItem('uno_guest_uid') || 'guest_' + Date.now();
+    setUserId(activeUid);
+    userIdRef.current = activeUid;
+
+    // Helper to launch offline zero-latency bot game immediately
+    const startOfflineBotGame = () => {
+      showToast('Naglalaro sa Offline Mode (Zero Lag)...', 'card_deal');
+      localGameEngine.startBotGame(activeUid, userName, userAvatar, botCount, variant);
+    };
+
+    // If device is offline, launch directly
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      startOfflineBotGame();
+      return;
+    }
+
     try {
       showToast('Naghahanda ng bot match...', 'card_deal');
-      const activeUid = userId || localStorage.getItem('uno_guest_uid') || 'guest_' + Date.now();
-      setUserId(activeUid);
-      userIdRef.current = activeUid;
+
+      // 2-second timeout: if internet is slow or server unreachable, fallback to local engine instantly
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
       const res = await fetchWithFallback('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           hostId: activeUid,
           hostName: userName,
@@ -445,32 +501,44 @@ export const App: React.FC = () => {
         }),
       });
 
+      clearTimeout(timeoutId);
+
       const contentType = res.headers.get('content-type') || '';
       if (!res.ok || !contentType.includes('application/json')) {
-        const text = await res.text();
-        throw new Error(`Server returned status ${res.status}: ${text.slice(0, 100)}`);
+        throw new Error('Server unreachable');
       }
 
       const data = await res.json();
       if (data.roomId) {
-        // Connect to the room
         networkManager.connect(data.roomId, {
           id: activeUid,
           name: userName,
           avatar: userAvatar,
         });
 
-        // Automatically start the game right after connecting
         setTimeout(() => {
           networkManager.startGame(data.roomId, activeUid);
         }, 150);
       } else {
-        showToast('Server returned an error creating room.', 'error');
+        startOfflineBotGame();
       }
     } catch (err: any) {
-      console.error('Error starting bot game:', err);
-      showToast(`Could not connect to bot server: ${err?.message || 'Check connection'}`, 'error');
+      console.warn('Network bot match failed, falling back to local offline game engine:', err);
+      startOfflineBotGame();
     }
+  };
+
+  const handleSpectateRoom = (roomId: string) => {
+    setIsPublicRoomsOpen(false);
+    setIsJoinOpen(false);
+    const activeUid = userId || localStorage.getItem('uno_guest_uid') || 'guest_' + Date.now();
+    setUserId(activeUid);
+    userIdRef.current = activeUid;
+    networkManager.connect(roomId, {
+      id: activeUid,
+      name: userName,
+      avatar: userAvatar,
+    });
   };
 
   const handleFetchPublicRooms = async () => {
@@ -487,6 +555,9 @@ export const App: React.FC = () => {
   };
 
   const handleLeaveRoom = () => {
+    if (localGameEngine.isRunning()) {
+      localGameEngine.stop();
+    }
     networkManager.disconnect();
     setPublicState(null);
     setYourHand([]);
@@ -548,7 +619,13 @@ export const App: React.FC = () => {
             handleFetchPublicRooms();
           }}
           onCreateRoom={() => setIsCreateOpen(true)}
-          onJoinRoom={() => setIsJoinOpen(true)}
+          onJoinRoom={(roomId) => {
+            if (roomId) {
+              handleJoinRoom(roomId);
+            } else {
+              setIsJoinOpen(true);
+            }
+          }}
           onPlayWithBots={handlePlayWithBots}
           onOpenHowToPlay={() => setIsHowToPlayOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
@@ -557,6 +634,10 @@ export const App: React.FC = () => {
             historyService.getPlayerStats(userId).then(setPlayerStats);
             setIsHistoryOpen(true);
           }}
+          publicRooms={publicRooms}
+          isLoadingRooms={isLoadingRooms}
+          onRefreshRooms={handleFetchPublicRooms}
+          onSpectateRoom={handleSpectateRoom}
         />
       ) : view === 'lobby' ? (
         <LobbyView
@@ -597,13 +678,41 @@ export const App: React.FC = () => {
             currentUserId={userId}
             isMuted={isMuted}
             onToggleMute={handleToggleMute}
-            onPlayCard={(cardId, chosenColor, targetId) =>
-              networkManager.playCard(publicState.roomId, userIdRef.current || userId, cardId, chosenColor, targetId)
-            }
-            onDrawCard={(targetCardIndex) => networkManager.drawCard(publicState.roomId, userIdRef.current || userId, targetCardIndex)}
-            onPassTurn={() => networkManager.passTurn(publicState.roomId, userIdRef.current || userId)}
-            onCallUno={() => networkManager.callUno(publicState.roomId, userIdRef.current || userId)}
-            onCatchUno={(targetId) => networkManager.catchUno(publicState.roomId, userIdRef.current || userId, targetId)}
+            onPlayCard={(cardId, chosenColor, targetId) => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.playCard(userIdRef.current || userId, cardId, chosenColor, targetId);
+              } else {
+                networkManager.playCard(publicState.roomId, userIdRef.current || userId, cardId, chosenColor, targetId);
+              }
+            }}
+            onDrawCard={(targetCardIndex) => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.drawCard(userIdRef.current || userId);
+              } else {
+                networkManager.drawCard(publicState.roomId, userIdRef.current || userId, targetCardIndex);
+              }
+            }}
+            onPassTurn={() => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.passTurn(userIdRef.current || userId);
+              } else {
+                networkManager.passTurn(publicState.roomId, userIdRef.current || userId);
+              }
+            }}
+            onCallUno={() => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.callUno(userIdRef.current || userId);
+              } else {
+                networkManager.callUno(publicState.roomId, userIdRef.current || userId);
+              }
+            }}
+            onCatchUno={(targetId) => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.catchUno(userIdRef.current || userId, targetId);
+              } else {
+                networkManager.catchUno(publicState.roomId, userIdRef.current || userId, targetId);
+              }
+            }}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onOpenChat={() => {
               setIsChatOpen(true);
@@ -611,7 +720,11 @@ export const App: React.FC = () => {
             }}
             onToggleEmojiBar={() => setShowEmojiBar(!showEmojiBar)}
             onLeaveMatch={handleLeaveRoom}
-            onDeclareDeadlock={() => networkManager.declareDeadlock(publicState.roomId, userIdRef.current || userId)}
+            onDeclareDeadlock={() => {
+              if (!localGameEngine.isRunning()) {
+                networkManager.declareDeadlock(publicState.roomId, userIdRef.current || userId);
+              }
+            }}
             unreadChatCount={unreadChatCount}
             wallet={wallet}
             catalog={catalog}
@@ -626,6 +739,7 @@ export const App: React.FC = () => {
             }}
             onOpenShop={() => setIsShopOpen(true)}
             isVsIntroActive={showVsScreen}
+            messages={messages}
           />
 
           {/* Quick Floating Emoji Bar when toggled */}
