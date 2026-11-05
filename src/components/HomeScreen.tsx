@@ -337,9 +337,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </div>
 
-      {/* Floating Center/Right Available Rooms Display Widget */}
+      {/* Floating Available Rooms Display Button & Modal */}
       {onSpectateRoom && (
-        <div className="hidden sm:flex absolute right-4 top-16 md:right-12 md:top-14 z-30 pointer-events-auto">
+        <div className="flex absolute right-3 top-14 sm:right-4 sm:top-16 md:right-12 md:top-14 z-30 pointer-events-auto">
           <LiveAvailableRooms
             rooms={publicRooms}
             isLoading={isLoadingRooms}

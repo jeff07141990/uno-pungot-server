@@ -28,10 +28,39 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
   onJoin,
   onSpectate,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // If closed, render a sleek floating button that the user can click to open whenever they want
+  if (!isOpen) {
+    return (
+      <button
+        onClick={() => {
+          setIsOpen(true);
+          onRefresh();
+        }}
+        className="group relative flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-950/80 hover:bg-slate-900 border border-purple-500/50 hover:border-amber-400 shadow-[0_0_20px_rgba(168,85,247,0.4)] backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+        title="Panoorin ang mga live na laro (Buksan ang Live TV Rooms)"
+      >
+        <div className="relative flex items-center justify-center">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping absolute" />
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+        </div>
+        <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+        <span className="text-xs font-black tracking-wide text-white group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
+          <span>LIVE TV ROOMS</span>
+          <span className="text-[10px] bg-red-600 text-white font-black px-1.5 py-0.2 rounded shadow uppercase tracking-wider">
+            TV
+          </span>
+        </span>
+        <span className="text-xs bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+          {rooms.length}
+        </span>
+      </button>
+    );
+  }
 
   return (
-    <div className="bg-black/60 backdrop-blur-md border border-amber-500/30 rounded-2xl p-3 shadow-2xl flex flex-col max-h-[340px] w-full max-w-sm transition-all duration-300">
+    <div className="bg-black/80 backdrop-blur-md border border-purple-500/40 rounded-2xl p-3 shadow-2xl flex flex-col max-h-[340px] w-full max-w-sm transition-all duration-300 animate-fadeIn">
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-white/10">
         <div className="flex items-center gap-2">
@@ -41,7 +70,7 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
           </div>
           <span className="font-extrabold text-white text-sm tracking-wide flex items-center gap-1.5 drop-shadow">
             <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-            LIVE TV AVAILABLE ROOMS
+            LIVE TV ROOMS
           </span>
           <span className="text-[10px] bg-red-600/90 text-white font-black px-1.5 py-0.5 rounded shadow-[0_0_8px_rgba(239,68,68,0.8)] uppercase tracking-wider animate-pulse">
             TV
@@ -61,18 +90,17 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
           </button>
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => setIsOpen(false)}
             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition active:scale-95 cursor-pointer"
-            title={isCollapsed ? "I-expand" : "I-minimize"}
+            title="Isara ang widget"
           >
-            {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+            <ChevronUp className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {/* Content */}
-      {!isCollapsed && (
-        <div className="overflow-y-auto mt-2 space-y-2 pr-1 custom-scrollbar flex-1 min-h-[140px]">
+      <div className="overflow-y-auto mt-2 space-y-2 pr-1 custom-scrollbar flex-1 min-h-[140px]">
           {isLoading && rooms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-slate-400 text-xs">
               <RefreshCw className="w-6 h-6 animate-spin text-amber-400 mb-2" />
@@ -167,7 +195,6 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
             })
           )}
         </div>
-      )}
     </div>
   );
 };
