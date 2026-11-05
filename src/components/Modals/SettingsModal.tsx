@@ -12,9 +12,10 @@ import {
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'settings' | 'card_studio';
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, initialTab }) => {
   const [volume, setVolume] = useState<number>(() => {
     try {
       return Math.round(soundManager.getVolume() * 100);
@@ -101,6 +102,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       sessionStorage.removeItem('uno_admin_authed');
     } catch {}
   };
+
+  // Sync admin unlock state when modal opens or initialTab is card_studio
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const authed = sessionStorage.getItem('uno_admin_authed') === 'true';
+        if (authed || initialTab === 'card_studio') {
+          setIsAdminUnlocked(true);
+          sessionStorage.setItem('uno_admin_authed', 'true');
+        }
+      } catch {}
+    }
+  }, [isOpen, initialTab]);
 
   useEffect(() => {
     const handleUpdate = () => {

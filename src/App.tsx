@@ -84,6 +84,7 @@ export const App: React.FC = () => {
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'settings' | 'card_studio'>('settings');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [playerStats, setPlayerStats] = useState<PlayerStats | null>(null);
@@ -849,7 +850,11 @@ export const App: React.FC = () => {
 
       <SettingsModal
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        initialTab={settingsInitialTab}
+        onClose={() => {
+          setIsSettingsOpen(false);
+          setSettingsInitialTab('settings');
+        }}
       />
 
       <ProfileModal
@@ -934,7 +939,10 @@ export const App: React.FC = () => {
       <AdminModal
         isOpen={isAdminOpen}
         onClose={() => setIsAdminOpen(false)}
-        onOpenCardStudio={() => setIsSettingsOpen(true)}
+        onOpenCardStudio={() => {
+          setSettingsInitialTab('card_studio');
+          setIsSettingsOpen(true);
+        }}
         onRefreshWallet={() => {
           economyService.fetchWallet(userId, userName, userAvatar).then((data) => {
             setWallet(data.wallet);
