@@ -104,10 +104,10 @@ export const PublicRoomsModal: React.FC<PublicRoomsModalProps> = ({
                   <button
                     onClick={() => onJoinRoom(room.roomId)}
                     className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500 hover:from-purple-500 hover:to-indigo-400 text-white font-black text-xs shadow-[0_0_12px_rgba(168,85,247,0.5)] border border-purple-400/60 flex items-center gap-1 active:scale-95 transition cursor-pointer"
-                    title="Panoorin ang laban (Spectate Live Match)"
+                    title="View Match (Viewing lang ng ongoing game)"
                   >
-                    <span>🍿</span>
-                    <span>Panoorin</span>
+                    <span>👁️</span>
+                    <span>View</span>
                   </button>
                 )}
               </div>

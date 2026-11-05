@@ -24,6 +24,7 @@ class NetworkManager {
   private reconnectAttempts = 0;
   private reconnectTimeout: number | null = null;
   private heartbeatInterval: number | null = null;
+  private isSpectator = false;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -37,7 +38,7 @@ class NetworkManager {
               this.reconnectTimeout = null;
             }
             this.reconnectAttempts = 0;
-            this.connect(this.currentRoomId, this.currentPlayer);
+            this.connect(this.currentRoomId, this.currentPlayer, this.isSpectator);
           }
         }
       });
@@ -48,7 +49,7 @@ class NetworkManager {
           if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
             console.log('Network back online, reconnecting...');
             this.reconnectAttempts = 0;
-            this.connect(this.currentRoomId, this.currentPlayer);
+            this.connect(this.currentRoomId, this.currentPlayer, this.isSpectator);
           }
         }
       });
@@ -175,9 +176,10 @@ class NetworkManager {
     this.callbacks = { ...this.callbacks, ...cbs };
   }
 
-  public connect(roomId: string, player: { id: string; name: string; avatar: string }) {
+  public connect(roomId: string, player: { id: string; name: string; avatar: string }, asSpectator = false) {
     this.currentRoomId = roomId;
     this.currentPlayer = player;
+    this.isSpectator = asSpectator;
 
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       this.send({
@@ -186,6 +188,7 @@ class NetworkManager {
         playerId: player.id,
         playerName: player.name,
         playerAvatar: player.avatar,
+        asSpectator: this.isSpectator,
       });
       return;
     }
@@ -207,6 +210,7 @@ class NetworkManager {
             playerId: this.currentPlayer.id,
             playerName: this.currentPlayer.name,
             playerAvatar: this.currentPlayer.avatar,
+            asSpectator: this.isSpectator,
           });
         }
       };

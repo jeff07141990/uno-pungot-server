@@ -140,11 +140,11 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
                       {/* Spectate Button */}
                       <button
                         onClick={() => onSpectate(rId)}
-                        className="px-2 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-md shadow-purple-900/30 active:scale-95 transition cursor-pointer"
-                        title="Manood lamang sa larong ito"
+                        className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-purple-900/30 active:scale-95 transition cursor-pointer"
+                        title="View / Manood lamang sa larong ito (Viewing mode)"
                       >
-                        <Eye className="w-3 h-3" />
-                        Panoorin
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View</span>
                       </button>
 
                       {/* Join as Player if in lobby and not full */}

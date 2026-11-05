@@ -538,7 +538,7 @@ export const App: React.FC = () => {
       id: activeUid,
       name: userName,
       avatar: userAvatar,
-    });
+    }, true);
   };
 
   const handleFetchPublicRooms = async () => {

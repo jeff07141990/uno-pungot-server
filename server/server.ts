@@ -189,10 +189,10 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         case 'JOIN_ROOM': {
-          const { roomId, playerId, playerName, playerAvatar } = data;
+          const { roomId, playerId, playerName, playerAvatar, asSpectator } = data;
           boundRoomId = roomId;
           boundPlayerId = playerId;
-          const result = roomManager.joinRoom(roomId, playerId, playerName, playerAvatar, ws);
+          const result = roomManager.joinRoom(roomId, playerId, playerName, playerAvatar, ws, asSpectator);
           if (!result.success) {
             ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
           }

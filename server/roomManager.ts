@@ -222,7 +222,8 @@ export class RoomManager {
     playerId: string,
     playerName: string,
     playerAvatar: string,
-    ws: WebSocket
+    ws: WebSocket,
+    asSpectator?: boolean
   ): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
     if (!room) {
@@ -231,7 +232,7 @@ export class RoomManager {
 
     // Check if player is reconnecting or initial host binding
     const existingIndex = room.publicState.players.findIndex((p) => p.id === playerId);
-    if (existingIndex !== -1) {
+    if (existingIndex !== -1 && !asSpectator) {
       const player = room.publicState.players[existingIndex];
       const wasDisconnected = player.isDisconnected;
       player.isDisconnected = false;
@@ -245,8 +246,8 @@ export class RoomManager {
       return { success: true };
     }
 
-    // If game has already started, admit the user as SPECTATOR (Manonood)!
-    if (room.publicState.phase !== 'lobby') {
+    // If joining explicitly as spectator OR if game has already started, admit the user as SPECTATOR (Manonood)!
+    if (asSpectator || room.publicState.phase !== 'lobby') {
       if (!room.spectators) {
         room.spectators = new Map();
       }
@@ -264,7 +265,7 @@ export class RoomManager {
 
       // Broadcast new state so players see spectator arrived
       this.broadcastState(roomId);
-      this.broadcastToast(roomId, `🍿 ${specName} is now spectating the match!`, 'turn_alert');
+      this.broadcastToast(roomId, `🍿 ${specName} is now viewing the match!`, 'turn_alert');
       return { success: true };
     }
 
