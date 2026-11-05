@@ -869,6 +869,23 @@ export const GameTable: React.FC<GameTableProps> = ({
     prevTurnPlayerIdRef.current = activePlayer?.id || null;
   }, [topDiscard, activePlayerIndex]);
 
+  // Watch for Catch UNO announcements to display penalty hammer on the penalized player
+  const prevLastActionRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (gameState.lastActionText && gameState.lastActionText !== prevLastActionRef.current) {
+      prevLastActionRef.current = gameState.lastActionText;
+      if (gameState.lastActionText.includes('NAHULI') || gameState.lastActionText.includes('HULI')) {
+        // Find which player's name is mentioned after NAHULI/HULI
+        const target = players.find(p => gameState.lastActionText?.includes(p.name));
+        if (target) {
+          setSmackingPlayerId(target.id);
+          soundManager.play('uno_penalty');
+          setTimeout(() => setSmackingPlayerId(null), 800);
+        }
+      }
+    }
+  }, [gameState.lastActionText, players]);
+
   // Animate card slide when any player draws (opponents, bots, or penalties)
   useEffect(() => {
     if (startIntroPhase !== 'done') {
@@ -1971,6 +1988,20 @@ export const GameTable: React.FC<GameTableProps> = ({
                       <span>{secondsRemaining}s</span>
                     </div>
                   )}
+
+                  {/* Penalty Hammer Animation when caught or smacked */}
+                  {smackingPlayerId === selfPlayer.id && (
+                    <div className="absolute -top-4 -right-4 z-50 p-1 bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,1)] border-2 border-yellow-300 animate-hammerSmash scale-125">
+                      <span className="text-xl sm:text-2xl leading-none select-none block">🔨</span>
+                    </div>
+                  )}
+
+                  {/* Warning banner when vulnerable on 1 card */}
+                  {yourHand.length === 1 && !selfPlayer.calledUno && (
+                    <div className="absolute -top-3 -left-3 z-50 p-1 bg-red-600 text-yellow-300 rounded-full border border-yellow-300 shadow animate-pulse">
+                      <span className="text-xs leading-none select-none block">⚠️</span>
+                    </div>
+                  )}
                 </div>
                 <span
                   className={`text-[9px] sm:text-xs font-bold mt-0.5 px-2 py-0.2 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
@@ -2151,50 +2182,44 @@ export const GameTable: React.FC<GameTableProps> = ({
               )}
             </div>
 
-            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button (With Real Human Shout & Penalty Warning!) */}
-            <div className="flex flex-col items-center relative">
-              {/* Warning indicator if player has 1 card and has not called UNO */}
-              {yourHand.length === 1 && !selfPlayer.calledUno && (
-                <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
-                  <span className="animate-ping">⚠️</span>
-                  <span>PINDUTIN ANG UNO! Baka ka hulihin (+1 Penalty Card)!</span>
-                </div>
-              )}
-              {/* Reminder indicator when holding 2 cards */}
-              {yourHand.length === 2 && (
-                <div className="absolute -top-8 right-0 whitespace-nowrap bg-amber-500/95 text-slate-950 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-yellow-200 shadow animate-pulse z-40">
-                  💡 Pindutin ang UNO bago mag-1 card!
-                </div>
-              )}
-              {/* Success indicator when already called UNO */}
-              {yourHand.length === 1 && selfPlayer.calledUno && (
-                <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
-                  <span>✅</span>
-                  <span>LIGTAS! Nagsabi ka na ng UNO!</span>
-                </div>
-              )}
+            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button - ONLY appears when player has exactly 1 card! */}
+            {yourHand.length === 1 && (
+              <div className="flex flex-col items-center relative animate-fadeIn">
+                {/* Warning indicator if player has 1 card and has not called UNO */}
+                {!selfPlayer.calledUno && (
+                  <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
+                    <span className="animate-ping">⚠️</span>
+                    <span>PINDUTIN ANG UNO! Baka ka maunahan (+1 Penalty Card)!</span>
+                  </div>
+                )}
+                {/* Success indicator when already called UNO */}
+                {selfPlayer.calledUno && (
+                  <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
+                    <span>✅</span>
+                    <span>LIGTAS! Naka-UNO ka na!</span>
+                  </div>
+                )}
 
-              <div
-                onClick={handleCallUnoClick}
-                className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
-                  yourHand.length === 1 && !selfPlayer.calledUno
-                    ? 'animate-bounce ring-2 sm:ring-4 ring-red-500 shadow-[0_0_20px_rgba(239,68,68,0.9)]'
-                    : yourHand.length <= 2
-                    ? 'animate-bounce ring-2 sm:ring-4 ring-yellow-400'
-                    : ''
-                }`}
-                title="Shout UNO!"
-              >
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
-                  <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
-                    CALL
-                  </span>
-                  <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                    UNO
-                  </span>
+                <div
+                  onClick={handleCallUnoClick}
+                  className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
+                    !selfPlayer.calledUno
+                      ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_25px_rgba(239,68,68,0.95)]'
+                      : 'ring-2 ring-emerald-400 opacity-80'
+                  }`}
+                  title="Shout UNO!"
+                >
+                  <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
+                    <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
+                      CALL
+                    </span>
+                    <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                      UNO
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

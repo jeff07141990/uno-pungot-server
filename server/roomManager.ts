@@ -1857,8 +1857,18 @@ export class RoomManager {
     if (!player) return { success: false };
 
     const hand = room.playerHands.get(playerId) || [];
-    if (hand.length > 2) {
-      return { success: false, message: 'You can only call UNO when you have 1 or 2 cards!' };
+    if (hand.length > 1) {
+      // False UNO penalty: Player called UNO when they don't have exactly 1 card!
+      const drawn = this.drawFromPile(room, 1);
+      hand.push(...drawn);
+      player.cardCount = hand.length;
+      player.calledUno = false;
+
+      const desc = `⚠️ FALSE UNO! Hindi pa 1 card si ${player.name}! (+1 Penalty Card)`;
+      room.publicState.lastActionText = desc;
+      this.broadcastState(roomId);
+      this.broadcastToast(roomId, desc, 'uno_penalty');
+      return { success: false, message: 'Hindi pa 1 card ang hawak mo! +1 penalty card.' };
     }
 
     player.calledUno = true;

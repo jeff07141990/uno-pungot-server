@@ -302,6 +302,26 @@ export class LocalGameEngine {
     if (!this.active) return;
     const player = this.publicState.players.find((p) => p.id === playerId);
     if (!player) return;
+    const hand = this.playerHands.get(playerId) || [];
+
+    if (hand.length > 1) {
+      // False UNO penalty (+1 card)
+      if (this.drawPile.length === 0) {
+        const reshuffled = reshuffleDiscards(this.drawPile, this.discardPile);
+        this.drawPile = reshuffled.newDrawPile;
+        this.discardPile = reshuffled.newDiscardPile;
+      }
+      const penaltyCard = this.drawPile.pop();
+      if (penaltyCard) hand.push(penaltyCard);
+      player.cardCount = hand.length;
+      player.calledUno = false;
+      this.publicState.drawPileCount = this.drawPile.length;
+
+      this.callbacks?.onToast(`⚠️ FALSE UNO! Hindi pa 1 card si ${player.name}! (+1 Penalty Card)`, 'uno_call');
+      this.broadcast();
+      return;
+    }
+
     player.calledUno = true;
     if (this.publicState.unoCallWindow?.targetPlayerId === playerId) {
       this.publicState.unoCallWindow = null;
