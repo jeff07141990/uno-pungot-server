@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   LogOut,
   MessageSquare,
@@ -81,21 +81,168 @@ const UnoCallout: React.FC<{ isSelf?: boolean }> = ({ isSelf = false }) => {
   );
 };
 
-/** Renders an emoji string OR a base64 profile photo depending on the avatar value */
+/** Renders an emoji string OR a base64 profile photo depending on the avatar value (Square rounded style) */
 const AvatarDisplay: React.FC<{ avatar: string; className?: string }> = ({ avatar, className = '' }) => {
   if (avatar && avatar.startsWith('data:image')) {
     return (
       <img
         src={avatar}
         alt="avatar"
-        className={`object-cover rounded-full ${className}`}
-        style={{ width: '100%', height: '100%' }}
+        className={`w-full h-full object-cover select-none pointer-events-none ${className}`}
       />
     );
   }
   return <span>{avatar}</span>;
 };
 
+/** Semi-transparent chat bubble with pop-out animation anchored above avatar */
+const AvatarChatBubble: React.FC<{ text: string; isSelf?: boolean }> = ({ text, isSelf = false }) => {
+  return (
+    <div
+      className={`absolute z-50 pointer-events-none select-none animate-avatarChatPop flex flex-col items-center ${
+        isSelf ? '-top-11 left-1/2 -translate-x-1/2' : '-top-10 left-1/2 -translate-x-1/2'
+      }`}
+      style={{ willChange: 'transform, opacity' }}
+    >
+      <div className="relative flex flex-col items-center max-w-[140px] sm:max-w-[170px]">
+        {/* Semi-transparent message bubble */}
+        <div className="px-2.5 py-1 bg-slate-950/80 backdrop-blur-md text-amber-200 border border-amber-400/80 rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.6)] text-[11px] sm:text-xs font-bold leading-tight break-words text-center tracking-wide">
+          {text}
+        </div>
+        {/* Speech tail pointing down */}
+        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-amber-400/80 drop-shadow-sm -mt-[1px]"></div>
+      </div>
+    </div>
+  );
+};
+
+/** Real flaming video turn timer ring from public/turn timer ring/ */
+/** Real flaming video turn timer ring from public/turn timer ring/ with black background removed via Canvas chroma key */
+const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: number }> = ({
+  progressFraction,
+  totalDuration = 30,
+}) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  // Pick the matching video file: 15s, 30s, or 60s
+  const videoSrc = useMemo(() => {
+    if (totalDuration <= 15) return '/turn timer ring/15 seconds.mp4';
+    if (totalDuration >= 60) return '/turn timer ring/60 seconds.mp4';
+    return '/turn timer ring/30 seconds.mp4';
+  }, [totalDuration]);
+
+  // Keep video playback smoothly synchronized with actual game time
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const nominalDuration = totalDuration || 30;
+    const targetTime = Math.max(0, Math.min(nominalDuration, (1 - progressFraction) * nominalDuration));
+
+    if (Math.abs(video.currentTime - targetTime) > 0.4) {
+      video.currentTime = targetTime;
+    }
+
+    if (video.paused && progressFraction > 0.01) {
+      video.play().catch(() => {});
+    }
+  }, [progressFraction, totalDuration]);
+
+  // Continuously remove black background pixel-by-pixel onto canvas
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    let isSubscribed = true;
+
+    const render = () => {
+      if (!isSubscribed) return;
+
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        // The new video is a square 1:1 format with a crisp outer square frame
+        // crop to the outer perimeter of the square ring
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+
+        // The ring starts near 8% margin and extends to 92%
+        const cropX = vw * 0.08;
+        const cropY = vh * 0.08;
+        const cropW = vw * 0.84;
+        const cropH = vh * 0.84;
+
+        if (canvas.width !== 300 || canvas.height !== 300) {
+          canvas.width = 300;
+          canvas.height = 300;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+
+        try {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          const len = data.length;
+
+          // Pure black background extraction
+          for (let i = 0; i < len; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const maxVal = Math.max(r, g, b);
+            if (maxVal < 25) {
+              data[i + 3] = 0; // completely transparent background
+            } else if (maxVal < 55) {
+              data[i + 3] = Math.round(((maxVal - 25) / 30) * data[i + 3]);
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+        } catch {
+          // Fallback if cross-origin or canvas read error
+        }
+      }
+
+      animFrameRef.current = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      isSubscribed = false;
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [videoSrc]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none z-30 select-none overflow-hidden rounded-xl flex items-center justify-center">
+      {/* Hidden source video */}
+      <video
+        ref={videoRef}
+        src={videoSrc}
+        muted
+        playsInline
+        autoPlay
+        loop={false}
+        className="hidden"
+      />
+      {/* Canvas rendering new turn timer ring fitted exactly on avatar square */}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full object-fill pointer-events-none"
+        style={{
+          filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.95)) contrast(1.15) brightness(1.1)',
+        }}
+      />
+    </div>
+  );
+};
 
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
@@ -122,23 +269,33 @@ export const GameTable: React.FC<GameTableProps> = ({
   messages = [],
 }) => {
   const isSpectator = !gameState.players.some((p) => p.id === currentUserId);
-  const [activeChatPrompt, setActiveChatPrompt] = useState<{ id: string; senderName: string; text: string; avatar: string } | null>(null);
-
-  // Auto-prompt recent chat message in corner of game table for 4 seconds
+  // Active chat bubbles anchored directly over each player's avatar (4 seconds duration)
+  const [activeAvatarBubbles, setActiveAvatarBubbles] = useState<Map<string, { id: string; text: string }>>(new Map());
   const lastProcessedChatIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!messages || messages.length === 0) return;
     const latest = messages[messages.length - 1];
     if (latest && latest.id !== lastProcessedChatIdRef.current) {
       lastProcessedChatIdRef.current = latest.id;
-      setActiveChatPrompt({
-        id: latest.id,
-        senderName: latest.senderName,
-        text: latest.text,
-        avatar: latest.senderAvatar || '💬',
+      // Match senderId or fallback to senderName matching player
+      const senderKey = latest.senderId || latest.senderName;
+      setActiveAvatarBubbles((prev) => {
+        const next = new Map(prev);
+        next.set(senderKey, { id: latest.id, text: latest.text });
+        return next;
       });
+
       const timer = setTimeout(() => {
-        setActiveChatPrompt((curr) => (curr?.id === latest.id ? null : curr));
+        setActiveAvatarBubbles((prev) => {
+          const current = prev.get(senderKey);
+          if (current?.id === latest.id) {
+            const next = new Map(prev);
+            next.delete(senderKey);
+            return next;
+          }
+          return prev;
+        });
       }, 4000);
       return () => clearTimeout(timer);
     }
@@ -343,7 +500,6 @@ export const GameTable: React.FC<GameTableProps> = ({
         soundManager.play('power_targeted_draw2');
         break;
       case 'draw2':
-      case 'wild4':
         if (gameState.pendingDrawPenalty > 0) {
           const p = gameState.pendingDrawPenalty;
           if (p === 6) soundManager.play('power_draw6');
@@ -358,8 +514,25 @@ export const GameTable: React.FC<GameTableProps> = ({
           else if (p >= 24) soundManager.play('power_draw24');
           else if (p === 4) soundManager.play('power_wild4');
           else soundManager.play('power_draw2');
-        } else if (card.type === 'draw2') {
+        } else {
           soundManager.play('power_draw2');
+        }
+        break;
+      case 'wild4':
+        // Shout Draw 4 (or stacked draw count) first! The chosen color will be shouted right after with delay so they never overlap.
+        if (gameState.pendingDrawPenalty > 0) {
+          const p = gameState.pendingDrawPenalty;
+          if (p === 6) soundManager.play('power_draw6');
+          else if (p === 8) soundManager.play('power_draw8');
+          else if (p === 10) soundManager.play('power_draw10');
+          else if (p === 12) soundManager.play('power_draw12');
+          else if (p === 14) soundManager.play('power_draw14');
+          else if (p === 16) soundManager.play('power_draw16');
+          else if (p === 18) soundManager.play('power_draw18');
+          else if (p === 20) soundManager.play('power_draw20');
+          else if (p === 22) soundManager.play('power_draw22');
+          else if (p >= 24) soundManager.play('power_draw24');
+          else soundManager.play('power_wild4');
         } else {
           soundManager.play('power_wild4');
         }
@@ -372,6 +545,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         if (gameState.variant === 'all_wild') {
           soundManager.play('power_general');
         } else {
+          // Play wild color sound effect first, then chosen color follows smoothly
           soundManager.play('power_wild');
         }
         break;
@@ -609,24 +783,32 @@ export const GameTable: React.FC<GameTableProps> = ({
     });
   }, []);
 
-  // Turn timer countdown and audio tick
+  // Turn timer countdown, progress fraction (for circular border animation), and audio tick
+  const [turnProgressFraction, setTurnProgressFraction] = useState<number>(1);
   useEffect(() => {
     if (!turnDeadline) {
       setSecondsRemaining(null);
+      setTurnProgressFraction(1);
       return;
     }
 
-    const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.ceil((turnDeadline - Date.now()) / 1000));
-      setSecondsRemaining(remaining);
+    const totalDurationMs = (houseRules.turnTimer || 30) * 1000;
 
-      if (remaining <= 5 && remaining > 0 && isYourTurn) {
+    const interval = setInterval(() => {
+      const msRemaining = Math.max(0, turnDeadline - Date.now());
+      const remainingSec = Math.max(0, Math.ceil(msRemaining / 1000));
+      setSecondsRemaining(remainingSec);
+
+      const fraction = totalDurationMs > 0 ? Math.max(0, Math.min(1, msRemaining / totalDurationMs)) : 0;
+      setTurnProgressFraction(fraction);
+
+      if (remainingSec <= 5 && remainingSec > 0 && isYourTurn && msRemaining % 1000 < 200) {
         soundManager.play('timer_tick');
       }
-    }, 1000);
+    }, 200);
 
     return () => clearInterval(interval);
-  }, [turnDeadline, isYourTurn]);
+  }, [turnDeadline, houseRules.turnTimer, isYourTurn]);
 
   // Recalculate docking offsets on resize
   useEffect(() => {
@@ -876,52 +1058,44 @@ export const GameTable: React.FC<GameTableProps> = ({
     // When card lands on the table
     setTimeout(() => {
       setIsDiscardLanding(true);
-      if (card.type === 'forced_swap' || card.type === 'power_swap' || (houseRules.sevenZero && card.type === 'number' && card.value === 7)) {
-        soundManager.play('power_swap');
-      } else if (card.type === 'targeted_draw2') {
-        soundManager.play('power_targeted_draw2');
-      } else if (card.type === 'draw2' || card.type === 'wild4') {
-        if (gameState.pendingDrawPenalty > 0) {
-          const p = gameState.pendingDrawPenalty;
-          if (p === 6) soundManager.play('power_draw6');
-          else if (p === 8) soundManager.play('power_draw8');
-          else if (p === 10) soundManager.play('power_draw10');
-          else if (p === 12) soundManager.play('power_draw12');
-          else if (p === 14) soundManager.play('power_draw14');
-          else if (p === 16) soundManager.play('power_draw16');
-          else if (p === 18) soundManager.play('power_draw18');
-          else if (p === 20) soundManager.play('power_draw20');
-          else if (p === 22) soundManager.play('power_draw22');
-          else if (p >= 24) soundManager.play('power_draw24');
-          else if (p === 4) soundManager.play('power_wild4');
-          else soundManager.play('power_draw2');
-        } else if (card.type === 'draw2') {
-          soundManager.play('power_draw2');
-        } else {
-          soundManager.play('power_wild4');
-        }
-      } else if (card.type === 'draw5' || card.type === 'wild_draw_color') {
-        soundManager.play('power_wild4');
-      } else if (card.type === 'skip' || card.type === 'skip_all') {
-        soundManager.play('power_skip');
-      } else if (card.type === 'skip2') {
-        soundManager.play('power_skip2');
-      } else if (card.type === 'reverse' || card.type === 'power_reverse') {
-        soundManager.play('power_reverse');
-      } else {
-        soundManager.play('card_play');
-      }
+      // Play crisp landing sound for card placement; power announcements handle special audio once
+      soundManager.play('card_play');
       setTimeout(() => setIsDiscardLanding(false), 300);
       setFlyingCard(null);
     }, 360);
   };
 
-  // Animate opponent card plays to table and trigger power card pop-up
+  // Track previous color to trigger color voice ONLY in Classic variant when a color is chosen
+  const prevColorRef = useRef<CardColor>(currentColor);
+  useEffect(() => {
+    if (prevColorRef.current !== currentColor) {
+      const isClassic = !gameState.variant || gameState.variant === 'classic';
+      if (
+        isClassic &&
+        (currentColor === 'red' || currentColor === 'blue' || currentColor === 'yellow' || currentColor === 'green')
+      ) {
+        // If a draw card (wild4, draw2) or wild card is played, wait 900ms so the initial shout finishes first before color voice
+        const isDrawOrWild = topDiscard?.type === 'wild4' || topDiscard?.type === 'draw2' || topDiscard?.type === 'wild_draw_color' || topDiscard?.type === 'wild';
+        const delay = isDrawOrWild ? 900 : 350;
+        const colorToPlay = currentColor;
+        const timer = setTimeout(() => {
+          soundManager.playColorVoice(colorToPlay);
+        }, delay);
+        prevColorRef.current = currentColor;
+        return () => clearTimeout(timer);
+      }
+      prevColorRef.current = currentColor;
+    }
+  }, [currentColor, gameState.variant, topDiscard?.type]);
+
+  // Animate opponent card plays to table and trigger power card pop-up (keyed strictly on new discard card ID)
   useEffect(() => {
     if (topDiscard && topDiscard.id !== prevDiscardIdRef.current) {
       const lastPlayerId = prevTurnPlayerIdRef.current;
       const lastPlayer = lastPlayerId ? players.find((p) => p.id === lastPlayerId) : null;
       const actorName = lastPlayer ? (lastPlayer.id === currentUserId ? 'You' : lastPlayer.name) : 'Player';
+
+      prevDiscardIdRef.current = topDiscard.id;
 
       // Visual Pop-up announcement banner with glowing effects
       triggerPowerAnnouncement(topDiscard, actorName);
@@ -934,10 +1108,9 @@ export const GameTable: React.FC<GameTableProps> = ({
       } else {
         recentlyPlayedCardsRef.current.delete(topDiscard.id);
       }
-      prevDiscardIdRef.current = topDiscard.id;
     }
     prevTurnPlayerIdRef.current = activePlayer?.id || null;
-  }, [topDiscard, activePlayerIndex]);
+  }, [topDiscard]);
 
   // Watch for Catch UNO announcements to display penalty hammer on the penalized player
   const prevLastActionRef = useRef<string | null>(null);
@@ -1218,12 +1391,67 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Center top: empty space so view is ultra clean */}
         <div className="flex-1" />
 
-        {/* Top-Right: Sound toggle ALWAYS visible in upper-right corner as requested, Settings still in menu, Exit button always visible */}
-        <div className="flex items-center gap-2 pointer-events-auto">
+        {/* Top-Right: Action buttons (Chat, Mic, Shop, Sound, Settings, PowerUps, Exit) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+          {/* Circular Yellow Chat Button */}
+          <button
+            onClick={onOpenChat}
+            className="relative w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+            title="Room Chat"
+          >
+            <img
+              src="/home screen in game icons/chats.png"
+              alt="Chat"
+              className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+            />
+            {unreadChatCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
+                {unreadChatCount}
+              </span>
+            )}
+          </button>
+
+          {/* Circular Open Mic Button */}
+          <button
+            onClick={handleToggleMic}
+            className="relative w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+            title={
+              !isVoiceConnected
+                ? 'Buksan ang Mikropono (Enable Mic)'
+                : isVoiceMuted
+                ? 'Naka-Mute ang Mic (Pindutin para magsalita)'
+                : 'Bukas ang Mic (Nagsasalita / Live)'
+            }
+          >
+            <img
+              src={isVoiceMuted || !isVoiceConnected ? "/home screen in game icons/mic off.png" : "/home screen in game icons/mic on.png"}
+              alt="Mic"
+              className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+            />
+            {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-ping" />
+            )}
+          </button>
+
+          {/* Circular Yellow Tindahan / Power-Up Shop Button */}
+          {onOpenShop && (
+            <button
+              onClick={onOpenShop}
+              className="relative w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
+              title="Buksan ang Tindahan (Power-Up Shop)"
+            >
+              <img
+                src="/home screen in game icons/shop.png"
+                alt="Shop"
+                className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+              />
+            </button>
+          )}
+
           {/* Always Visible Volume On/Off Button */}
           <button
             onClick={onToggleMute}
-            className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
             title={isMuted ? 'I-on ang Tunog (Unmute Sound)' : 'I-off ang Tunog (Mute Sound)'}
           >
             <img
@@ -1234,10 +1462,10 @@ export const GameTable: React.FC<GameTableProps> = ({
           </button>
 
           {showTopBarMenu && (
-            <div className="flex items-center gap-2 animate-fadeIn">
+            <div className="flex items-center gap-1.5 sm:gap-2 animate-fadeIn">
               <button
                 onClick={() => onOpenSettings?.()}
-                className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
+                className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
                 title="Settings at Palitan ang Larawan ng Baraha"
               >
                 <img
@@ -1249,7 +1477,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
           )}
 
-          {/* Power-Up Dock Button (next to exit) */}
+          {/* Power-Up Dock Button */}
           {onUsePowerUp && onOpenShop && (
             <PowerUpDock
               gameState={gameState}
@@ -1261,10 +1489,10 @@ export const GameTable: React.FC<GameTableProps> = ({
             />
           )}
 
-          {/* Exit Match Button (Always visible on top right as requested) */}
+          {/* Exit Match Button */}
           <button
             onClick={() => setShowLeaveConfirm(true)}
-            className="w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
             title="Umalis sa Laro (Leave Match)"
           >
             <img
@@ -1462,33 +1690,35 @@ export const GameTable: React.FC<GameTableProps> = ({
                         </div>
                       )}
 
-                      {/* Active Color Indicator Tag */}
-                      <div className="absolute -bottom-5 flex items-center gap-1.5 bg-slate-950/90 px-3 py-0.5 rounded-full border border-slate-700 shadow z-20">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            currentColor === 'red'
-                              ? 'bg-red-500'
-                              : currentColor === 'blue'
-                              ? 'bg-blue-500'
-                              : currentColor === 'green'
-                              ? 'bg-emerald-500'
-                              : currentColor === 'yellow'
-                              ? 'bg-amber-400'
-                              : currentColor === 'teal'
-                              ? 'bg-teal-400'
-                              : currentColor === 'orange'
-                              ? 'bg-orange-500'
-                              : currentColor === 'purple'
-                              ? 'bg-purple-500'
-                              : currentColor === 'pink'
-                              ? 'bg-pink-500'
-                              : 'bg-slate-400'
-                          }`}
-                        ></span>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-200">
-                          {currentColor}
-                        </span>
-                      </div>
+                      {/* Active Color Indicator Tag (Hidden in All Wild variant since colors are not needed) */}
+                      {gameState.variant !== 'all_wild' && (
+                        <div className="absolute -bottom-5 flex items-center gap-1.5 bg-slate-950/90 px-3 py-0.5 rounded-full border border-slate-700 shadow z-20">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              currentColor === 'red'
+                                ? 'bg-red-500'
+                                : currentColor === 'blue'
+                                ? 'bg-blue-500'
+                                : currentColor === 'green'
+                                ? 'bg-emerald-500'
+                                : currentColor === 'yellow'
+                                ? 'bg-amber-400'
+                                : currentColor === 'teal'
+                                ? 'bg-teal-400'
+                                : currentColor === 'orange'
+                                ? 'bg-orange-500'
+                                : currentColor === 'purple'
+                                ? 'bg-purple-500'
+                                : currentColor === 'pink'
+                                ? 'bg-pink-500'
+                                : 'bg-slate-400'
+                            }`}
+                          ></span>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-200">
+                            {currentColor}
+                          </span>
+                        </div>
+                      )}
 
                       {/* Live Action Ticker directly below the played/discard card */}
                       <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-20 pointer-events-none flex flex-col items-center">
@@ -1572,13 +1802,22 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className="pointer-events-auto flex flex-col items-center relative transition-all"
                 >
                   {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
+                  {(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name)) && (
+                    <AvatarChatBubble text={(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name))!.text} />
+                  )}
                   <div className="flex items-center gap-1 sm:gap-2">
                     {/* Avatar Box with Dynamic Expansion & Turn Lightup Halo */}
                     <div className="relative">
+                      {isTurn && secondsRemaining !== null && (
+                        <AvatarTurnTimerRing
+                          progressFraction={turnProgressFraction}
+                          totalDuration={houseRules.turnTimer || 30}
+                        />
+                      )}
                       <div
-                        className={`rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 overflow-visible relative ${
+                        className={`rounded-xl flex items-center justify-center shadow-xl transition-all duration-300 overflow-hidden relative ${
                           isTurn
-                            ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
+                            ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                             : activeUnoShouts.some((s) => s.playerId === opp.id)
                             ? 'w-8 h-8 sm:w-11 sm:h-11 border-2 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
                             : speakingPlayerIds.has(opp.id)
@@ -1588,7 +1827,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                             : 'w-8 h-8 sm:w-11 sm:h-11 border border-slate-700 bg-slate-900/90'
                         }`}
                       >
-                        <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
+                        <div className="w-full h-full overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                           <AvatarDisplay avatar={opp.avatar} />
                         </div>
 
@@ -1596,14 +1835,6 @@ export const GameTable: React.FC<GameTableProps> = ({
                         {speakingPlayerIds.has(opp.id) && (
                           <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[7px] shadow z-50 animate-bounce">
                             🎙️
-                          </div>
-                        )}
-
-                        {/* Turn Timer Countdown Badge on Avatar Box */}
-                        {isTurn && secondsRemaining !== null && (
-                          <div className="absolute -bottom-2 -left-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
-                            <span>⏱️</span>
-                            <span>{secondsRemaining}s</span>
                           </div>
                         )}
                       </div>
@@ -1682,7 +1913,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <span
                     className={`text-[10px] sm:text-xs font-black mt-1 px-2.5 py-0.5 rounded-full border shadow max-w-[100px] sm:max-w-[120px] truncate text-center leading-none transition-all ${
                       isTurn
-                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] scale-105'
+                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)]'
                         : 'bg-slate-950/90 text-slate-200 border-slate-800'
                     }`}
                   >
@@ -1714,10 +1945,19 @@ export const GameTable: React.FC<GameTableProps> = ({
                   {/* Avatar Box with Turn Glow & UNO Callout */}
                   <div className="relative">
                     {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
+                    {(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name)) && (
+                      <AvatarChatBubble text={(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name))!.text} />
+                    )}
+                    {isTurn && secondsRemaining !== null && (
+                      <AvatarTurnTimerRing
+                        progressFraction={turnProgressFraction}
+                        totalDuration={houseRules.turnTimer || 30}
+                      />
+                    )}
                     <div
-                      className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative ${
+                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden ${
                         isTurn
-                          ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
+                          ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
                           ? 'w-8 h-8 sm:w-11 sm:h-11 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
                           : !opp.isFinished && opp.cardCount === 1 && !opp.calledUno
@@ -1725,17 +1965,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                           : 'w-8 h-8 sm:w-11 sm:h-11 border-slate-700 bg-slate-900/95'
                       }`}
                     >
-                      <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
+                      <div className="w-full h-full overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                         <AvatarDisplay avatar={opp.avatar} />
                       </div>
-
-                      {/* Turn Timer Countdown Badge */}
-                      {isTurn && secondsRemaining !== null && (
-                        <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
-                          <span>⏱️</span>
-                          <span>{secondsRemaining}s</span>
-                        </div>
-                      )}
                     </div>
                     {/* Catch UNO Hammer Overlay directly on Avatar */}
                     {!opp.isFinished && opp.cardCount === 1 && !opp.calledUno && (
@@ -1758,7 +1990,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <span
                     className={`text-[10px] sm:text-xs font-bold mt-1 px-2 py-0.5 rounded-full border shadow max-w-[85px] truncate text-center transition-all ${
                       isTurn
-                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] scale-105 font-black'
+                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] font-black'
                         : 'bg-slate-950/90 text-white border-slate-800'
                     }`}
                   >
@@ -1853,10 +2085,19 @@ export const GameTable: React.FC<GameTableProps> = ({
                   {/* Avatar Box with Turn Glow & UNO Callout */}
                   <div className="relative">
                     {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
+                    {(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name)) && (
+                      <AvatarChatBubble text={(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name))!.text} />
+                    )}
+                    {isTurn && secondsRemaining !== null && (
+                      <AvatarTurnTimerRing
+                        progressFraction={turnProgressFraction}
+                        totalDuration={houseRules.turnTimer || 30}
+                      />
+                    )}
                     <div
-                      className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative ${
+                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden ${
                         isTurn
-                          ? 'w-10 h-10 sm:w-14 sm:h-14 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
+                          ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
                           ? 'w-8 h-8 sm:w-11 sm:h-11 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-yellow-300'
                           : !opp.isFinished && opp.cardCount === 1 && !opp.calledUno
@@ -1864,17 +2105,9 @@ export const GameTable: React.FC<GameTableProps> = ({
                           : 'w-8 h-8 sm:w-11 sm:h-11 border-slate-700 bg-slate-900/95'
                       }`}
                     >
-                      <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
+                      <div className="w-full h-full overflow-hidden flex items-center justify-center text-base sm:text-xl md:text-2xl">
                         <AvatarDisplay avatar={opp.avatar} />
                       </div>
-
-                      {/* Turn Timer Countdown Badge */}
-                      {isTurn && secondsRemaining !== null && (
-                        <div className="absolute -bottom-2 -left-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
-                          <span>⏱️</span>
-                          <span>{secondsRemaining}s</span>
-                        </div>
-                      )}
                     </div>
                     {/* Catch UNO Hammer Overlay directly on Avatar */}
                     {!opp.isFinished && opp.cardCount === 1 && !opp.calledUno && (
@@ -1897,7 +2130,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <span
                     className={`text-[10px] sm:text-xs font-bold mt-1 px-2 py-0.5 rounded-full border shadow max-w-[85px] truncate text-center transition-all ${
                       isTurn
-                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] scale-105 font-black'
+                        ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_12px_rgba(250,204,21,0.8)] font-black'
                         : 'bg-slate-950/90 text-white border-slate-800'
                     }`}
                   >
@@ -2028,129 +2261,73 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="flex items-end justify-between gap-1 sm:gap-4">
             {/* Bottom-Left: Avatar Box & Yellow Chat Button */}
             <div className="flex items-center gap-1.5 sm:gap-3">
-              <div className="flex flex-col items-center relative">
+              <div className="flex flex-col items-center">
                 {activeUnoShouts.some((s) => s.playerId === selfPlayer.id) && <UnoCallout isSelf={true} />}
-                <div
-                  className={`rounded-xl sm:rounded-2xl flex items-center justify-center text-xl sm:text-2xl shadow-xl transition-all duration-300 relative ${
-                    isYourTurn
-                      ? 'w-11 h-11 sm:w-16 sm:h-16 scale-105 sm:scale-120 z-40 bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-200 border-2 sm:border-3 border-yellow-200 animate-turnHalo ring-2 sm:ring-4 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
-                      : activeUnoShouts.some((s) => s.playerId === selfPlayer.id)
-                      ? 'w-9 h-9 sm:w-12 sm:h-12 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-2 border-yellow-300'
-                      : speakingPlayerIds.has(selfPlayer.id)
-                      ? 'w-9 h-9 sm:w-12 sm:h-12 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.9)] animate-pulse'
-                      : 'w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border border-amber-300'
-                  }`}
-                >
-                  <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden flex items-center justify-center text-lg sm:text-2xl">
-                    <AvatarDisplay avatar={selfPlayer.avatar || '🤖'} />
-                  </div>
-
-                  {/* Speaking Mic Badge */}
-                  {speakingPlayerIds.has(selfPlayer.id) && (
-                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[8px] shadow z-50 animate-bounce">
-                      🎙️
-                    </div>
-                  )}
-
-                  {/* Turn Timer Countdown Badge on Self Avatar */}
+                {(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || (currentUserId && activeAvatarBubbles.get(currentUserId))) && (
+                  <AvatarChatBubble
+                    text={(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || activeAvatarBubbles.get(currentUserId))!.text}
+                    isSelf={true}
+                  />
+                )}
+                {/* Avatar Box with Turn Ring strictly wrapped to its dimensions */}
+                <div className="relative">
                   {isYourTurn && secondsRemaining !== null && (
-                    <div className="absolute -top-3 -right-2 bg-gradient-to-r from-red-600 to-amber-500 text-white font-black text-[9px] sm:text-xs px-1.5 py-0.5 rounded-full border border-yellow-200 shadow-[0_0_10px_rgba(239,68,68,0.9)] flex items-center gap-0.5 z-50 animate-bounce">
-                      <span>⏱️</span>
-                      <span>{secondsRemaining}s</span>
-                    </div>
+                    <AvatarTurnTimerRing
+                      progressFraction={turnProgressFraction}
+                      totalDuration={houseRules.turnTimer || 30}
+                    />
                   )}
+                  <div
+                    className={`rounded-xl flex items-center justify-center text-xl sm:text-2xl shadow-xl transition-all duration-300 relative overflow-hidden ${
+                      isYourTurn
+                        ? 'w-11 h-11 sm:w-16 sm:h-16 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
+                        : activeUnoShouts.some((s) => s.playerId === selfPlayer.id)
+                        ? 'w-9 h-9 sm:w-12 sm:h-12 animate-unoAvatar ring-2 sm:ring-4 ring-red-500 border-2 border-yellow-300'
+                        : speakingPlayerIds.has(selfPlayer.id)
+                        ? 'w-9 h-9 sm:w-12 sm:h-12 ring-4 ring-emerald-400 border-2 border-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.9)] animate-pulse'
+                        : 'w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-tr from-amber-400/30 to-yellow-300/30 border border-amber-300'
+                    }`}
+                  >
+                    <div className="w-full h-full overflow-hidden flex items-center justify-center text-lg sm:text-2xl">
+                      <AvatarDisplay avatar={selfPlayer.avatar || '🤖'} />
+                    </div>
 
-                  {/* Penalty Hammer Animation when caught or smacked */}
-                  {smackingPlayerId === selfPlayer.id && (
-                    <div className="absolute -top-4 -right-4 z-50 p-1 bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,1)] border-2 border-yellow-300 animate-hammerSmash scale-125">
-                      <span className="text-xl sm:text-2xl leading-none select-none block">🔨</span>
-                    </div>
-                  )}
+                    {/* Speaking Mic Badge */}
+                    {speakingPlayerIds.has(selfPlayer.id) && (
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border border-white flex items-center justify-center text-[8px] shadow z-50 animate-bounce">
+                        🎙️
+                      </div>
+                    )}
 
-                  {/* Warning banner when vulnerable on 1 card */}
-                  {yourHand.length === 1 && !selfPlayer.calledUno && (
-                    <div className="absolute -top-3 -left-3 z-50 p-1 bg-red-600 text-yellow-300 rounded-full border border-yellow-300 shadow animate-pulse">
-                      <span className="text-xs leading-none select-none block">⚠️</span>
-                    </div>
-                  )}
+                    {/* Penalty Hammer Animation when caught or smacked */}
+                    {smackingPlayerId === selfPlayer.id && (
+                      <div className="absolute -top-4 -right-4 z-50 p-1 bg-red-600 text-white rounded-full shadow-[0_0_20px_rgba(239,68,68,1)] border-2 border-yellow-300 animate-hammerSmash scale-125">
+                        <span className="text-xl sm:text-2xl leading-none select-none block">🔨</span>
+                      </div>
+                    )}
+
+                    {/* Warning banner when vulnerable on 1 card */}
+                    {yourHand.length === 1 && !selfPlayer.calledUno && (
+                      <div className="absolute -top-3 -left-3 z-50 p-1 bg-red-600 text-yellow-300 rounded-full border border-yellow-300 shadow animate-pulse">
+                        <span className="text-xs leading-none select-none block">⚠️</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <span
-                  className={`text-[9px] sm:text-xs font-bold mt-0.5 px-2 py-0.2 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
+                  className={`text-[9px] sm:text-xs font-bold mt-1 px-2.5 py-0.5 rounded-full border shadow max-w-[80px] sm:max-w-[120px] truncate text-center transition-all ${
                     isYourTurn
-                      ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.8)] scale-105 font-black'
+                      ? 'bg-amber-400 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.8)] font-black'
                       : 'bg-slate-950/90 text-white border-slate-800'
                   }`}
                 >
                   {selfPlayer.name}
                 </span>
               </div>
-
-              {/* Circular Yellow Chat Button */}
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={onOpenChat}
-                  className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                  title="Room Chat"
-                >
-                  <img
-                    src="/home screen in game icons/chats.png"
-                    alt="Chat"
-                    className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                  />
-                  {unreadChatCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-600 text-[8px] font-black text-white flex items-center justify-center shadow">
-                      {unreadChatCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {/* Circular Open Mic Button - Official Uploaded Game Icon */}
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={handleToggleMic}
-                  className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                  title={
-                    !isVoiceConnected
-                      ? 'Buksan ang Mikropono (Enable Mic)'
-                      : isVoiceMuted
-                      ? 'Naka-Mute ang Mic (Pindutin para magsalita)'
-                      : 'Bukas ang Mic (Nagsasalita / Live)'
-                  }
-                >
-                  <img
-                    src={isVoiceMuted || !isVoiceConnected ? "/home screen in game icons/mic off.png" : "/home screen in game icons/mic on.png"}
-                    alt="Mic"
-                    className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                  />
-
-                  {/* Pulsing indicator when speaking */}
-                  {speakingPlayerIds.has(currentUserId) && !isVoiceMuted && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white animate-ping" />
-                  )}
-                </button>
-              </div>
-
-              {/* Circular Yellow Tindahan / Power-Up Shop Button - Official Uploaded Game Icon */}
-              {onOpenShop && (
-                <div className="flex flex-col items-center">
-                  <button
-                    onClick={onOpenShop}
-                    className="relative w-8 h-8 sm:w-10 sm:h-10 aspect-square flex items-center justify-center cursor-pointer hover:scale-105 active:scale-95 transition-transform p-0 shrink-0"
-                    title="Buksan ang Tindahan (Power-Up Shop)"
-                  >
-                    <img
-                      src="/home screen in game icons/shop.png"
-                      alt="Shop"
-                      className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
-                    />
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Bottom-Center: Interactive Player Hand or Finished Banner */}
-            <div className="flex-1 min-w-0 max-w-4xl flex flex-col items-center">
+            <div className="flex-1 min-w-0 max-w-4xl flex flex-col items-center justify-center">
               {selfPlayer.isFinished ? (
                 <div className="py-3 px-6 bg-gradient-to-r from-amber-500/25 via-emerald-500/25 to-amber-500/25 border-2 border-amber-400/80 rounded-2xl shadow-2xl flex flex-col items-center text-center animate-bounce">
                   <span className="text-2xl">
@@ -2204,28 +2381,29 @@ export const GameTable: React.FC<GameTableProps> = ({
                       const mid = (total - 1) / 2;
                       const rel = idx - mid;
 
-                      // Dynamic card sizing: scale dynamically based on screen width and hand count
+                      // Keep consistent card sizing and natural card fan arrangement
+                      // so the layout stays identical even when hand count decreases
                       const isSmallScreen = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
                       const cardSize: 'xs' | 'sm' | 'md' = isSmallScreen 
-                        ? (total > 12 ? 'xs' : total > 7 ? 'sm' : 'md')
-                        : (total > 20 ? 'xs' : total > 12 ? 'sm' : 'md');
+                        ? (total > 15 ? 'xs' : 'sm')
+                        : (total > 16 ? 'sm' : 'md');
 
-                      // Dynamic step angles so cards don't rotate too wildly when count is large
-                      const stepAngle = total > 18 ? 0.8 : total > 12 ? 1.4 : total > 7 ? 2.2 : 3.0;
+                      // Stable gentle step angle and arch curve
+                      const stepAngle = total > 14 ? 1.5 : total > 8 ? 2.0 : 2.5;
                       const rot = rel * stepAngle;
-                      const archY = Math.pow(Math.abs(rel), 1.2) * (total > 12 ? 0.9 : 1.3);
+                      const archY = Math.pow(Math.abs(rel), 1.25) * 1.1;
 
-                      // Continuous dynamic overlap margin
+                      // Stable overlap spacing that doesn't collapse or wildly shift when card count decreases
                       const baseWidth = cardSize === 'xs' ? 36 : cardSize === 'sm' ? 56 : 76;
-                      const maxContainerWidth = typeof window !== 'undefined' ? Math.max(window.innerWidth - 180, 240) : 500;
+                      const maxContainerWidth = typeof window !== 'undefined' ? Math.max(window.innerWidth - 160, 260) : 500;
                       const requiredWidth = total * baseWidth;
                       let overlapMargin = 0;
                       if (idx > 0 && requiredWidth > maxContainerWidth) {
                         const excess = requiredWidth - maxContainerWidth;
                         const neededNegativePerCard = excess / (total - 1);
-                        overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.82);
+                        overlapMargin = -Math.min(neededNegativePerCard, baseWidth * 0.75);
                       } else if (idx > 0) {
-                        overlapMargin = total > 6 ? -24 : total > 4 ? -16 : -8;
+                        overlapMargin = -26; // Consistent natural poker fan overlap
                       }
 
                       return (
@@ -2566,42 +2744,6 @@ export const GameTable: React.FC<GameTableProps> = ({
           <CardView isBack={true} size="md" className="shadow-2xl" />
         </div>
       ))}
-
-      {/* CORNER IN-GAME CHAT PROMPT: Floating notification bubble in the table corner */}
-      {activeChatPrompt && (
-        <div className="fixed bottom-20 left-4 sm:bottom-24 sm:left-6 z-50 pointer-events-auto animate-fadeIn max-w-[280px] sm:max-w-xs transition-all duration-300">
-          <div
-            onClick={onOpenChat}
-            className="cursor-pointer bg-slate-900/95 hover:bg-slate-800/95 border-2 border-amber-400/80 rounded-2xl p-2.5 shadow-2xl backdrop-blur-md flex items-start gap-2.5 active:scale-95 transition"
-            title="I-click para buksan ang chat"
-          >
-            <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-400/60 flex items-center justify-center shrink-0 overflow-hidden text-sm">
-              <AvatarDisplay avatar={activeChatPrompt.avatar} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-black text-amber-300 truncate">
-                  {activeChatPrompt.senderName}
-                </span>
-                <span className="text-[9px] text-slate-400 shrink-0 font-medium">ngayon</span>
-              </div>
-              <p className="text-xs text-white break-words line-clamp-2 mt-0.5 leading-tight">
-                {activeChatPrompt.text}
-              </p>
-            </div>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveChatPrompt(null);
-              }}
-              className="text-slate-400 hover:text-white text-xs p-0.5 shrink-0"
-              title="Isara"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
 
     </div>
   );

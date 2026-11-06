@@ -84,19 +84,41 @@ export class RoomManager {
     }[] = [];
 
     for (const [id, room] of this.rooms.entries()) {
-      if (!room.publicState.isPrivate && room.publicState.phase !== 'ended') {
-        list.push({
-          roomId: id,
-          roomName: room.publicState.roomName,
-          variant: room.publicState.variant,
-          playerCount: room.publicState.players.length,
-          maxPlayers: 10,
-          phase: room.publicState.phase,
-          entryFee: room.publicState.entryFee,
-          prizePool: room.publicState.prizePool,
-          spectatorCount: room.spectators?.size || 0,
-        });
+      // Must not be private, ended, or an automated test room (e.g. alice_123, test-room, Championship Match test)
+      if (room.publicState.isPrivate || room.publicState.phase === 'ended') {
+        continue;
       }
+
+      // Check if this was a test room
+      const isTestRoom =
+        room.publicState.hostId.startsWith('alice_') ||
+        room.publicState.hostId.startsWith('test') ||
+        room.publicState.hostId.startsWith('p1_') ||
+        room.publicState.roomName === 'Championship Match';
+
+      if (isTestRoom) {
+        // Automatically purge leftover test rooms from memory
+        this.cleanupRoom(id);
+        continue;
+      }
+
+      // Only display rooms that have at least one active, real connected human player
+      const hasActiveHuman = room.publicState.players.some((p) => !p.isBot && !p.isDisconnected);
+      if (!hasActiveHuman) {
+        continue;
+      }
+
+      list.push({
+        roomId: id,
+        roomName: room.publicState.roomName,
+        variant: room.publicState.variant,
+        playerCount: room.publicState.players.length,
+        maxPlayers: 10,
+        phase: room.publicState.phase,
+        entryFee: room.publicState.entryFee,
+        prizePool: room.publicState.prizePool,
+        spectatorCount: room.spectators?.size || 0,
+      });
     }
     return list;
   }
@@ -310,12 +332,15 @@ export class RoomManager {
   }
 
   /**
-   * Host updates room house rules while in lobby.
+   * Host updates room house rules and variant while in lobby.
    */
-  public updateRules(roomId: string, playerId: string, rules: Partial<HouseRules>): boolean {
+  public updateRules(roomId: string, playerId: string, rules: Partial<HouseRules>, variant?: GameVariant): boolean {
     const room = this.rooms.get(roomId);
     if (!room || room.publicState.hostId !== playerId || room.publicState.phase !== 'lobby') {
       return false;
+    }
+    if (variant) {
+      room.publicState.variant = variant;
     }
     room.publicState.houseRules = {
       ...room.publicState.houseRules,
@@ -507,7 +532,7 @@ export class RoomManager {
   public startGame(
     roomId: string,
     hostId: string,
-    countdownMs: number = process.env.NODE_ENV === 'test' || typeof process !== 'undefined' && process.env.VITEST ? 0 : 10000
+    countdownMs: number = (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || Boolean(process.env.VITEST))) ? 0 : 10000
   ): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
     if (!room) return { success: false, message: 'Room not found.' };
@@ -788,8 +813,31 @@ export class RoomManager {
 
     // UNO check: if player now has 1 card
     if (hand.length === 1) {
-      if (!activePlayer.calledUno) {
-        // Open a 3-second window for opponents to catch missed UNO
+      if (activePlayer.isBot) {
+        // Bots do NOT automatically get calledUno=true immediately.
+        // Instead, the hammer appears! Bot will only call UNO after a 2.5s-4.0s delay (if not caught first).
+        activePlayer.calledUno = false;
+        publicState.unoCallWindow = {
+          targetPlayerId: activePlayer.id,
+          expiresAt: Date.now() + 3500,
+        };
+
+        if (room.unoTimeout) clearTimeout(room.unoTimeout);
+        const botCallDelay = 2200 + Math.random() * 1500; // 2.2s - 3.7s window for player to smack them with hammer!
+        room.unoTimeout = setTimeout(() => {
+          const currentRoom = this.rooms.get(roomId);
+          if (!currentRoom || currentRoom.publicState.phase !== 'playing') return;
+          const currentHand = currentRoom.playerHands.get(activePlayer.id) || [];
+          if (currentHand.length === 1 && !activePlayer.calledUno) {
+            activePlayer.calledUno = true;
+            currentRoom.publicState.unoCallWindow = null;
+            this.broadcastUnoShout(roomId, activePlayer.id, activePlayer.name);
+            this.broadcastToast(roomId, `🔥 ${activePlayer.name} SHOUTED UNO! 🔥`, 'uno_call');
+            this.broadcastState(roomId);
+          }
+        }, botCallDelay);
+      } else if (!activePlayer.calledUno) {
+        // Human player forgot or hasn't called UNO yet: open a 3.5s reaction window for opponents
         publicState.unoCallWindow = {
           targetPlayerId: activePlayer.id,
           expiresAt: Date.now() + 3500,
@@ -2092,23 +2140,7 @@ export class RoomManager {
       if (!currentActive || currentActive.id !== activePlayer.id) return;
 
       const botHand = room.playerHands.get(activePlayer.id) || [];
-
-      // Bot Catch UNO check: catch any opponent who forgot to call UNO
-      // Humans are given a reaction window; bots only catch with a modest chance (35%) after a slight delay
-      for (const opp of room.publicState.players) {
-        if (opp.id !== activePlayer.id && !opp.isFinished && opp.cardCount === 1 && !opp.calledUno) {
-          if (Math.random() < 0.35) {
-            this.catchUno(roomId, activePlayer.id, opp.id);
-            break;
-          }
-        }
-      }
-
       const decision = makeBotMove(botHand, room.publicState, room.publicState.houseRules);
-
-      if (decision.shouldCallUno) {
-        this.callUno(roomId, activePlayer.id);
-      }
 
       if (decision.action === 'play' && decision.cardId) {
         this.playCard(

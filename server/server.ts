@@ -200,8 +200,8 @@ wss.on('connection', (ws: WebSocket) => {
         }
 
         case 'UPDATE_RULES': {
-          const { roomId, playerId, rules } = data;
-          roomManager.updateRules(roomId, playerId, rules);
+          const { roomId, playerId, rules, variant } = data;
+          roomManager.updateRules(roomId, playerId, rules, variant);
           break;
         }
 

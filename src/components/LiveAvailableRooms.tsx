@@ -19,6 +19,7 @@ interface LiveAvailableRoomsProps {
   onRefresh: () => void;
   onJoin: (roomId: string) => void;
   onSpectate: (roomId: string) => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
@@ -27,8 +28,20 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
   onRefresh,
   onJoin,
   onSpectate,
+  onOpenChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    onOpenChange?.(true);
+    onRefresh();
+  };
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onOpenChange?.(false);
+  };
 
   // If closed: Render a small, transparent running marquee banner at the very top of the screen
   if (!isOpen) {
@@ -38,10 +51,7 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
 
     return (
       <div
-        onClick={() => {
-          setIsOpen(true);
-          onRefresh();
-        }}
+        onClick={handleOpen}
         className="w-full bg-black/40 hover:bg-black/60 backdrop-blur-xs border-b border-white/10 hover:border-amber-400/50 py-1 px-3 cursor-pointer transition-all flex items-center gap-2 overflow-hidden shadow-sm select-none"
         title="I-click para buksan ang Live TV Rooms"
       >
@@ -108,7 +118,7 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
             </button>
             <button
-              onClick={() => setIsOpen(false)}
+              onClick={handleClose}
               className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition active:scale-95 cursor-pointer font-bold text-xs px-2.5"
               title="Isara"
             >
@@ -188,7 +198,10 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
                     <div className="flex items-center gap-1.5">
                       {/* Spectate Button */}
                       <button
-                        onClick={() => onSpectate(rId)}
+                        onClick={() => {
+                          handleClose();
+                          onSpectate(rId);
+                        }}
                         className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-md shadow-purple-900/30 active:scale-95 transition cursor-pointer"
                         title="View / Manood lamang sa larong ito (Viewing mode)"
                       >
@@ -199,7 +212,10 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
                       {/* Join as Player if in lobby and not full */}
                       {!isPlaying && !isFull && (
                         <button
-                          onClick={() => onJoin(rId)}
+                          onClick={() => {
+                            handleClose();
+                            onJoin(rId);
+                          }}
                           className="px-2 py-1 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-[11px] flex items-center gap-1 shadow-md shadow-emerald-900/30 active:scale-95 transition cursor-pointer"
                         >
                           <Play className="w-3 h-3 fill-current" />

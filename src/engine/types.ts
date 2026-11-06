@@ -275,6 +275,10 @@ export type SoundEffectType =
   | 'power_general'
   | 'power_swap'
   | 'power_skip2'
+  | 'color_red'
+  | 'color_blue'
+  | 'color_yellow'
+  | 'color_green'
   | 'vs_impact'
   | 'countdown_tick'
   | 'match_start';

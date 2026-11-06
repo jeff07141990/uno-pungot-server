@@ -22,7 +22,7 @@ import {
   HelpCircle,
   X,
 } from 'lucide-react';
-import { EntryFeeAmount, GameVariant, PlayerWallet, PublicGameState, PublicPlayer } from '../engine/types';
+import { EntryFeeAmount, GameVariant, HouseRules, PlayerWallet, PublicGameState, PublicPlayer } from '../engine/types';
 
 interface LobbyViewProps {
   gameState: PublicGameState;
@@ -40,6 +40,7 @@ interface LobbyViewProps {
   wallet?: PlayerWallet | null;
   onConfirmPayment?: () => void;
   onUpdateEntryFee?: (fee: EntryFeeAmount) => void;
+  onUpdateRules?: (rules: Partial<HouseRules>, variant?: GameVariant) => void;
 }
 
 export const LobbyView: React.FC<LobbyViewProps> = ({
@@ -58,10 +59,12 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
   wallet,
   onConfirmPayment,
   onUpdateEntryFee,
+  onUpdateRules,
 }) => {
   const [copied, setCopied] = useState(false);
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showMatchSettingsModal, setShowMatchSettingsModal] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
 
   const isHost = gameState.hostId === currentUserId;
@@ -308,17 +311,33 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
         </div>
       )}
 
-      {/* Main Center Area: Players Grid & Rules Card */}
-      <div className="w-full max-w-4xl mx-auto my-6 grid grid-cols-1 md:grid-cols-3 gap-6 flex-1">
-        {/* Players List (2 columns on wide screen) */}
-        <div className="md:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <span>Players in Lobby</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-amber-400">
-                {gameState.players.length}/{maxPlayersAllowed}
-              </span>
-            </h3>
+      {/* Main Center Area: Players in Lobby (Full Width 1-Screen) */}
+      <div className="w-full max-w-5xl mx-auto my-4 sm:my-6 flex-1 flex flex-col">
+        <div className="space-y-4 flex-1">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-black text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                <span>Players in Lobby</span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-amber-400 border border-slate-700">
+                  {gameState.players.length}/{maxPlayersAllowed}
+                </span>
+              </h3>
+
+              {/* Match Settings Button */}
+              <button
+                onClick={() => setShowMatchSettingsModal(true)}
+                className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs border border-amber-500/40 flex items-center gap-1.5 transition active:scale-95 shadow"
+                title="Tingnan o Baguhin ang Match Settings"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>Match Settings</span>
+                {isHost && (
+                  <span className="text-[10px] bg-amber-500/20 text-amber-400 font-extrabold px-1 rounded border border-amber-500/30">
+                    Edit
+                  </span>
+                )}
+              </button>
+            </div>
 
             {isHost && gameState.players.length < maxPlayersAllowed && (
               <button
@@ -331,7 +350,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {gameState.players.map((player) => {
               const isSelf = player.id === currentUserId;
               return (
@@ -432,115 +451,6 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 </div>
               ))
             )}
-          </div>
-        </div>
-
-        {/* Selected House Rules & Match Settings Card */}
-        <div className="bg-slate-900/80 backdrop-blur-md rounded-3xl p-5 border border-slate-800 shadow-xl flex flex-col justify-between">
-          <div>
-            <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-amber-400" />
-              <span>Match Settings</span>
-            </h4>
-
-            <div className="space-y-3 text-xs">
-              {/* Entry Fee Row */}
-              <div className="flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                <span className="text-amber-200 flex items-center gap-1.5 font-bold">
-                  <Coins className="w-3.5 h-3.5 text-amber-400" />
-                  Entry Fee
-                </span>
-                <span className="font-black text-amber-300">
-                  {isFeeRoom ? `₱${feeAmount} per player` : 'Free / Casual'}
-                </span>
-              </div>
-
-              {/* Prize Pool Row */}
-              {isFeeRoom && (
-                <div className="flex items-center justify-between p-2 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <span className="text-amber-200 flex items-center gap-1.5 font-bold">
-                    <span>🏆</span>
-                    Total Prize Pool
-                  </span>
-                  <span className="font-black text-amber-300">
-                    ₱{poolAmount.toLocaleString()} (5 Places)
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  Game Variant
-                </span>
-                <span className="font-bold text-amber-300 flex items-center gap-1">
-                  <span>{activeVariantInfo.icon}</span>
-                  <span>{activeVariantInfo.label}</span>
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-red-950/40 border border-red-500/30">
-                <span className="text-red-300 flex items-center gap-1.5 font-semibold">
-                  <span>💀</span>
-                  Defeat Condition
-                </span>
-                <span className="font-bold text-red-400 text-[11px]">
-                  Last with Cards Loses (Pungot)
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Timer className="w-3.5 h-3.5 text-cyan-400" />
-                  Turn Timer
-                </span>
-                <span className="font-bold text-white">
-                  {gameState.houseRules.turnTimer > 0 ? `${gameState.houseRules.turnTimer}s` : 'Off'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5 text-blue-400" />
-                  Starting Hand
-                </span>
-                <span className="font-bold text-white">
-                  {gameState.houseRules.startingHandSize} Cards
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-red-400" />
-                  Stacking Rules
-                </span>
-                <span className={gameState.houseRules.stacking ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold'}>
-                  {gameState.houseRules.stacking ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400">7-0 Swap Rule</span>
-                <span className={gameState.houseRules.sevenZero ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold'}>
-                  {gameState.houseRules.sevenZero ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-800">
-                <span className="text-slate-400">WD4 Challenge</span>
-                <span className={gameState.houseRules.wildDraw4Challenge ? 'text-emerald-400 font-bold' : 'text-slate-500 font-bold'}>
-                  {gameState.houseRules.wildDraw4Challenge ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 text-[11px] text-slate-500 text-center">
-            {isHost
-              ? isFeeRoom
-                ? '5 players & all paid required to start match.'
-                : 'You are the host. You control when the match begins.'
-              : 'Waiting for host to launch the game...'}
           </div>
         </div>
       </div>
@@ -717,6 +627,319 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 font-black text-xs active:scale-95 transition shadow-lg"
               >
                 {isPaying ? 'Nagbabayad...' : `Magbayad (₱${feeAmount})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SEPARATE MATCH SETTINGS MODAL (Editable by Host) */}
+      {showMatchSettingsModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="w-full max-w-lg bg-slate-900 border-2 border-amber-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl animate-scaleIn my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>MATCH SETTINGS</span>
+                    {isHost ? (
+                      <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/40">
+                        Host Controls
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">
+                        View Only
+                      </span>
+                    )}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    {isHost ? 'I-adjust ang mga panuntunan bago simulan ang laban.' : 'Mga kasalukuyang panuntunan ng laban.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowMatchSettingsModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center active:scale-95 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body: Settings List */}
+            <div className="space-y-3.5 my-5 max-h-[62vh] overflow-y-auto pr-1">
+              {/* 1. Entry Fee Option (Host Editable when unlocked) */}
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
+                    <Coins className="w-4 h-4 text-amber-400" />
+                    Entry Fee & Prize Pool
+                  </span>
+                  <span className="text-xs font-black text-amber-300">
+                    {isFeeRoom ? `₱${feeAmount} per player (Pool: ₱${poolAmount.toLocaleString()})` : 'Free / Casual'}
+                  </span>
+                </div>
+                {isHost && !gameState.isEntryFeeLocked ? (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {([0, 10, 20, 50] as EntryFeeAmount[]).map((fee) => (
+                      <button
+                        key={fee}
+                        onClick={() => {
+                          if (onUpdateEntryFee) {
+                            onUpdateEntryFee(fee);
+                            onToast(`Entry fee pinalitan sa ${fee === 0 ? 'Free' : `₱${fee}`}`);
+                          }
+                        }}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-extrabold border transition active:scale-95 ${
+                          feeAmount === fee
+                            ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.5)]'
+                            : 'bg-slate-950/60 text-slate-300 border-slate-700 hover:border-amber-400/50'
+                        }`}
+                      >
+                        {fee === 0 ? 'Free' : `₱${fee}`}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400">
+                    {gameState.isEntryFeeLocked ? 'Naka-lock ang entry fee dahil may sumali nang ibang manlalaro.' : 'Tanging Host lamang ang maaaring magpalit ng Entry Fee.'}
+                  </p>
+                )}
+              </div>
+
+              {/* 2. Game Variant (Host Editable) */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    Game Variant
+                  </span>
+                  <span className="text-xs font-black text-amber-300 flex items-center gap-1">
+                    <span>{activeVariantInfo.icon}</span>
+                    <span>{activeVariantInfo.label}</span>
+                  </span>
+                </div>
+                {isHost ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    {(['classic', 'all_wild', 'flip', 'dare'] as GameVariant[]).map((v) => {
+                      const vInfo = variantBadgeMap[v];
+                      const isSel = (gameState.variant || 'classic') === v;
+                      return (
+                        <button
+                          key={v}
+                          onClick={() => {
+                            if (onUpdateRules) {
+                              onUpdateRules({}, v);
+                              onToast(`Game variant pinalitan sa ${vInfo.label}`);
+                            }
+                          }}
+                          className={`py-1.5 px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-1 transition active:scale-95 ${
+                            isSel
+                              ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.5)]'
+                              : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                          }`}
+                        >
+                          <span>{vInfo.icon}</span>
+                          <span className="truncate">{vInfo.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 3. Defeat Condition (Pungot Edition) */}
+              <div className="p-3 rounded-2xl bg-red-950/40 border border-red-500/30 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-red-300 flex items-center gap-1.5">
+                    <span>💀</span>
+                    Defeat Condition
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    Ang huling manlalarong may hawak na baraha ang talo (Pungot).
+                  </div>
+                </div>
+                <span className="text-xs font-black text-red-400 bg-red-500/20 px-2 py-1 rounded-xl border border-red-500/40 shrink-0">
+                  Last with Cards Loses
+                </span>
+              </div>
+
+              {/* 4. Turn Timer (Host Editable: Off, 15s, 30s, 60s) */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Timer className="w-4 h-4 text-cyan-400" />
+                    Turn Timer
+                  </span>
+                  <span className="text-xs font-black text-cyan-300">
+                    {gameState.houseRules.turnTimer > 0 ? `${gameState.houseRules.turnTimer}s` : 'Off'}
+                  </span>
+                </div>
+                {isHost ? (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {([0, 15, 30, 60] as const).map((timerVal) => (
+                      <button
+                        key={timerVal}
+                        onClick={() => {
+                          if (onUpdateRules) {
+                            onUpdateRules({ turnTimer: timerVal });
+                            onToast(`Turn timer: ${timerVal === 0 ? 'Off' : `${timerVal}s`}`);
+                          }
+                        }}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
+                          gameState.houseRules.turnTimer === timerVal
+                            ? 'bg-cyan-500 text-slate-950 border-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.5)]'
+                            : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        {timerVal === 0 ? 'Off' : `${timerVal}s`}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 5. Starting Hand Size (Host Editable: 3, 5, 7, 10 Cards) */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-blue-400" />
+                    Starting Hand
+                  </span>
+                  <span className="text-xs font-black text-blue-300">
+                    {gameState.houseRules.startingHandSize} Cards
+                  </span>
+                </div>
+                {isHost ? (
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    {[3, 5, 7, 10].map((handSize) => (
+                      <button
+                        key={handSize}
+                        onClick={() => {
+                          if (onUpdateRules) {
+                            onUpdateRules({ startingHandSize: handSize });
+                            onToast(`Starting hand pinalitan sa ${handSize} Cards`);
+                          }
+                        }}
+                        className={`py-1.5 px-2 rounded-xl text-xs font-bold border transition active:scale-95 ${
+                          gameState.houseRules.startingHandSize === handSize
+                            ? 'bg-blue-500 text-slate-950 border-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.5)]'
+                            : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500'
+                        }`}
+                      >
+                        {handSize} Cards
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* 6. House Rule Toggles (Stacking, 7-0 Swap, WD4 Challenge) */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5">
+                <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <Flame className="w-4 h-4 text-rose-400" />
+                  House Rule Toggles
+                </div>
+
+                {/* Stacking Rule */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <div>
+                    <div className="text-xs font-bold text-white">Stacking Rules (+2 sa +2, +4)</div>
+                    <div className="text-[10px] text-slate-400">Pwedeng ipatong ang penalty draw card.</div>
+                  </div>
+                  {isHost ? (
+                    <button
+                      onClick={() => {
+                        if (onUpdateRules) {
+                          onUpdateRules({ stacking: !gameState.houseRules.stacking });
+                          onToast(`Stacking rules ${!gameState.houseRules.stacking ? 'Enabled' : 'Disabled'}`);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-black border transition active:scale-95 ${
+                        gameState.houseRules.stacking
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {gameState.houseRules.stacking ? 'Enabled' : 'Disabled'}
+                    </button>
+                  ) : (
+                    <span className={gameState.houseRules.stacking ? 'text-emerald-400 font-bold text-xs' : 'text-slate-500 font-bold text-xs'}>
+                      {gameState.houseRules.stacking ? 'Enabled' : 'Disabled'}
+                    </span>
+                  )}
+                </div>
+
+                {/* 7-0 Swap Rule */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <div>
+                    <div className="text-xs font-bold text-white">7-0 Swap Rule</div>
+                    <div className="text-[10px] text-slate-400">7 = palit kamay sa napiling player; 0 = ikot ang kamay.</div>
+                  </div>
+                  {isHost ? (
+                    <button
+                      onClick={() => {
+                        if (onUpdateRules) {
+                          onUpdateRules({ sevenZero: !gameState.houseRules.sevenZero });
+                          onToast(`7-0 rule ${!gameState.houseRules.sevenZero ? 'Enabled' : 'Disabled'}`);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-black border transition active:scale-95 ${
+                        gameState.houseRules.sevenZero
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {gameState.houseRules.sevenZero ? 'Enabled' : 'Disabled'}
+                    </button>
+                  ) : (
+                    <span className={gameState.houseRules.sevenZero ? 'text-emerald-400 font-bold text-xs' : 'text-slate-500 font-bold text-xs'}>
+                      {gameState.houseRules.sevenZero ? 'Enabled' : 'Disabled'}
+                    </span>
+                  )}
+                </div>
+
+                {/* WD4 Challenge */}
+                <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                  <div>
+                    <div className="text-xs font-bold text-white">WD4 Bluff Challenge</div>
+                    <div className="text-[10px] text-slate-400">Pwedeng i-challenge ang naglaro ng Wild Draw 4.</div>
+                  </div>
+                  {isHost ? (
+                    <button
+                      onClick={() => {
+                        if (onUpdateRules) {
+                          onUpdateRules({ wildDraw4Challenge: !gameState.houseRules.wildDraw4Challenge });
+                          onToast(`WD4 challenge ${!gameState.houseRules.wildDraw4Challenge ? 'Enabled' : 'Disabled'}`);
+                        }
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-black border transition active:scale-95 ${
+                        gameState.houseRules.wildDraw4Challenge
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow'
+                          : 'bg-slate-800 text-slate-400 border-slate-700'
+                      }`}
+                    >
+                      {gameState.houseRules.wildDraw4Challenge ? 'Enabled' : 'Disabled'}
+                    </button>
+                  ) : (
+                    <span className={gameState.houseRules.wildDraw4Challenge ? 'text-emerald-400 font-bold text-xs' : 'text-slate-500 font-bold text-xs'}>
+                      {gameState.houseRules.wildDraw4Challenge ? 'Enabled' : 'Disabled'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-3 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setShowMatchSettingsModal(false)}
+                className="py-2.5 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs active:scale-95 transition shadow-lg"
+              >
+                Isara (Done)
               </button>
             </div>
           </div>

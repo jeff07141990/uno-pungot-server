@@ -39,11 +39,22 @@ class SoundManager {
     }
   }
 
+  private lastPlayedTimes: Map<string, number> = new Map();
+
   /**
    * Helper to play an external audio file with high reliability on mobile & desktop browsers.
    */
   public playAudioFile(path: string, volumeScale: number = 1.0): boolean {
     if (this.isMuted || this.volume <= 0 || typeof window === 'undefined') return false;
+    
+    // Prevent double-trigger / echoing within a short window (350ms)
+    const now = Date.now();
+    const lastPlayed = this.lastPlayedTimes.get(path) || 0;
+    if (now - lastPlayed < 350) {
+      return true;
+    }
+    this.lastPlayedTimes.set(path, now);
+
     try {
       let audio = this.audioCache.get(path);
       if (!audio) {
@@ -204,6 +215,18 @@ class SoundManager {
         case 'power_swap':
           this.playPowerSwap(ctx);
           break;
+        case 'color_red':
+          this.playColorVoice('red');
+          break;
+        case 'color_blue':
+          this.playColorVoice('blue');
+          break;
+        case 'color_yellow':
+          this.playColorVoice('yellow');
+          break;
+        case 'color_green':
+          this.playColorVoice('green');
+          break;
         case 'power_general':
         case 'flip':
         case 'dare':
@@ -222,6 +245,17 @@ class SoundManager {
     } catch (e) {
       console.warn('Audio playback error', e);
     }
+  }
+
+  /**
+   * Play voiced color sound effect: red.mp3, blue.mp3, yellow.mp3, green.mp3
+   */
+  public playColorVoice(color: string): boolean {
+    const col = color.toLowerCase().trim();
+    if (col === 'red' || col === 'blue' || col === 'yellow' || col === 'green') {
+      return this.playAudioFile(`/sound effects/${col}.mp3`, 1.0);
+    }
+    return false;
   }
 
   // --- POWER CARDS SOUND EFFECTS (Synthesized Web Audio) ---
@@ -343,9 +377,10 @@ class SoundManager {
     });
   }
 
-  // 5. WILD: Play Colored Wild.mp3, fallback to draw color card the power card.wav or synthesized chime
+  // 5. WILD: Play wild color.mp3, fallback to Colored Wild.mp3 or synthesized chime
   private playPowerWild(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/Colored Wild.mp3', 0.95) ||
+    const played = this.playAudioFile('/sound effects/wild color.mp3', 0.95) ||
+                   this.playAudioFile('/sound effects/Colored Wild.mp3', 0.95) ||
                    this.playAudioFile('/sound effects/draw color card the power card.wav', 0.9);
     if (played) return;
 
@@ -414,11 +449,6 @@ class SoundManager {
                    this.playAudioFile('/sound effects/douple skip.wav', 0.9);
     if (played) return;
     this.playPowerSkip(ctx);
-    setTimeout(() => {
-      try {
-        this.playPowerSkip(ctx);
-      } catch (_) {}
-    }, 120);
   }
 
   // 9. SWAP CARD: Play Card Swap.mp3, fallback to swap card.wav

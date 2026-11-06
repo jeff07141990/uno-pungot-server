@@ -72,7 +72,13 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                 className={`flex flex-col ${isSelf ? 'items-end' : 'items-start'}`}
               >
                 <div className="flex items-center gap-1.5 mb-1 text-[11px] text-slate-400">
-                  <span>{msg.senderAvatar}</span>
+                  <div className="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center shrink-0 bg-slate-800">
+                    {msg.senderAvatar && msg.senderAvatar.startsWith('data:image') ? (
+                      <img src={msg.senderAvatar} alt={msg.senderName} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px]">{msg.senderAvatar || '💬'}</span>
+                    )}
+                  </div>
                   <span className="font-bold text-slate-300">{msg.senderName}</span>
                   {!isSelf && (
                     <button

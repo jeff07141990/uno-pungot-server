@@ -660,6 +660,7 @@ export const App: React.FC = () => {
           wallet={wallet}
           onConfirmPayment={() => networkManager.confirmEntryPayment(publicState.roomId, userId)}
           onUpdateEntryFee={(fee) => networkManager.updateEntryFee(publicState.roomId, userId, fee)}
+          onUpdateRules={(rules, variant) => networkManager.updateRules(publicState.roomId, userId, rules, variant)}
         />
       ) : (
         <>

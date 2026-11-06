@@ -13,7 +13,7 @@ describe('Real Live Multi-Player Network Integration', () => {
         hostId: 'alice_123',
         hostName: 'Alice',
         hostAvatar: '🦊',
-        options: { roomName: 'Championship Match' },
+        options: { roomName: 'Test Match', isPrivate: true },
       }),
     });
     const { roomId } = await createRes.json();

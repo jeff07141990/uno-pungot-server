@@ -114,7 +114,7 @@ describe('Card Playability and Matching Rules', () => {
     rm.addBot(roomId, 'p1'); // p4
 
     const room = rm.getRoom(roomId)!;
-    rm.startGame(roomId, 'p1');
+    rm.startGame(roomId, 'p1', 0);
 
     // Setup active state at player 0
     room.publicState.activePlayerIndex = 0;

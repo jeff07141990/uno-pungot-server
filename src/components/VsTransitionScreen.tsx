@@ -147,6 +147,12 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
   onFinishRef.current = onFinish;
 
   useEffect(() => {
+    // Play real background video immediately
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      videoRef.current.play().catch(() => {});
+    }
+
     // 0s: Play VS impact sound instantly
     soundManager.play('vs_impact');
     setAnimStage('players');
@@ -212,7 +218,7 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
         animStage === 'exiting' ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
-      {/* 1. CINEMATIC VIDEO ARENA BACKGROUND (VS SCREEN.mp4 - Ultra HD 2.5K 2560x1440 Crystal Clear) */}
+      {/* 1. CINEMATIC VIDEO ARENA BACKGROUND (vs screen.mp4 - Real Video Background) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden bg-slate-950">
         <video
           ref={videoRef}
@@ -220,13 +226,13 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
           loop
           muted
           playsInline
-          poster="/vs animation screen/vs.png"
+          preload="auto"
           className="w-full h-full object-cover select-none pointer-events-none"
           style={{
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden',
           }}
-          src="/vs animation screen/VS SCREEN.mp4"
+          src="/vs animation screen/vs screen.mp4"
         />
       </div>
 

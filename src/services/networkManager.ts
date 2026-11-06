@@ -1,4 +1,4 @@
-import { Card, CardColor, ChatMessage, HouseRules, PowerUpId, PublicGameState, ReactionEvent, SoundEffectType } from '../engine/types';
+import { Card, CardColor, ChatMessage, GameVariant, HouseRules, PowerUpId, PublicGameState, ReactionEvent, SoundEffectType } from '../engine/types';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'reconnecting';
 
@@ -172,6 +172,13 @@ class NetworkManager {
     return 'http://192.168.1.80:3001';
   }
 
+  private voiceSignalListeners: Set<(senderId: string, signal: unknown) => void> = new Set();
+
+  public onVoiceSignal(listener: (senderId: string, signal: unknown) => void): () => void {
+    this.voiceSignalListeners.add(listener);
+    return () => this.voiceSignalListeners.delete(listener);
+  }
+
   public setCallbacks(cbs: Partial<NetworkCallbacks>) {
     this.callbacks = { ...this.callbacks, ...cbs };
   }
@@ -236,6 +243,13 @@ class NetworkManager {
               break;
             case 'VOICE_SIGNAL':
               this.callbacks.onVoiceSignal?.(msg.senderId, msg.signal);
+              this.voiceSignalListeners.forEach((fn) => {
+                try {
+                  fn(msg.senderId, msg.signal);
+                } catch (e) {
+                  console.warn('Error in voiceSignalListener:', e);
+                }
+              });
               break;
             case 'UNO_SHOUT':
               this.callbacks.onUnoShout?.(msg.playerId, msg.playerName);
@@ -324,8 +338,8 @@ class NetworkManager {
   }
 
   // Authoritative action calls
-  public updateRules(roomId: string, playerId: string, rules: Partial<HouseRules>) {
-    this.send({ type: 'UPDATE_RULES', roomId, playerId, rules });
+  public updateRules(roomId: string, playerId: string, rules: Partial<HouseRules>, variant?: GameVariant) {
+    this.send({ type: 'UPDATE_RULES', roomId, playerId, rules, variant });
   }
 
   public setReady(roomId: string, playerId: string, isReady: boolean) {

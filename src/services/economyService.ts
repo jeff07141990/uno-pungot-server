@@ -78,24 +78,28 @@ class EconomyService {
       const data = await res.json();
 
       // --- HYDRATION GUARD ---
-      // If the server returned a "fresh" wallet (level 1, default balance ≤ 1000) but the
-      // device already has a richer saved wallet for the SAME player, prefer the local
-      // copy. This protects the player's progress across app updates / server restarts.
+      // If the server returned a wallet that has less progress than the device's cached wallet,
+      // preserve the player's higher level, balance, and experience.
       const serverWallet: PlayerWallet = data.wallet;
       const localWallet = this.getCachedWallet();
-      const isServerFresh =
-        serverWallet.level <= 1 &&
-        serverWallet.balance <= 1000 &&
-        serverWallet.totalWins === 0;
-      const localIsBetter =
+      const localIsHigherProgress =
         localWallet &&
-        localWallet.playerId === playerId &&
-        (localWallet.level > 1 ||
-          localWallet.balance > 1000 ||
-          localWallet.totalWins > 0);
+        (localWallet.playerId === playerId || localWallet.playerName.trim().toLowerCase() === playerName.trim().toLowerCase()) &&
+        ((localWallet.level || 1) > (serverWallet.level || 1) ||
+          (localWallet.experience || 0) > (serverWallet.experience || 0) ||
+          (localWallet.balance || 0) > (serverWallet.balance || 0));
 
-      const walletToUse: PlayerWallet =
-        isServerFresh && localIsBetter ? localWallet! : serverWallet;
+      const walletToUse: PlayerWallet = localIsHigherProgress
+        ? {
+            ...localWallet!,
+            playerId,
+            playerName: playerName || localWallet!.playerName,
+            playerAvatar: playerAvatar || localWallet!.playerAvatar,
+            balance: Math.max(localWallet!.balance || 0, serverWallet.balance || 0),
+            level: Math.max(localWallet!.level || 1, serverWallet.level || 1),
+            experience: Math.max(localWallet!.experience || 0, serverWallet.experience || 0),
+          }
+        : serverWallet;
 
       this.cachedWallet = walletToUse;
       this.cachedCatalog = data.catalog;

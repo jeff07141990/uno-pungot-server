@@ -5,6 +5,7 @@ export interface VoicePeer {
   pc: RTCPeerConnection;
   audioElement?: HTMLAudioElement;
   stream?: MediaStream;
+  pendingCandidates?: RTCIceCandidateInit[];
 }
 
 export type VoiceStateListener = (speakingPlayers: Set<string>, isMuted: boolean, isConnected: boolean) => void;
@@ -22,21 +23,23 @@ class VoiceManager {
   private remoteAnalysers: Map<string, AnalyserNode> = new Map();
   private listeners: Set<VoiceStateListener> = new Set();
   private animationFrameId: number | null = null;
+  private unsubscribeVoiceSignal: (() => void) | null = null;
 
   private rtcConfig: RTCConfiguration = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
     ],
+    iceCandidatePoolSize: 10,
   };
 
   constructor() {
-    // Listen to signaling messages from networkManager
-    networkManager.setCallbacks({
-      onVoiceSignal: (senderId: string, signal: unknown) => {
-        this.handleRemoteSignal(senderId, signal);
-      },
+    // Listen to signaling messages permanently via onVoiceSignal
+    this.unsubscribeVoiceSignal = networkManager.onVoiceSignal((senderId: string, signal: unknown) => {
+      this.handleRemoteSignal(senderId, signal);
     });
   }
 
@@ -55,6 +58,9 @@ class VoiceManager {
    */
   public async init(roomId: string, playerId: string): Promise<boolean> {
     if (this.isInitialized && this.roomId === roomId && this.myPlayerId === playerId) {
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        this.audioContext.resume().catch(() => {});
+      }
       return true;
     }
 
@@ -87,6 +93,9 @@ class VoiceManager {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
         this.audioContext = new AudioCtx();
+        if (this.audioContext.state === 'suspended') {
+          this.audioContext.resume().catch(() => {});
+        }
         const source = this.audioContext.createMediaStreamSource(this.localStream);
         this.analyser = this.audioContext.createAnalyser();
         this.analyser.fftSize = 256;
@@ -113,7 +122,7 @@ class VoiceManager {
 
     // Remove peers that have left the room
     const currentActiveIds = new Set(playerIds.filter((id) => id !== this.myPlayerId));
-    for (const [id, peer] of this.peers.entries()) {
+    for (const [id] of this.peers.entries()) {
       if (!currentActiveIds.has(id)) {
         this.cleanupPeer(id);
       }
@@ -121,9 +130,21 @@ class VoiceManager {
 
     // Connect to new players: initiate offer if our ID is alphabetically higher (to prevent duel-offers)
     for (const targetId of currentActiveIds) {
-      if (!this.peers.has(targetId)) {
+      const existingPeer = this.peers.get(targetId);
+      if (!existingPeer) {
         if (this.myPlayerId > targetId) {
           this.initiatePeerConnection(targetId, true);
+        }
+      } else {
+        // If connection died or tracks missing, re-attach local track
+        if (this.localStream) {
+          const senders = existingPeer.pc.getSenders();
+          const hasAudioSender = senders.some((s) => s.track && s.track.kind === 'audio');
+          if (!hasAudioSender) {
+            this.localStream.getAudioTracks().forEach((track) => {
+              existingPeer.pc.addTrack(track, this.localStream!);
+            });
+          }
         }
       }
     }
@@ -153,15 +174,34 @@ class VoiceManager {
     pc.ontrack = (event) => {
       const [remoteStream] = event.streams;
       if (remoteStream) {
-        const audio = new Audio();
-        audio.srcObject = remoteStream;
-        audio.autoplay = true;
-        audio.play().catch(() => {});
+        let peer = this.peers.get(targetId);
+        if (!peer) {
+          peer = { playerId: targetId, pc };
+          this.peers.set(targetId, peer);
+        }
+        peer.stream = remoteStream;
 
-        const peer = this.peers.get(targetId);
-        if (peer) {
+        let audio = peer.audioElement;
+        if (!audio) {
+          audio = new Audio();
+          audio.autoplay = true;
+          audio.setAttribute('playsinline', 'true');
           peer.audioElement = audio;
-          peer.stream = remoteStream;
+        }
+
+        audio.srcObject = remoteStream;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Auto-play policy: user interaction unlock
+            const unlockPlay = () => {
+              audio?.play().catch(() => {});
+              window.removeEventListener('click', unlockPlay);
+              window.removeEventListener('touchstart', unlockPlay);
+            };
+            window.addEventListener('click', unlockPlay, { once: true });
+            window.addEventListener('touchstart', unlockPlay, { once: true });
+          });
         }
 
         // Setup remote analyser to detect when targetId is speaking
@@ -182,7 +222,7 @@ class VoiceManager {
     if (!this.roomId || !this.myPlayerId) return;
 
     const pc = this.createPeerConnection(targetId);
-    this.peers.set(targetId, { playerId: targetId, pc });
+    this.peers.set(targetId, { playerId: targetId, pc, pendingCandidates: [] });
 
     if (isInitiator) {
       try {
@@ -210,11 +250,20 @@ class VoiceManager {
     if (payload.type === 'offer' && payload.sdp) {
       if (!peer) {
         const pc = this.createPeerConnection(senderId);
-        peer = { playerId: senderId, pc };
+        peer = { playerId: senderId, pc, pendingCandidates: [] };
         this.peers.set(senderId, peer);
       }
       try {
         await peer.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+
+        // Flush queued ICE candidates received before remoteDescription
+        if (peer.pendingCandidates && peer.pendingCandidates.length > 0) {
+          for (const cand of peer.pendingCandidates) {
+            await peer.pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+          }
+          peer.pendingCandidates = [];
+        }
+
         const answer = await peer.pc.createAnswer();
         await peer.pc.setLocalDescription(answer);
 
@@ -229,16 +278,30 @@ class VoiceManager {
       if (peer) {
         try {
           await peer.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+
+          // Flush queued ICE candidates
+          if (peer.pendingCandidates && peer.pendingCandidates.length > 0) {
+            for (const cand of peer.pendingCandidates) {
+              await peer.pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+            }
+            peer.pendingCandidates = [];
+          }
         } catch (err) {
           console.warn('Failed setting remote description for answer:', err);
         }
       }
     } else if (payload.type === 'candidate' && payload.candidate) {
       if (peer) {
-        try {
-          await peer.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
-        } catch (err) {
-          console.warn('Failed adding ICE candidate:', err);
+        if (peer.pc.remoteDescription && peer.pc.remoteDescription.type) {
+          try {
+            await peer.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+          } catch (err) {
+            console.warn('Failed adding ICE candidate:', err);
+          }
+        } else {
+          // Buffer candidate until remote description is applied
+          if (!peer.pendingCandidates) peer.pendingCandidates = [];
+          peer.pendingCandidates.push(payload.candidate);
         }
       }
     }
@@ -348,6 +411,16 @@ class VoiceManager {
     if (this.audioContext && this.audioContext.state === 'suspended' && !muted) {
       this.audioContext.resume().catch(() => {});
     }
+
+    // If unmuting, make sure all remote audio outputs are playing
+    if (!muted) {
+      for (const peer of this.peers.values()) {
+        if (peer.audioElement && peer.audioElement.paused) {
+          peer.audioElement.play().catch(() => {});
+        }
+      }
+    }
+
     if (muted && this.myPlayerId) {
       this.speakingPlayers.delete(this.myPlayerId);
     }

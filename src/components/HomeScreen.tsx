@@ -93,6 +93,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onSpectateRoom,
 }) => {
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
+  const [isLiveTvOpen, setIsLiveTvOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -170,6 +171,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             onRefresh={onRefreshRooms || (() => {})}
             onJoin={(roomId) => onJoinRoom(roomId)}
             onSpectate={(roomId) => onSpectateRoom(roomId)}
+            onOpenChange={setIsLiveTvOpen}
           />
         </div>
       )}
@@ -240,62 +242,62 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {/* Main Content: Compact and responsive width & yellow theme */}
-      <div className="my-auto z-10 w-full max-w-[220px] sm:max-w-[250px] md:max-w-[270px] flex flex-col items-center sm:items-start self-center sm:self-start sm:ml-4 md:ml-8 gap-1.5 py-1">
+      <div className="my-auto z-10 w-full max-w-[210px] sm:max-w-[250px] md:max-w-[290px] flex flex-col items-center sm:items-start self-center sm:self-start sm:ml-4 md:ml-8 gap-1.5 py-1">
         {/* Brand Logo and Title */}
         <div className="flex flex-col items-center sm:items-start text-center sm:text-left shrink-0">
           {/* Animated Brand Uno Cards - Compact and High Contrast */}
-          <div className="relative inline-block mb-1">
+          <div className="relative inline-block mb-0.5">
             <div className="flex items-center justify-center sm:justify-start -space-x-1 sm:space-x-1">
               {/* U Card (Red) */}
-              <div className="w-8 h-12 sm:w-10 sm:h-14 rounded-lg bg-gradient-to-br from-red-500 via-red-600 to-red-700 border-2 border-white shadow-xl rotate-[-12deg] hover:rotate-[-6deg] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none">
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-start leading-none">U</span>
+              <div className="w-7 h-10 sm:w-9 sm:h-12 rounded-lg bg-gradient-to-br from-red-500 via-red-600 to-red-700 border-2 border-white shadow-xl rotate-[-12deg] hover:rotate-[-6deg] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none">
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-start leading-none">U</span>
                 <div className="w-[82%] h-[68%] mx-auto rounded-[50%/35%] bg-white flex items-center justify-center rotate-[-20deg] shadow-inner">
-                  <span className="rotate-[20deg] font-black italic text-xs sm:text-sm text-red-600 drop-shadow">U</span>
+                  <span className="rotate-[20deg] font-black italic text-[10px] sm:text-xs text-red-600 drop-shadow">U</span>
                 </div>
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-end leading-none rotate-180">U</span>
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-end leading-none rotate-180">U</span>
               </div>
 
               {/* N Card (Amber / Yellow) */}
-              <div className="w-8 h-12 sm:w-10 sm:h-14 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 border-2 border-white shadow-xl rotate-[-4deg] hover:rotate-0 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none z-10">
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-start leading-none">N</span>
+              <div className="w-7 h-10 sm:w-9 sm:h-12 rounded-lg bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 border-2 border-white shadow-xl rotate-[-4deg] hover:rotate-0 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none z-10">
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-start leading-none">N</span>
                 <div className="w-[82%] h-[68%] mx-auto rounded-[50%/35%] bg-white flex items-center justify-center rotate-[-20deg] shadow-inner">
-                  <span className="rotate-[20deg] font-black italic text-xs sm:text-sm text-amber-500 drop-shadow">N</span>
+                  <span className="rotate-[20deg] font-black italic text-[10px] sm:text-xs text-amber-500 drop-shadow">N</span>
                 </div>
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-end leading-none rotate-180">N</span>
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-end leading-none rotate-180">N</span>
               </div>
 
               {/* O Card (Green) */}
-              <div className="w-8 h-12 sm:w-10 sm:h-14 rounded-lg bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 border-2 border-white shadow-xl rotate-[4deg] hover:rotate-0 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none z-10">
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-start leading-none">O</span>
+              <div className="w-7 h-10 sm:w-9 sm:h-12 rounded-lg bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-700 border-2 border-white shadow-xl rotate-[4deg] hover:rotate-0 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none z-10">
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-start leading-none">O</span>
                 <div className="w-[82%] h-[68%] mx-auto rounded-[50%/35%] bg-white flex items-center justify-center rotate-[-20deg] shadow-inner">
-                  <span className="rotate-[20deg] font-black italic text-xs sm:text-sm text-emerald-600 drop-shadow">O</span>
+                  <span className="rotate-[20deg] font-black italic text-[10px] sm:text-xs text-emerald-600 drop-shadow">O</span>
                 </div>
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-end leading-none rotate-180">O</span>
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-end leading-none rotate-180">O</span>
               </div>
 
               {/* ! Card (Blue) */}
-              <div className="w-8 h-12 sm:w-10 sm:h-14 rounded-lg bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 border-2 border-white shadow-xl rotate-[12deg] hover:rotate-[6deg] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none">
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-start leading-none">!</span>
+              <div className="w-7 h-10 sm:w-9 sm:h-12 rounded-lg bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 border-2 border-white shadow-xl rotate-[12deg] hover:rotate-[6deg] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between p-0.5 select-none">
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-start leading-none">!</span>
                 <div className="w-[82%] h-[68%] mx-auto rounded-[50%/35%] bg-white flex items-center justify-center rotate-[-20deg] shadow-inner">
-                  <span className="rotate-[20deg] font-black italic text-xs sm:text-sm text-blue-600 drop-shadow">!</span>
+                  <span className="rotate-[20deg] font-black italic text-[10px] sm:text-xs text-blue-600 drop-shadow">!</span>
                 </div>
-                <span className="text-[7px] sm:text-[8px] font-black text-white self-end leading-none rotate-180">!</span>
+                <span className="text-[6px] sm:text-[7px] font-black text-white self-end leading-none rotate-180">!</span>
               </div>
             </div>
           </div>
 
-          <h1 className="text-lg sm:text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] uppercase leading-tight">
+          <h1 className="text-base sm:text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 drop-shadow-[0_2px_10px_rgba(0,0,0,0.95)] uppercase leading-tight">
             THE PUNGOT EDITION
           </h1>
-          <p className="text-[8.5px] sm:text-[9.5px] font-black text-amber-200 uppercase tracking-widest mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] flex items-center gap-1.5">
-            <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
+          <p className="text-[8px] sm:text-[9px] font-black text-amber-200 uppercase tracking-widest mt-0.5 drop-shadow-[0_2px_4px_rgba(0,0,0,1)] flex items-center gap-1">
+            <Radio className="w-2 h-2 text-emerald-400 animate-pulse" />
             <span>Voice & Multiplayer Ready</span>
           </p>
         </div>
 
-        {/* Action Menu Buttons: Custom 3D Buttons from Untitled-1.png */}
-        <div className="space-y-1 w-full shrink-0 flex flex-col items-center">
-          {/* 1. PLAY ONLINE */}
+        {/* Action Menu Buttons: 2x2 Grid Layout (Compact & Mobile-friendly) */}
+        <div className="grid grid-cols-2 gap-x-0.5 gap-y-1 w-full shrink-0">
+          {/* Top-Left: PLAY ONLINE */}
           <button
             onClick={onPlayOnline}
             className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
@@ -303,39 +305,38 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <img
               src="/home screen in game icons/btn_play_online.png"
               alt="Play Online"
-              className="w-full h-auto object-contain select-none pointer-events-none"
+              className="w-full h-auto max-h-[52px] sm:max-h-[64px] object-contain select-none pointer-events-none"
               draggable={false}
             />
           </button>
 
-          {/* 2 & 3. CREATE ROOM & JOIN ROOM */}
-          <div className="grid grid-cols-2 gap-1.5 w-full">
-            <button
-              onClick={onCreateRoom}
-              className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
-            >
-              <img
-                src="/home screen in game icons/btn_create.png"
-                alt="Create Room"
-                className="w-full h-auto object-contain select-none pointer-events-none"
-                draggable={false}
-              />
-            </button>
+          {/* Top-Right: CREATE ROOM */}
+          <button
+            onClick={onCreateRoom}
+            className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+          >
+            <img
+              src="/home screen in game icons/btn_create.png"
+              alt="Create Room"
+              className="w-full h-auto max-h-[52px] sm:max-h-[64px] object-contain select-none pointer-events-none"
+              draggable={false}
+            />
+          </button>
 
-            <button
-              onClick={() => onJoinRoom()}
-              className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
-            >
-              <img
-                src="/home screen in game icons/btn_join.png"
-                alt="Join Room"
-                className="w-full h-auto object-contain select-none pointer-events-none"
-                draggable={false}
-              />
-            </button>
-          </div>
+          {/* Bottom-Left: JOIN ROOM */}
+          <button
+            onClick={() => onJoinRoom()}
+            className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+          >
+            <img
+              src="/home screen in game icons/btn_join.png"
+              alt="Join Room"
+              className="w-full h-auto max-h-[52px] sm:max-h-[64px] object-contain select-none pointer-events-none"
+              draggable={false}
+            />
+          </button>
 
-          {/* 4. PLAY WITH BOTS */}
+          {/* Bottom-Right: PLAY WITH BOT */}
           <button
             onClick={() => setIsBotModalOpen(true)}
             className="w-full transition-all duration-150 hover:scale-[1.03] active:scale-95 focus:outline-none cursor-pointer drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
@@ -343,7 +344,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <img
               src="/home screen in game icons/btn_play_bot.png"
               alt="Play With Bot"
-              className="w-full h-auto object-contain select-none pointer-events-none"
+              className="w-full h-auto max-h-[52px] sm:max-h-[64px] object-contain select-none pointer-events-none"
               draggable={false}
             />
           </button>
@@ -351,7 +352,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </div>
 
       {/* Floating Bottom-Right Quick Action Icons (Shop, Missions, Leaderboards, Fullscreen, Exit) - No box, clean floating icons */}
-      <div className="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2.5 sm:gap-3">
+      <div className={`fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-40 flex items-center gap-2.5 sm:gap-3 transition-opacity duration-200 ${isLiveTvOpen ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
         {/* Power-Up Shop Icon */}
         <button
           onClick={onOpenShop}

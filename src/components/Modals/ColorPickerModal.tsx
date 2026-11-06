@@ -1,12 +1,14 @@
 import React from 'react';
 import { CardColor } from '../../engine/types';
+import { soundManager } from '../../audio/soundManager';
 
 interface ColorPickerModalProps {
   isOpen: boolean;
   onSelectColor: (color: CardColor) => void;
+  variant?: string;
 }
 
-export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({ isOpen, onSelectColor }) => {
+export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({ isOpen, onSelectColor, variant = 'classic' }) => {
   if (!isOpen) return null;
 
   const colors: { name: string; value: CardColor; bg: string; hover: string; border: string }[] = [
@@ -26,7 +28,12 @@ export const ColorPickerModal: React.FC<ColorPickerModalProps> = ({ isOpen, onSe
           {colors.map((c) => (
             <button
               key={c.value}
-              onClick={() => onSelectColor(c.value)}
+              onClick={() => {
+                if (variant === 'classic') {
+                  soundManager.playColorVoice(c.value);
+                }
+                onSelectColor(c.value);
+              }}
               className={`${c.bg} ${c.hover} text-white font-black text-lg py-6 rounded-xl border-2 ${c.border} shadow-lg transition-transform hover:scale-105 active:scale-95 flex flex-col items-center justify-center gap-1`}
             >
               <div className="w-5 h-5 rounded-full bg-white/30 border border-white/50"></div>

@@ -225,19 +225,45 @@ export class LocalGameEngine {
       return;
     }
 
-    // UNO call window if 1 card left and didn't shout
-    if (hand.length === 1 && !activePlayer.calledUno) {
-      this.publicState.unoCallWindow = {
-        targetPlayerId: activePlayer.id,
-        expiresAt: Date.now() + 3000,
-      };
-      if (this.unoWindowTimer) clearTimeout(this.unoWindowTimer);
-      this.unoWindowTimer = setTimeout(() => {
-        if (this.publicState.unoCallWindow?.targetPlayerId === activePlayer.id) {
-          this.publicState.unoCallWindow = null;
-          this.broadcast();
-        }
-      }, 3000);
+    // UNO check: if player now has 1 card
+    if (hand.length === 1) {
+      if (activePlayer.isBot) {
+        // Bots do NOT automatically call UNO immediately: hammer appears for player to catch them!
+        activePlayer.calledUno = false;
+        this.publicState.unoCallWindow = {
+          targetPlayerId: activePlayer.id,
+          expiresAt: Date.now() + 3500,
+        };
+        if (this.unoWindowTimer) clearTimeout(this.unoWindowTimer);
+        const botCallDelay = 2200 + Math.random() * 1500;
+        this.unoWindowTimer = setTimeout(() => {
+          if (activePlayer.cardCount === 1 && !activePlayer.calledUno) {
+            activePlayer.calledUno = true;
+            this.publicState.unoCallWindow = null;
+            this.callbacks?.onUnoShout?.(activePlayer.id);
+            this.callbacks?.onToast(`🔥 Sumigaw si ${activePlayer.name} ng UNO!`, 'uno_call');
+            this.broadcast();
+          }
+        }, botCallDelay);
+      } else if (!activePlayer.calledUno) {
+        // Human player forgot or hasn't called UNO yet: open catch window
+        this.publicState.unoCallWindow = {
+          targetPlayerId: activePlayer.id,
+          expiresAt: Date.now() + 3000,
+        };
+        if (this.unoWindowTimer) clearTimeout(this.unoWindowTimer);
+        this.unoWindowTimer = setTimeout(() => {
+          if (this.publicState.unoCallWindow?.targetPlayerId === activePlayer.id) {
+            this.publicState.unoCallWindow = null;
+            this.broadcast();
+          }
+        }, 3000);
+      }
+    } else {
+      activePlayer.calledUno = false;
+      if (this.publicState.unoCallWindow?.targetPlayerId === activePlayer.id) {
+        this.publicState.unoCallWindow = null;
+      }
     }
 
     // Action Card Effects
@@ -384,10 +410,6 @@ export class LocalGameEngine {
       if (!bot || bot.id !== botId) return;
 
       const decision = makeBotMove(botHand, this.publicState, this.publicState.houseRules);
-
-      if (decision.shouldCallUno || (botHand.length === 2 && Math.random() < 0.85)) {
-        this.callUno(botId);
-      }
 
       if (decision.action === 'play' && decision.cardId) {
         this.playCard(botId, decision.cardId, decision.chosenColor, decision.targetPlayerId);

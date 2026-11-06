@@ -209,6 +209,36 @@ export class EconomyManager {
 
     let wallet = this.db.wallets[playerId];
     if (!wallet) {
+      // Recovery check: If user's browser/device generated a new guest UUID (e.g. after refresh/update),
+      // look for an existing registered wallet matching this playerName so their hard-earned Level & Coins are never lost!
+      const isTestUser = playerId.startsWith('test') || playerId.startsWith('p1_') || playerId.startsWith('p2_') || playerName.startsWith('XP Tester');
+      if (!isTestUser && playerName && playerName !== 'Player' && playerName !== 'Player 1') {
+        const existingId = Object.keys(this.db.wallets).find((id) => {
+          if (id.startsWith('test') || id.startsWith('p1_') || id.startsWith('p2_')) return false;
+          const w = this.db.wallets[id];
+          return (
+            w &&
+            w.playerName &&
+            w.playerName.trim().toLowerCase() === playerName.trim().toLowerCase() &&
+            (w.level > 1 || w.balance > 1000 || (w.experience || 0) > 0)
+          );
+        });
+
+        if (existingId) {
+          const existingWallet = this.db.wallets[existingId];
+          // Re-bind to current playerId and carry over all progress
+          wallet = {
+            ...existingWallet,
+            playerId,
+            playerAvatar: playerAvatar || existingWallet.playerAvatar,
+            updatedAt: Date.now(),
+          };
+          this.db.wallets[playerId] = wallet;
+          this.persistDatabase();
+          return wallet;
+        }
+      }
+
       const startingBalance = this.db.systemConfig.startingBalance || 1000;
       wallet = {
         playerId,
