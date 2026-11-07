@@ -62,6 +62,12 @@ public class MainActivity extends BridgeActivity {
                 // Handle window.open() popups spawned by Firebase Auth while preserving Capacitor's file chooser & media capture
                 webView.setWebChromeClient(new com.getcapacitor.BridgeWebChromeClient(this.bridge) {
                     @Override
+                    public android.graphics.Bitmap getDefaultVideoPoster() {
+                        // Return empty 1x1 transparent bitmap to completely eliminate the Android WebView default play button watermark
+                        return android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888);
+                    }
+
+                    @Override
                     public boolean onCreateWindow(android.webkit.WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
                         final android.app.Dialog authDialog = new android.app.Dialog(MainActivity.this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
                         final android.webkit.WebView popupWebView = new android.webkit.WebView(MainActivity.this);

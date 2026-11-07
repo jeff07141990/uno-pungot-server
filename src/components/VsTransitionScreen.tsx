@@ -38,20 +38,32 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
   >('cards_vs');
   const [countdownNum, setCountdownNum] = useState<number | 'START'>(10);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundManager.getMuted());
+  const [isVideoReady, setIsVideoReady] = useState<boolean>(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     // Mobile browsers require muted autoplay. Play immediately to show background instantly!
     if (videoRef.current) {
-      videoRef.current.muted = isMuted;
-      videoRef.current.volume = isMuted ? 0 : 0.85;
-      videoRef.current.play().catch(() => {
-        // Fallback: Force muted play if browser blocked unmuted
-        if (videoRef.current) {
-          videoRef.current.muted = true;
-          videoRef.current.play().catch(() => {});
-        }
-      });
+      videoRef.current.muted = true;
+      videoRef.current.defaultMuted = true;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoReady(true);
+            if (!isMuted && videoRef.current) {
+              videoRef.current.muted = false;
+              videoRef.current.volume = 0.85;
+            }
+          })
+          .catch(() => {
+            // Fallback: keep muted
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              videoRef.current.play().catch(() => {});
+            }
+          });
+      }
     }
   }, [isMuted]);
 
@@ -247,8 +259,14 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
           muted
           playsInline
           disablePictureInPicture
+          controls={false}
           preload="auto"
-          className="w-full h-full object-cover select-none pointer-events-none"
+          poster="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+          onLoadedData={() => setIsVideoReady(true)}
+          onPlaying={() => setIsVideoReady(true)}
+          className={`w-full h-full object-cover select-none pointer-events-none transition-opacity duration-300 ${
+            isVideoReady ? 'opacity-100' : 'opacity-0'
+          }`}
           style={{
             transform: 'translateZ(0)',
             backfaceVisibility: 'hidden',
