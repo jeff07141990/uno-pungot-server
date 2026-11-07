@@ -151,13 +151,57 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Sync video audio with global mute state and handle mobile/browser autoplay policies
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.muted = isMuted;
+    if (!isMuted) {
+      video.volume = 0.55;
+    }
+
+    const tryPlay = () => {
+      video.play().catch(() => {
+        // If unmuted playback is blocked by browser policy before first tap, play muted first
+        video.muted = true;
+        video.play().catch(() => {});
+      });
+    };
+
+    tryPlay();
+
+    const handleFirstUserGesture = () => {
+      if (video) {
+        video.muted = isMuted;
+        if (!isMuted) video.volume = 0.55;
+        video.play().catch(() => {});
+      }
+      window.removeEventListener('click', handleFirstUserGesture);
+      window.removeEventListener('touchstart', handleFirstUserGesture);
+    };
+
+    window.addEventListener('click', handleFirstUserGesture, { once: true });
+    window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
+
+    return () => {
+      window.removeEventListener('click', handleFirstUserGesture);
+      window.removeEventListener('touchstart', handleFirstUserGesture);
+    };
+  }, [isMuted]);
+
   return (
     <div className="relative min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between p-2 sm:p-4 bg-slate-950 overflow-hidden select-none">
-      {/* Background Beach Artwork - Clear and Undimmed */}
+      {/* Dynamic Animated Video Background with Audio */}
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
-        <img
-          src="/home-bg.jpg"
-          alt="Home Background"
+        <video
+          ref={videoRef}
+          src="/home screen in game icons/Homscreen Background.mp4"
+          autoPlay
+          loop
+          playsInline
           className="w-full h-full object-cover select-none pointer-events-none"
         />
       </div>
@@ -180,17 +224,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="w-full flex items-center justify-between z-30 shrink-0 gap-2 mt-7 sm:mt-8">
         {/* Left Side: Profile Pill & Virtual Coin Wallet Pill */}
         <div className="flex items-center gap-1.5 sm:gap-2 overflow-hidden">
-          {/* Profile Pill */}
+          {/* Sleek Modern Profile Glass Badge */}
           <button
             onClick={onOpenProfile}
-            className="flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-700/80 hover:border-amber-400/80 transition-all shadow-lg hover:scale-105 active:scale-95 group shrink-0"
+            className="flex items-center gap-2 bg-gradient-to-r from-slate-900/90 via-slate-800/85 to-slate-900/90 backdrop-blur-md px-2 sm:px-3 py-1 rounded-full border border-amber-400/60 shadow-[0_4px_14px_rgba(0,0,0,0.5),0_0_10px_rgba(245,158,11,0.2)] hover:border-amber-300 hover:scale-105 active:scale-95 transition-all group shrink-0 select-none cursor-pointer"
+            title="Profile & Level"
           >
             <div
               onClick={(e) => {
                 e.stopPropagation();
                 handleSecretAdminTrigger();
               }}
-              className="w-7 h-7 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-base shadow overflow-hidden cursor-pointer active:scale-90 select-none"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-sm sm:text-base shadow-inner overflow-hidden cursor-pointer active:scale-90 select-none border-2 border-white/90 shrink-0"
               title="Profile"
             >
               {playerAvatar && playerAvatar.startsWith('data:image') ? (
@@ -199,44 +244,52 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <span>{playerAvatar}</span>
               )}
             </div>
-            <div className="text-left">
-              <span className="block text-[11px] sm:text-xs font-black text-white group-hover:text-amber-300 transition truncate max-w-[80px] sm:max-w-[120px]">
+
+            <div className="text-left pr-1">
+              <span className="block text-[11px] sm:text-xs font-black text-white group-hover:text-amber-300 transition truncate max-w-[90px] sm:max-w-[130px] drop-shadow">
                 {playerName}
               </span>
               {(() => {
                 const xpInfo = getXPProgress(wallet?.experience || 0);
                 return (
-                  <div className="flex flex-col gap-0.5 mt-0.5" title={`${xpInfo.currentLevelXP} / ${xpInfo.neededXPForNext} XP (${xpInfo.percent}%)`}>
-                    <div className="flex items-center gap-1 leading-none">
-                      <span className="text-[9px] text-cyan-400 font-black">
-                        Lvl {xpInfo.level}
-                      </span>
-                      <span className="text-[8px] font-mono text-slate-400 font-bold">
-                        {xpInfo.percent}%
-                      </span>
-                    </div>
-                    <div className="w-14 sm:w-16 h-1 rounded-full bg-slate-800 overflow-hidden border border-slate-700/60 shadow-inner">
+                  <div className="flex items-center gap-1.5 leading-none mt-0.5" title={`${xpInfo.currentLevelXP} / ${xpInfo.neededXPForNext} XP (${xpInfo.percent}%)`}>
+                    <span className="text-[9px] text-amber-300 font-black">
+                      Lvl {xpInfo.level}
+                    </span>
+                    <div className="w-10 sm:w-14 h-1.5 bg-slate-950/80 rounded-full overflow-hidden border border-slate-600/60">
                       <div
-                        className="h-full bg-gradient-to-r from-cyan-400 to-emerald-400 transition-all duration-300"
-                        style={{ width: `${xpInfo.percent}%` }}
+                        className="h-full bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, Math.max(5, xpInfo.percent))}%` }}
                       />
                     </div>
+                    <span className="text-[8px] font-mono text-cyan-300 font-bold">
+                      {xpInfo.percent}%
+                    </span>
                   </div>
                 );
               })()}
             </div>
           </button>
 
-          {/* Virtual Peso Coin Wallet Pill */}
+          {/* Virtual Peso Coin Wallet Pill - Super Highlighted */}
           <button
             onClick={onOpenShop}
-            className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 hover:from-amber-500/30 hover:to-yellow-500/35 border-2 border-amber-400/80 px-2.5 py-1 rounded-full shadow-lg transition-all active:scale-95 group cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-amber-600/40 via-yellow-500/30 to-amber-600/40 hover:from-amber-500/50 hover:to-yellow-500/50 border-2 border-amber-300 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full shadow-[0_0_15px_rgba(250,204,21,0.5),inset_0_1px_3px_rgba(255,255,255,0.4)] transition-all active:scale-95 group cursor-pointer shrink-0 backdrop-blur-md"
             title="I-click para buksan ang Power-Up Shop"
           >
-            <span className="text-sm sm:text-base animate-pulse">💰</span>
-            <span className="font-black text-amber-300 text-xs sm:text-sm tracking-wide">
-              ₱{(wallet?.balance ?? 1000).toLocaleString()}
-            </span>
+            <img
+              src="/play online modal and buttons/icon_coins.png"
+              alt="Coins"
+              className="w-5 h-5 sm:w-6 sm:h-6 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)] group-hover:scale-110 transition-transform"
+            />
+            <div className="flex items-center gap-1">
+              <span className="font-black text-amber-200 text-xs sm:text-base tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                ₱{(wallet?.balance ?? 1000).toLocaleString()}
+              </span>
+              <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 text-slate-950 font-black text-[9px] sm:text-[10px] flex items-center justify-center shadow ml-0.5 group-hover:rotate-90 transition-transform">
+                +
+              </span>
+            </div>
           </button>
         </div>
       </div>

@@ -38,7 +38,9 @@ import { ShopModal } from './components/Modals/ShopModal';
 import { MissionsModal } from './components/Modals/MissionsModal';
 import { LeaderboardModal } from './components/Modals/LeaderboardModal';
 import { AdminModal } from './components/Modals/AdminModal';
+import { GooglePromptModal } from './components/Modals/GooglePromptModal';
 import { economyService } from './services/economyService';
+import { firebaseState } from './firebase/config';
 import { DailyMission, PlayerWallet, PowerUpId, PowerUpItem } from './engine/types';
 
 export const App: React.FC = () => {
@@ -94,6 +96,7 @@ export const App: React.FC = () => {
   const [isMissionsOpen, setIsMissionsOpen] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isGooglePromptOpen, setIsGooglePromptOpen] = useState(false);
   const [wallet, setWallet] = useState<PlayerWallet | null>(() => economyService.getCachedWallet());
   const [catalog, setCatalog] = useState<Record<PowerUpId, PowerUpItem> | null>(() => economyService.getCachedCatalog());
   const [missions, setMissions] = useState<DailyMission[]>(() => economyService.getCachedMissions());
@@ -172,6 +175,17 @@ export const App: React.FC = () => {
       setUserId(uid);
       userIdRef.current = uid;
 
+      // Check if user is not yet linked to Google.
+      // Automatically prompt newly installed & updated users to bind their account!
+      const isAlreadyBound = firebaseState.auth?.currentUser && !firebaseState.auth.currentUser.isAnonymous;
+      const hasDismissedToday = sessionStorage.getItem('uno_dismissed_google_prompt');
+      if (!isAlreadyBound && !hasDismissedToday) {
+        // Small delay so game assets load first
+        setTimeout(() => {
+          setIsGooglePromptOpen(true);
+        }, 1200);
+      }
+
       // Fetch or initialize authoritative wallet
       economyService.fetchWallet(uid, userName, userAvatar).then((data) => {
         setWallet(data.wallet);
@@ -244,6 +258,11 @@ export const App: React.FC = () => {
         }
         setPublicState(state);
         setYourHand([...hand]);
+        if (state.roomId) {
+          try {
+            localStorage.setItem('uno_recent_room_id', state.roomId.toUpperCase());
+          } catch {}
+        }
 
         if (state.phase === 'lobby') {
           setView('lobby');
@@ -442,10 +461,29 @@ export const App: React.FC = () => {
   const handleJoinRoom = (roomId: string, explicitUid?: string) => {
     setIsJoinOpen(false);
     setIsPublicRoomsOpen(false);
+    const cleanRoomId = roomId.trim().toUpperCase();
+    try {
+      localStorage.setItem('uno_recent_room_id', cleanRoomId);
+    } catch {}
     const activeUid = explicitUid || userId || localStorage.getItem('uno_guest_uid') || 'guest_' + Date.now();
     setUserId(activeUid);
     userIdRef.current = activeUid;
-    networkManager.connect(roomId, {
+    networkManager.connect(cleanRoomId, {
+      id: activeUid,
+      name: userName,
+      avatar: userAvatar,
+    });
+  };
+
+  const handleReconnectRoom = () => {
+    const targetRoomId = publicState?.roomId || localStorage.getItem('uno_recent_room_id');
+    if (!targetRoomId) {
+      showToast('Walang active o recent match na nahanap.', 'error');
+      return;
+    }
+    showToast(`Kinokonekta muli sa Room #${targetRoomId}...`, 'turn_alert');
+    const activeUid = userIdRef.current || userId || localStorage.getItem('uno_guest_uid') || 'guest_' + Date.now();
+    networkManager.connect(targetRoomId, {
       id: activeUid,
       name: userName,
       avatar: userAvatar,
@@ -722,6 +760,7 @@ export const App: React.FC = () => {
             }}
             onToggleEmojiBar={() => setShowEmojiBar(!showEmojiBar)}
             onLeaveMatch={handleLeaveRoom}
+            onReconnect={handleReconnectRoom}
             onDeclareDeadlock={() => {
               if (!localGameEngine.isRunning()) {
                 networkManager.declareDeadlock(publicState.roomId, userIdRef.current || userId);
@@ -950,6 +989,22 @@ export const App: React.FC = () => {
             setCatalog(data.catalog);
             setMissions(data.missions);
           });
+        }}
+      />
+
+      {/* Google Account Onboarding & Update Protection Modal */}
+      <GooglePromptModal
+        isOpen={isGooglePromptOpen}
+        onClose={() => {
+          setIsGooglePromptOpen(false);
+          sessionStorage.setItem('uno_dismissed_google_prompt', 'true');
+        }}
+        onSuccess={() => {
+          setIsGooglePromptOpen(false);
+          showToast('Matagumpay na na-bind ang iyong Google Account!', 'game_win');
+          setTimeout(() => {
+            window.location.reload();
+          }, 600);
         }}
       />
     </div>

@@ -3,12 +3,20 @@ import { X, LogIn, KeyRound } from 'lucide-react';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
+  initialCode?: string;
   onClose: () => void;
   onJoin: (roomCode: string) => void;
 }
 
-export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose, onJoin }) => {
-  const [code, setCode] = useState('');
+export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, initialCode = '', onClose, onJoin }) => {
+  const [code, setCode] = useState(() => initialCode || localStorage.getItem('uno_recent_room_id') || '');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      const recent = initialCode || localStorage.getItem('uno_recent_room_id') || '';
+      if (recent) setCode(recent.toUpperCase());
+    }
+  }, [isOpen, initialCode]);
 
   if (!isOpen) return null;
 
@@ -50,6 +58,11 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose, o
               placeholder="e.g. PUNG77"
               className="w-full text-center tracking-[0.3em] font-mono font-black text-2xl py-3 bg-slate-950 border-2 border-slate-700 rounded-2xl text-amber-400 uppercase focus:outline-none focus:border-amber-400 transition"
             />
+            {code && code === localStorage.getItem('uno_recent_room_id')?.toUpperCase() && (
+              <span className="text-[10px] text-emerald-400 font-bold block text-center mt-1.5 animate-pulse">
+                ⚡ Na-detect ang iyong previous match! I-click ang Join para mag-reconnect agad.
+              </span>
+            )}
           </div>
 
           <button

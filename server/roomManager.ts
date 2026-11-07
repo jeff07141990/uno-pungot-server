@@ -823,20 +823,40 @@ export class RoomManager {
         };
 
         if (room.unoTimeout) clearTimeout(room.unoTimeout);
-        const botCallDelay = 2200 + Math.random() * 1500; // 2.2s - 3.7s window for player to smack them with hammer!
-        room.unoTimeout = setTimeout(() => {
-          const currentRoom = this.rooms.get(roomId);
-          if (!currentRoom || currentRoom.publicState.phase !== 'playing') return;
-          const currentHand = currentRoom.playerHands.get(activePlayer.id) || [];
-          if (currentHand.length === 1 && !activePlayer.calledUno) {
-            activePlayer.calledUno = true;
-            currentRoom.publicState.unoCallWindow = null;
-            this.broadcastUnoShout(roomId, activePlayer.id, activePlayer.name);
-            this.broadcastToast(roomId, `🔥 ${activePlayer.name} SHOUTED UNO! 🔥`, 'uno_call');
-            this.broadcastState(roomId);
-          }
-        }, botCallDelay);
-      } else if (!activePlayer.calledUno) {
+        // Dynamic & variable Bot UNO response time:
+        // - 15% chance: INSTANT reaction (flash reflex / preemptive press: 300ms - 650ms)
+        // - 35% chance: FAST reaction (alert bot: 750ms - 1400ms)
+        // - 30% chance: NORMAL / MEDIUM reaction (1600ms - 2400ms)
+        // - 12% chance: SLOW / PANIC reaction (2600ms - 3400ms, easy catch for human!)
+        // - 8% chance: FORGOT / DISTRACTED (never calls before catch window expires!)
+        const roll = Math.random();
+        let botCallDelay: number | null = null;
+        if (roll < 0.15) {
+          botCallDelay = 300 + Math.random() * 350; // Instant
+        } else if (roll < 0.50) {
+          botCallDelay = 750 + Math.random() * 650; // Fast
+        } else if (roll < 0.80) {
+          botCallDelay = 1600 + Math.random() * 800; // Normal
+        } else if (roll < 0.92) {
+          botCallDelay = 2600 + Math.random() * 800; // Slow / Clumsy
+        } else {
+          botCallDelay = null; // Forgot to press! Player has guaranteed hammer opportunity!
+        }
+
+        if (botCallDelay !== null) {
+          room.unoTimeout = setTimeout(() => {
+            const currentRoom = this.rooms.get(roomId);
+            if (!currentRoom || currentRoom.publicState.phase !== 'playing') return;
+            const currentHand = currentRoom.playerHands.get(activePlayer.id) || [];
+            if (currentHand.length === 1 && !activePlayer.calledUno) {
+              activePlayer.calledUno = true;
+              currentRoom.publicState.unoCallWindow = null;
+              this.broadcastUnoShout(roomId, activePlayer.id, activePlayer.name);
+              this.broadcastToast(roomId, `🔥 ${activePlayer.name} SHOUTED UNO! 🔥`, 'uno_call');
+              this.broadcastState(roomId);
+            }
+          }, botCallDelay);
+        }
         // Human player forgot or hasn't called UNO yet: open a 3.5s reaction window for opponents
         publicState.unoCallWindow = {
           targetPlayerId: activePlayer.id,

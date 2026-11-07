@@ -312,21 +312,19 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Overlapping Bottom Pill: Name & Level Badge */}
-                  <div className="absolute -bottom-2.5 sm:-bottom-3 left-1/2 -translate-x-1/2 z-20 w-[72px] sm:w-[90px] md:w-[105px]">
-                    <div className="py-0.5 px-1 rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400 shadow-[0_2px_8px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center backdrop-blur-md">
-                      <span className="font-black text-[8px] sm:text-[9.5px] text-white truncate max-w-[62px] sm:max-w-[80px] leading-tight">
-                        {player.name}
-                      </span>
-                      <div className="flex items-center justify-center gap-0.5 text-[7px] sm:text-[8px] font-black text-amber-300 leading-none mt-0.5">
-                        <span className="text-yellow-400">★</span>
-                        <span>Lv.{level}</span>
-                        {isMe && (
-                          <span className="ml-0.5 text-[6px] bg-yellow-400 text-slate-950 px-0.5 rounded-full uppercase font-black">
-                            YOU
-                          </span>
-                        )}
-                      </div>
+                  {/* Overlapping Bottom Banner: Name & Level Badge */}
+                  <div className="absolute -bottom-3 sm:-bottom-3.5 left-1/2 -translate-x-1/2 z-20 min-w-[75px] sm:min-w-[95px] max-w-[120px] px-2 py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-amber-400/70 shadow-[0_4px_12px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center">
+                    <span className="font-black text-[7.5px] sm:text-[9px] text-white truncate max-w-[65px] sm:max-w-[85px] leading-tight drop-shadow">
+                      {player.name}
+                    </span>
+                    <div className="flex items-center justify-center gap-0.5 text-[6.5px] sm:text-[7.5px] font-black text-amber-300 leading-none mt-0.5">
+                      <span className="text-yellow-400">★</span>
+                      <span>Lv.{level}</span>
+                      {isMe && (
+                        <span className="ml-0.5 text-[5.5px] bg-yellow-400 text-slate-950 px-0.5 rounded-full uppercase font-black">
+                          YOU
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -371,21 +369,19 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Overlapping Bottom Pill: Name & Level Badge */}
-                  <div className="absolute -bottom-2.5 sm:-bottom-3 left-1/2 -translate-x-1/2 z-20 w-[72px] sm:w-[90px] md:w-[105px]">
-                    <div className="py-0.5 px-1 rounded-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-amber-400 shadow-[0_2px_8px_rgba(0,0,0,0.8)] flex flex-col items-center justify-center text-center backdrop-blur-md">
-                      <span className="font-black text-[8px] sm:text-[9.5px] text-white truncate max-w-[62px] sm:max-w-[80px] leading-tight">
-                        {player.name}
-                      </span>
-                      <div className="flex items-center justify-center gap-0.5 text-[7px] sm:text-[8px] font-black text-amber-300 leading-none mt-0.5">
-                        <span className="text-yellow-400">★</span>
-                        <span>Lv.{level}</span>
-                        {isMe && (
-                          <span className="ml-0.5 text-[6px] bg-yellow-400 text-slate-950 px-0.5 rounded-full uppercase font-black">
-                            YOU
-                          </span>
-                        )}
-                      </div>
+                  {/* Overlapping Bottom Banner: Name & Level Badge */}
+                  <div className="absolute -bottom-3 sm:-bottom-3.5 left-1/2 -translate-x-1/2 z-20 min-w-[75px] sm:min-w-[95px] max-w-[120px] px-2 py-0.5 rounded-full bg-slate-900/90 backdrop-blur-md border border-amber-400/70 shadow-[0_4px_12px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center">
+                    <span className="font-black text-[7.5px] sm:text-[9px] text-white truncate max-w-[65px] sm:max-w-[85px] leading-tight drop-shadow">
+                      {player.name}
+                    </span>
+                    <div className="flex items-center justify-center gap-0.5 text-[6.5px] sm:text-[7.5px] font-black text-amber-300 leading-none mt-0.5">
+                      <span className="text-yellow-400">★</span>
+                      <span>Lv.{level}</span>
+                      {isMe && (
+                        <span className="ml-0.5 text-[5.5px] bg-yellow-400 text-slate-950 px-0.5 rounded-full uppercase font-black">
+                          YOU
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

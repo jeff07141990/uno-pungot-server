@@ -30,3 +30,6 @@ android/app/build/
 android/.gradle/
 android/local.properties
 *.apk
+
+*.mp4
+public/home screen in game icons/*.mp4

@@ -116,7 +116,7 @@ class SoundManager {
     return this.isMuted;
   }
 
-  public play(type: SoundEffectType) {
+  public play(type: SoundEffectType, variation: number = 0) {
     if (this.isMuted || this.volume <= 0) return;
     const ctx = this.initContext();
     if (!ctx) return;
@@ -130,7 +130,7 @@ class SoundManager {
           this.playCardDraw(ctx);
           break;
         case 'card_deal':
-          this.playCardDeal(ctx);
+          this.playCardDeal(ctx, variation);
           break;
         case 'turn_alert':
           this.playTurnAlert(ctx);
@@ -443,17 +443,19 @@ class SoundManager {
     osc.stop(now + 0.16);
   }
 
-  // 8. DOUBLE SKIP: Play Double Skip.mp3, fallback to douple skip.wav
+  // 8. DOUBLE SKIP: Play double skip (2).mp3, fallback to Double Skip.mp3
   private playPowerDoubleSkip(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/Double Skip.mp3', 0.95) ||
+    const played = this.playAudioFile('/sound effects/double skip (2).mp3', 1.0) ||
+                   this.playAudioFile('/sound effects/Double Skip.mp3', 0.95) ||
                    this.playAudioFile('/sound effects/douple skip.wav', 0.9);
     if (played) return;
     this.playPowerSkip(ctx);
   }
 
-  // 9. SWAP CARD: Play Card Swap.mp3, fallback to swap card.wav
+  // 9. SWAP CARD: Play card swap (2).mp3, fallback to Card Swap.mp3
   private playPowerSwap(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/Card Swap.mp3', 0.95) ||
+    const played = this.playAudioFile('/sound effects/card swap (2).mp3', 1.0) ||
+                   this.playAudioFile('/sound effects/Card Swap.mp3', 0.95) ||
                    this.playAudioFile('/sound effects/swap card.wav', 0.9);
     if (played) return;
 
@@ -475,9 +477,10 @@ class SoundManager {
     osc.stop(now + 0.3);
   }
 
-  // 10. TARGETED DRAW 2: Play Targeted Draw 2.mp3, fallback to draw 2.mp3
+  // 10. TARGETED DRAW 2: Play targeted draw 2 (2).mp3, fallback to Targeted Draw 2.mp3
   private playPowerTargetedDraw2(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/Targeted Draw 2.mp3', 0.95) ||
+    const played = this.playAudioFile('/sound effects/targeted draw 2 (2).mp3', 1.0) ||
+                   this.playAudioFile('/sound effects/Targeted Draw 2.mp3', 0.95) ||
                    this.playAudioFile('/sound effects/draw 2.mp3', 0.9);
     if (played) return;
     this.playPowerDraw2(ctx);
@@ -551,26 +554,60 @@ class SoundManager {
     noise.start();
   }
 
-  private playCardDeal(ctx: AudioContext) {
-    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.8);
-    if (played) return;
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+  /**
+   * Realistic Casino Card Flick & Distribution sound (authentic card sliding and snapping onto felt)
+   */
+  public playCardDeal(ctx: AudioContext, variation: number = 0) {
     const now = ctx.currentTime;
 
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(600, now);
-    osc.frequency.exponentialRampToValueAtTime(300, now + 0.05);
+    try {
+      // 1. Friction paper whoosh (pink/white filtered noise burst as the card slips off the deck)
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08); // 80ms
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        // High-density textured noise
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+      }
 
-    gain.gain.setValueAtTime(0.25 * this.volume, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      const noiseSource = ctx.createBufferSource();
+      noiseSource.buffer = buffer;
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      // Bandpass filter to simulate cardstock paper texture
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      // Slight pitch variation per card dealt so every player's card sounds distinct and organic
+      const baseFreq = 2200 + ((variation % 5) * 160) + (Math.random() * 80);
+      filter.frequency.setValueAtTime(baseFreq, now);
+      filter.Q.setValueAtTime(2.2, now);
 
-    osc.start(now);
-    osc.stop(now + 0.05);
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.42 * this.volume, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+      noiseSource.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      noiseSource.start(now);
+
+      // 2. Card body snap / thud as card leaves deck or lands on table felt
+      const snapOsc = ctx.createOscillator();
+      const snapGain = ctx.createGain();
+      snapOsc.type = 'triangle';
+      const snapFreq = 480 + ((variation % 4) * 45);
+      snapOsc.frequency.setValueAtTime(snapFreq, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(140, now + 0.045);
+
+      snapGain.gain.setValueAtTime(0.38 * this.volume, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+      snapOsc.connect(snapGain);
+      snapGain.connect(ctx.destination);
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.048);
+    } catch {
+      // Graceful fallback
+    }
   }
 
   private playTurnAlert(ctx: AudioContext) {

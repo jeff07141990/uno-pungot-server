@@ -235,16 +235,37 @@ export class LocalGameEngine {
           expiresAt: Date.now() + 3500,
         };
         if (this.unoWindowTimer) clearTimeout(this.unoWindowTimer);
-        const botCallDelay = 2200 + Math.random() * 1500;
-        this.unoWindowTimer = setTimeout(() => {
-          if (activePlayer.cardCount === 1 && !activePlayer.calledUno) {
-            activePlayer.calledUno = true;
-            this.publicState.unoCallWindow = null;
-            this.callbacks?.onUnoShout?.(activePlayer.id);
-            this.callbacks?.onToast(`🔥 Sumigaw si ${activePlayer.name} ng UNO!`, 'uno_call');
-            this.broadcast();
-          }
-        }, botCallDelay);
+        // Dynamic & variable Bot UNO response time:
+        // - 15% chance: INSTANT reaction (flash reflex: 300ms - 650ms)
+        // - 35% chance: FAST reaction (750ms - 1400ms)
+        // - 30% chance: NORMAL / MEDIUM reaction (1600ms - 2400ms)
+        // - 12% chance: SLOW / PANIC reaction (2600ms - 3400ms)
+        // - 8% chance: FORGOT / DISTRACTED (never calls before catch window expires!)
+        const roll = Math.random();
+        let botCallDelay: number | null = null;
+        if (roll < 0.15) {
+          botCallDelay = 300 + Math.random() * 350; // Instant
+        } else if (roll < 0.50) {
+          botCallDelay = 750 + Math.random() * 650; // Fast
+        } else if (roll < 0.80) {
+          botCallDelay = 1600 + Math.random() * 800; // Normal
+        } else if (roll < 0.92) {
+          botCallDelay = 2600 + Math.random() * 800; // Slow / Clumsy
+        } else {
+          botCallDelay = null; // Forgot to press! Player has guaranteed hammer opportunity!
+        }
+
+        if (botCallDelay !== null) {
+          this.unoWindowTimer = setTimeout(() => {
+            if (activePlayer.cardCount === 1 && !activePlayer.calledUno) {
+              activePlayer.calledUno = true;
+              this.publicState.unoCallWindow = null;
+              this.callbacks?.onUnoShout?.(activePlayer.id);
+              this.callbacks?.onToast(`🔥 Sumigaw si ${activePlayer.name} ng UNO!`, 'uno_call');
+              this.broadcast();
+            }
+          }, botCallDelay);
+        }
       } else if (!activePlayer.calledUno) {
         // Human player forgot or hasn't called UNO yet: open catch window
         this.publicState.unoCallWindow = {

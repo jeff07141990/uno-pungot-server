@@ -1,5 +1,14 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, signInAnonymously, Auth, User } from 'firebase/auth';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  linkWithPopup,
+  Auth, 
+  User 
+} from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { deviceStorage } from '../services/deviceStorage';
 
@@ -26,6 +35,9 @@ export const firebaseState: FirebaseState = {
   isConfigured: Boolean(firebaseConfig.apiKey && firebaseConfig.projectId),
 };
 
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
 if (firebaseState.isConfigured) {
   try {
     firebaseState.app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -42,7 +54,7 @@ if (firebaseState.isConfigured) {
  * Initializes anonymous guest session or retrieves existing auth token.
  */
 export async function getOrCreateGuestSession(): Promise<{ uid: string; isAnonymous: boolean }> {
-  // If Firebase is configured, use Firebase Auth
+  // If user already logged in with Google or Auth
   if (firebaseState.isConfigured && firebaseState.auth) {
     try {
       if (firebaseState.auth.currentUser) {
@@ -74,3 +86,55 @@ export async function getOrCreateGuestSession(): Promise<{ uid: string; isAnonym
 
   return { uid: localUid, isAnonymous: true };
 }
+
+/**
+ * Sign in or link with Google Account.
+ * Returns the signed-in User object or throws an error.
+ */
+export async function signInWithGoogle(): Promise<User> {
+  if (!firebaseState.auth) {
+    throw new Error('Firebase Auth is not configured. Please verify your VITE_FIREBASE_API_KEY.');
+  }
+
+  try {
+    // If user is currently guest/anonymous, try linking so stats carry over
+    if (firebaseState.auth.currentUser && firebaseState.auth.currentUser.isAnonymous) {
+      try {
+        const result = await linkWithPopup(firebaseState.auth.currentUser, googleProvider);
+        const user = result.user;
+        await deviceStorage.setItem('uno_persistent_uid', user.uid);
+        if (user.displayName) await deviceStorage.setItem('uno_player_name', user.displayName);
+        return user;
+      } catch (linkError: any) {
+        // If credential is already used by an existing Google account, sign in directly
+        if (linkError?.code === 'auth/credential-already-in-use') {
+          const result = await signInWithPopup(firebaseState.auth, googleProvider);
+          const user = result.user;
+          await deviceStorage.setItem('uno_persistent_uid', user.uid);
+          if (user.displayName) await deviceStorage.setItem('uno_player_name', user.displayName);
+          return user;
+        }
+        throw linkError;
+      }
+    }
+
+    const result = await signInWithPopup(firebaseState.auth, googleProvider);
+    const user = result.user;
+    await deviceStorage.setItem('uno_persistent_uid', user.uid);
+    if (user.displayName) await deviceStorage.setItem('uno_player_name', user.displayName);
+    return user;
+  } catch (error) {
+    console.error('Google Sign-in failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Sign out user.
+ */
+export async function logoutUser(): Promise<void> {
+  if (firebaseState.auth) {
+    await signOut(firebaseState.auth);
+  }
+}
+

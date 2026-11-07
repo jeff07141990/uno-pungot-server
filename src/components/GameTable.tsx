@@ -58,6 +58,7 @@ interface GameTableProps {
   onOpenShop?: () => void;
   isVsIntroActive?: boolean;
   messages?: ChatMessage[];
+  onReconnect?: () => void;
 }
 
 const UnoCallout: React.FC<{ isSelf?: boolean }> = ({ isSelf = false }) => {
@@ -267,6 +268,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   onOpenShop,
   isVsIntroActive = false,
   messages = [],
+  onReconnect,
 }) => {
   const isSpectator = !gameState.players.some((p) => p.id === currentUserId);
   // Active chat bubbles anchored directly over each player's avatar (4 seconds duration)
@@ -898,6 +900,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         const targetPlayer = allPlayers[currentDealStep % allPlayers.length];
 
         triggerDrawCardSlide(targetPlayer.id, 0);
+        soundManager.play('card_deal', currentDealStep);
         setDealtCount(round);
 
         currentDealStep++;
@@ -1461,6 +1464,24 @@ export const GameTable: React.FC<GameTableProps> = ({
             />
           </button>
 
+          {/* In-Game Refresh & Reconnect Button */}
+          {onReconnect && (
+            <button
+              onClick={() => {
+                soundManager.play('turn_alert');
+                onReconnect();
+              }}
+              className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center hover:scale-110 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
+              title="I-refresh at I-reconnect ang Game (Sync Room State)"
+            >
+              <img
+                src="/home screen in game icons/refresh.png"
+                alt="Refresh"
+                className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
+              />
+            </button>
+          )}
+
           {showTopBarMenu && (
             <div className="flex items-center gap-1.5 sm:gap-2 animate-fadeIn">
               <button
@@ -1489,15 +1510,15 @@ export const GameTable: React.FC<GameTableProps> = ({
             />
           )}
 
-          {/* Exit Match Button */}
+          {/* Home / Exit Match Button */}
           <button
             onClick={() => setShowLeaveConfirm(true)}
             className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 aspect-square flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer p-0 shrink-0"
-            title="Umalis sa Laro (Leave Match)"
+            title="Bumalik sa Home (Home Button)"
           >
             <img
-              src="/home screen in game icons/exit game.png"
-              alt="Exit Match"
+              src="/home screen in game icons/home.png"
+              alt="Home"
               className="w-full h-full object-contain aspect-square select-none pointer-events-none drop-shadow"
             />
           </button>

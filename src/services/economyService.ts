@@ -26,26 +26,48 @@ class EconomyService {
 
   /**
    * Persist wallet to Native Preferences (Android SharedPreferences) & localStorage.
-   * Guarantees wallet & level data survives app updates, device restarts, and WebView cache resets.
+   * Keyed per-player (by Google UID or persistent UID) so records are safely isolated in phone memory.
    */
-  public saveWalletToStorage(wallet: PlayerWallet): void {
+  public saveWalletToStorage(wallet: PlayerWallet, specificPlayerId?: string): void {
     try {
+      const pid = specificPlayerId || wallet.playerId;
       const json = JSON.stringify(wallet);
+      // General fallback key
       deviceStorage.setItem('uno_player_wallet', json);
       deviceStorage.setItem('uno_player_wallet_backup', json);
+      // Dedicated phone memory key bound to Google/Player UID
+      if (pid) {
+        deviceStorage.setItem(`uno_player_wallet_${pid}`, json);
+        deviceStorage.setItem(`uno_player_wallet_backup_${pid}`, json);
+      }
     } catch {}
   }
 
-  public getCachedWallet(): PlayerWallet | null {
-    if (this.cachedWallet) return this.cachedWallet;
+  public getCachedWallet(specificPlayerId?: string): PlayerWallet | null {
+    if (this.cachedWallet && (!specificPlayerId || this.cachedWallet.playerId === specificPlayerId)) {
+      return this.cachedWallet;
+    }
     try {
-      // Read primary first, fall back to backup key
-      const local =
-        deviceStorage.getItemSync('uno_player_wallet') ||
-        deviceStorage.getItemSync('uno_player_wallet_backup');
+      // 1. Try reading dedicated player key from phone memory
+      let local: string | null = null;
+      if (specificPlayerId) {
+        local =
+          deviceStorage.getItemSync(`uno_player_wallet_${specificPlayerId}`) ||
+          deviceStorage.getItemSync(`uno_player_wallet_backup_${specificPlayerId}`);
+      }
+      // 2. Fall back to generic keys
+      if (!local) {
+        local =
+          deviceStorage.getItemSync('uno_player_wallet') ||
+          deviceStorage.getItemSync('uno_player_wallet_backup');
+      }
+
       if (local) {
-        this.cachedWallet = JSON.parse(local);
-        if (this.cachedWallet) this.saveWalletToStorage(this.cachedWallet);
+        const parsed: PlayerWallet = JSON.parse(local);
+        if (parsed) {
+          this.cachedWallet = parsed;
+          this.saveWalletToStorage(parsed, specificPlayerId);
+        }
       }
     } catch {}
     return this.cachedWallet;
@@ -68,6 +90,9 @@ class EconomyService {
     catalog: Record<PowerUpId, PowerUpItem>;
     missions: DailyMission[];
   }> {
+    // 1. First retrieve any local record bound to this Google UID / player ID in Phone memory
+    const localWallet = this.getCachedWallet(playerId);
+
     try {
       const url = `${networkManager.getHttpApiUrl()}/api/economy/wallet/${encodeURIComponent(
         playerId
@@ -77,14 +102,12 @@ class EconomyService {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
 
-      // --- HYDRATION GUARD ---
-      // If the server returned a wallet that has less progress than the device's cached wallet,
-      // preserve the player's higher level, balance, and experience.
+      // --- PHONE MEMORY HYDRATION GUARD ---
+      // If the phone's native storage has higher progress (level/coins/xp) than the server,
+      // always prioritize the phone's local memory to prevent resetting!
       const serverWallet: PlayerWallet = data.wallet;
-      const localWallet = this.getCachedWallet();
       const localIsHigherProgress =
         localWallet &&
-        (localWallet.playerId === playerId || localWallet.playerName.trim().toLowerCase() === playerName.trim().toLowerCase()) &&
         ((localWallet.level || 1) > (serverWallet.level || 1) ||
           (localWallet.experience || 0) > (serverWallet.experience || 0) ||
           (localWallet.balance || 0) > (serverWallet.balance || 0));
@@ -105,13 +128,13 @@ class EconomyService {
       this.cachedCatalog = data.catalog;
       this.cachedMissions = data.missions || [];
 
-      this.saveWalletToStorage(walletToUse);
+      this.saveWalletToStorage(walletToUse, playerId);
       this.notify();
       return { wallet: walletToUse, catalog: data.catalog, missions: data.missions || [] };
     } catch (err) {
       console.warn('Economy API unavailable, loading offline local wallet fallback:', err);
-      // Fallback local wallet
-      let wallet = this.getCachedWallet();
+      // Fallback local wallet from phone memory
+      let wallet = this.getCachedWallet(playerId);
       if (!wallet) {
         wallet = {
           playerId,
