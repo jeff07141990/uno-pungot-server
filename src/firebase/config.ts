@@ -20,12 +20,12 @@ interface FirebaseState {
 }
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyDlFT9ZihYH4eckT8oF-EkBemlI5xX2aOc',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'uno-pungot-edition.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'uno-pungot-edition',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'uno-pungot-edition.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '433936377963',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:433936377963:web:99c48654494e9d1d4be92e',
 };
 
 export const firebaseState: FirebaseState = {
