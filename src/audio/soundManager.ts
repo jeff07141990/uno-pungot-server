@@ -558,53 +558,57 @@ class SoundManager {
    * Realistic Casino Card Flick & Distribution sound (authentic card sliding and snapping onto felt)
    */
   public playCardDeal(ctx: AudioContext, variation: number = 0) {
+    // 1. Play realistic card deal audio file if loaded
+    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.9);
+    if (played) return;
+
     const now = ctx.currentTime;
 
     try {
-      // 1. Friction paper whoosh (pink/white filtered noise burst as the card slips off the deck)
-      const bufferSize = Math.floor(ctx.sampleRate * 0.08); // 80ms
+      // 2. Multi-layer High-fidelity Card Distribution Physics:
+      // A. Card slide/friction off paper deck (white noise through dual resonant bandpass)
+      const bufferSize = Math.floor(ctx.sampleRate * 0.09); // 90ms
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        // High-density textured noise
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+        // Organic decayed card slide texture
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.6);
       }
 
       const noiseSource = ctx.createBufferSource();
       noiseSource.buffer = buffer;
 
-      // Bandpass filter to simulate cardstock paper texture
+      // Resonant filter tuned to casino plastic/cardstock friction
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      // Slight pitch variation per card dealt so every player's card sounds distinct and organic
-      const baseFreq = 2200 + ((variation % 5) * 160) + (Math.random() * 80);
+      const baseFreq = 2600 + ((variation % 6) * 180) + (Math.random() * 90);
       filter.frequency.setValueAtTime(baseFreq, now);
-      filter.Q.setValueAtTime(2.2, now);
+      filter.Q.setValueAtTime(3.0, now);
 
       const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.42 * this.volume, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+      noiseGain.gain.setValueAtTime(0.55 * this.volume, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
 
       noiseSource.connect(filter);
       filter.connect(noiseGain);
       noiseGain.connect(ctx.destination);
       noiseSource.start(now);
 
-      // 2. Card body snap / thud as card leaves deck or lands on table felt
+      // B. Crisp card snap & felt contact thud
       const snapOsc = ctx.createOscillator();
       const snapGain = ctx.createGain();
       snapOsc.type = 'triangle';
-      const snapFreq = 480 + ((variation % 4) * 45);
+      const snapFreq = 520 + ((variation % 5) * 50);
       snapOsc.frequency.setValueAtTime(snapFreq, now);
-      snapOsc.frequency.exponentialRampToValueAtTime(140, now + 0.045);
+      snapOsc.frequency.exponentialRampToValueAtTime(110, now + 0.038);
 
-      snapGain.gain.setValueAtTime(0.38 * this.volume, now);
-      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+      snapGain.gain.setValueAtTime(0.48 * this.volume, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
       snapOsc.connect(snapGain);
       snapGain.connect(ctx.destination);
       snapOsc.start(now);
-      snapOsc.stop(now + 0.048);
+      snapOsc.stop(now + 0.042);
     } catch {
       // Graceful fallback
     }
