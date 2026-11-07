@@ -13,6 +13,16 @@
     color: #F8FAFC;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   }
+
+  /* Hide default Android WebView big black play button watermark */
+  video::-webkit-media-controls-overlay-play-button,
+  video::-webkit-media-controls-play-button,
+  video::-webkit-media-controls-start-playback-button,
+  video::-webkit-media-controls {
+    display: none !important;
+    -webkit-appearance: none !important;
+    opacity: 0 !important;
+  }
 }
 
 /* Reduced motion preference */

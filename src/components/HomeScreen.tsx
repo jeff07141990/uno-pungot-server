@@ -248,13 +248,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div className="relative min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between p-2 sm:p-4 bg-slate-950 overflow-hidden select-none">
       {/* Dynamic Animated Video Background with Seamless Crossfade Loop & Audio */}
-      <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden transform-gpu" style={{ WebkitTransform: 'translateZ(0)' }}>
+      <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden transform-gpu bg-slate-950" style={{ WebkitTransform: 'translateZ(0)' }}>
+        {/* Instant Static Poster Background so screen is never grey while video warms up */}
+        <img
+          src="/home-bg.jpg"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none z-0"
+        />
+
         {/* Layer A */}
         <video
           ref={videoRefA}
           src="/home screen in game icons/home screen background.mp4"
           autoPlay
+          muted
           playsInline
+          poster="/home-bg.jpg"
+          disablePictureInPicture
           className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-1000 ease-in-out transform-gpu ${
             activeVideo === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
@@ -264,7 +274,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <video
           ref={videoRefB}
           src="/home screen in game icons/home screen background.mp4"
+          muted
           playsInline
+          poster="/home-bg.jpg"
+          disablePictureInPicture
           className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-1000 ease-in-out transform-gpu ${
             activeVideo === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
