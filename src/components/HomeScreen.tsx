@@ -151,34 +151,83 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const videoRefA = React.useRef<HTMLVideoElement>(null);
+  const videoRefB = React.useRef<HTMLVideoElement>(null);
+  const [activeVideo, setActiveVideo] = React.useState<'A' | 'B'>('A');
 
-  // Sync video audio with global mute state and handle mobile/browser autoplay policies
+  // Smooth Crossfade Loop & Audio Sync
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    const videoA = videoRefA.current;
+    const videoB = videoRefB.current;
+    if (!videoA || !videoB) return;
 
-    video.muted = isMuted;
+    videoA.muted = isMuted;
+    videoB.muted = isMuted;
     if (!isMuted) {
-      video.volume = 0.55;
+      videoA.volume = 0.55;
+      videoB.volume = 0.55;
     }
 
-    const tryPlay = () => {
-      video.play().catch(() => {
-        // If unmuted playback is blocked by browser policy before first tap, play muted first
-        video.muted = true;
-        video.play().catch(() => {});
-      });
+    // Start video A
+    videoA.play().catch(() => {
+      videoA.muted = true;
+      videoA.play().catch(() => {});
+    });
+
+    let isTransitioning = false;
+
+    // Monitor time of currently active video to prepare crossfade 1.2s before the end
+    const handleTimeUpdate = () => {
+      const current = activeVideo === 'A' ? videoA : videoB;
+      const next = activeVideo === 'A' ? videoB : videoA;
+
+      if (!current.duration || isTransitioning) return;
+
+      const timeLeft = current.duration - current.currentTime;
+      // Start crossfade when 1.2 seconds remain
+      if (timeLeft <= 1.2 && timeLeft > 0.05) {
+        isTransitioning = true;
+        next.currentTime = 0;
+        next.muted = isMuted;
+        if (!isMuted) next.volume = 0.55;
+        next.play().catch(() => {});
+        setActiveVideo(activeVideo === 'A' ? 'B' : 'A');
+
+        // Reset transition lock once crossfade transition completes
+        setTimeout(() => {
+          isTransitioning = false;
+        }, 1300);
+      }
     };
 
-    tryPlay();
+    videoA.addEventListener('timeupdate', handleTimeUpdate);
+    videoB.addEventListener('timeupdate', handleTimeUpdate);
+
+    // Fallback if video ends
+    const handleEndedA = () => {
+      if (activeVideo === 'A') {
+        videoB.currentTime = 0;
+        videoB.play().catch(() => {});
+        setActiveVideo('B');
+      }
+    };
+
+    const handleEndedB = () => {
+      if (activeVideo === 'B') {
+        videoA.currentTime = 0;
+        videoA.play().catch(() => {});
+        setActiveVideo('A');
+      }
+    };
+
+    videoA.addEventListener('ended', handleEndedA);
+    videoB.addEventListener('ended', handleEndedB);
 
     const handleFirstUserGesture = () => {
-      if (video) {
-        video.muted = isMuted;
-        if (!isMuted) video.volume = 0.55;
-        video.play().catch(() => {});
-      }
+      const cur = activeVideo === 'A' ? videoA : videoB;
+      cur.muted = isMuted;
+      if (!isMuted) cur.volume = 0.55;
+      cur.play().catch(() => {});
       window.removeEventListener('click', handleFirstUserGesture);
       window.removeEventListener('touchstart', handleFirstUserGesture);
     };
@@ -187,22 +236,37 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
 
     return () => {
+      videoA.removeEventListener('timeupdate', handleTimeUpdate);
+      videoB.removeEventListener('timeupdate', handleTimeUpdate);
+      videoA.removeEventListener('ended', handleEndedA);
+      videoB.removeEventListener('ended', handleEndedB);
       window.removeEventListener('click', handleFirstUserGesture);
       window.removeEventListener('touchstart', handleFirstUserGesture);
     };
-  }, [isMuted]);
+  }, [isMuted, activeVideo]);
 
   return (
     <div className="relative min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between p-2 sm:p-4 bg-slate-950 overflow-hidden select-none">
-      {/* Dynamic Animated Video Background with Audio */}
+      {/* Dynamic Animated Video Background with Seamless Crossfade Loop & Audio */}
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
+        {/* Layer A */}
         <video
-          ref={videoRef}
+          ref={videoRefA}
           src="/home screen in game icons/home screen background.mp4"
           autoPlay
-          loop
           playsInline
-          className="w-full h-full object-cover select-none pointer-events-none"
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-1000 ease-in-out ${
+            activeVideo === 'A' ? 'opacity-100 z-10' : 'opacity-0 z-0'
+          }`}
+        />
+        {/* Layer B */}
+        <video
+          ref={videoRefB}
+          src="/home screen in game icons/home screen background.mp4"
+          playsInline
+          className={`absolute inset-0 w-full h-full object-cover select-none pointer-events-none transition-opacity duration-1000 ease-in-out ${
+            activeVideo === 'B' ? 'opacity-100 z-10' : 'opacity-0 z-0'
+          }`}
         />
       </div>
 
