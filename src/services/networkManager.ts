@@ -128,7 +128,7 @@ class NetworkManager {
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         const isCapacitor = (window as any).Capacitor !== undefined || !window.location.port;
         if (isCapacitor) {
-          return 'ws://192.168.1.80:3001';
+          return 'wss://uno-pungot-server.onrender.com';
         }
         const wsProto = protocol === 'https:' ? 'wss:' : 'ws:';
         return `${wsProto}//${hostname}:3001`;
@@ -138,7 +138,7 @@ class NetworkManager {
         return `${wsProto}//${hostname}:3001`;
       }
     }
-    return 'ws://192.168.1.80:3001';
+    return 'wss://uno-pungot-server.onrender.com';
   }
 
   public getHttpApiUrl(): string {
@@ -161,7 +161,7 @@ class NetworkManager {
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         const isCapacitor = (window as any).Capacitor !== undefined || !window.location.port;
         if (isCapacitor) {
-          return 'http://192.168.1.80:3001';
+          return 'https://uno-pungot-server.onrender.com';
         }
         return `${protocol}//${hostname}:3001`;
       }
@@ -169,7 +169,7 @@ class NetworkManager {
         return `${protocol}//${hostname}:3001`;
       }
     }
-    return 'http://192.168.1.80:3001';
+    return 'https://uno-pungot-server.onrender.com';
   }
 
   private voiceSignalListeners: Set<(senderId: string, signal: unknown) => void> = new Set();

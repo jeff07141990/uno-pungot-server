@@ -984,6 +984,59 @@ export class RoomManager {
       const desc = `🏆 ${player.name} EMPTIED HAND & WON 1ST PLACE! Match continues for remaining players!`;
       publicState.lastActionText = desc;
       this.broadcastToast(roomId, desc, 'game_win');
+
+      // Immediate coin & XP payout for 1st place in casual matches (so players get coins instantly!)
+      if (publicState.entryFee === 0 && !room.payoutsProcessed && !player.isBot) {
+        try {
+          const hasBooster = Boolean(publicState.activeCoinBoosters?.includes(player.id));
+          const allHumanIds = publicState.players.filter((p) => !p.isBot).map((p) => p.id);
+          const playerMetadata: Record<string, { name: string; avatar: string }> = {};
+          for (const p of publicState.players) {
+            playerMetadata[p.id] = { name: p.name, avatar: p.avatar };
+          }
+          const { winnerCoins, streak, updatedWallets, levelUps, xpGains } = economyManager.awardMatchFinish(
+            player.id,
+            null,
+            allHumanIds,
+            hasBooster,
+            publicState.finishOrder,
+            playerMetadata
+          );
+          room.payoutsProcessed = true;
+
+          for (const p of publicState.players) {
+            if (updatedWallets[p.id]) {
+              p.level = updatedWallets[p.id].level;
+              p.experience = updatedWallets[p.id].experience;
+              p.xpGained = xpGains[p.id] || 0;
+            }
+          }
+
+          for (const [pid, updatedWallet] of Object.entries(updatedWallets)) {
+            const client = room.sockets.get(pid);
+            if (client && client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({
+                  type: 'WALLET_UPDATE',
+                  wallet: updatedWallet,
+                  levelUp: levelUps[pid],
+                  xpGained: xpGains[pid] || 0,
+                })
+              );
+            }
+            if (levelUps[pid]) {
+              const p = publicState.players.find((pl) => pl.id === pid);
+              this.broadcastToast(
+                roomId,
+                `🎉 LEVEL UP! Si ${p?.name || 'Player'} ay Level ${levelUps[pid].newLevel} na! (+₱${levelUps[pid].bonus})`,
+                'game_win'
+              );
+            }
+          }
+        } catch (err) {
+          console.error('Error awarding immediate 1st place payout:', err);
+        }
+      }
     } else {
       const desc = `🎉 ${player.name} is SAFE (Rank ${finishRank})! Battle continues!`;
       publicState.lastActionText = desc;

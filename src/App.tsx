@@ -213,7 +213,8 @@ export const App: React.FC = () => {
     historyService.getPlayerStats(userId).then(setPlayerStats);
 
     const unsubscribeEconomy = economyService.subscribe(() => {
-      setWallet(economyService.getCachedWallet());
+      const activeUid = userIdRef.current || userId;
+      setWallet(economyService.getCachedWallet(activeUid));
       setCatalog(economyService.getCachedCatalog());
       setMissions(economyService.getCachedMissions());
     });

@@ -367,9 +367,14 @@ class EconomyService {
   /**
    * Directly record match outcome and award coins locally (works 100% offline).
    */
-  public addLocalMatchResult(won: boolean, coinsReward: number = 200, xpReward: number = 120): PlayerWallet {
-    let wallet = this.getCachedWallet() || {
-      playerId: 'local_player',
+  public addLocalMatchResult(
+    won: boolean,
+    coinsReward: number = 200,
+    xpReward: number = 120,
+    specificPlayerId?: string
+  ): PlayerWallet {
+    let wallet = this.getCachedWallet(specificPlayerId) || {
+      playerId: specificPlayerId || 'local_player',
       playerName: 'Player',
       playerAvatar: '🦊',
       balance: 1000,
@@ -407,6 +412,7 @@ class EconomyService {
 
     const updatedWallet: PlayerWallet = {
       ...wallet,
+      playerId: specificPlayerId || wallet.playerId,
       balance: wallet.balance + addedCoins + levelBonus,
       totalWins: currentWins,
       totalLosses: currentLosses,
@@ -418,7 +424,7 @@ class EconomyService {
     };
 
     this.cachedWallet = updatedWallet;
-    this.saveWalletToStorage(updatedWallet);
+    this.saveWalletToStorage(updatedWallet, specificPlayerId);
     this.notify();
 
     return updatedWallet;

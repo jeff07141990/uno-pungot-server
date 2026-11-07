@@ -474,7 +474,12 @@ export class LocalGameEngine {
 
     const humanWon = winner.id === this.humanPlayerId;
     // Award offline payout & XP to persistent device memory!
-    const updatedWallet = economyService.addLocalMatchResult(humanWon, 200, humanWon ? 120 : 35);
+    const updatedWallet = economyService.addLocalMatchResult(
+      humanWon,
+      200,
+      humanWon ? 120 : 35,
+      this.humanPlayerId
+    );
 
     // Update human in public state
     const human = this.publicState.players.find((p) => p.id === this.humanPlayerId);
