@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Crown, Volume2, VolumeX, Shield, Trophy, Coins } from 'lucide-react';
 import { PlayerWallet, PublicGameState, PublicPlayer } from '../engine/types';
 import { soundManager } from '../audio/soundManager';
+import { getXPProgress } from '../utils/levelUtils';
 
 interface VsTransitionScreenProps {
   gameState: PublicGameState;
@@ -202,14 +203,33 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
     };
   }, []);
 
-  // Compute player level display
+  // Compute player level display - strictly unified with wallet XP and account progress
   const getPlayerLevel = (player: PublicPlayer, idx: number) => {
-    if (player.id === currentUserId && wallet?.level) {
-      return wallet.level;
+    if (player.id === currentUserId) {
+      if (wallet && typeof wallet.experience === 'number') {
+        return getXPProgress(wallet.experience).level;
+      }
+      if (typeof player.experience === 'number') {
+        return getXPProgress(player.experience).level;
+      }
+      if (wallet?.level) {
+        return wallet.level;
+      }
+      if (player.level) {
+        return player.level;
+      }
+      return 1;
     }
-    // Consistent virtual level for bots/opponents
+    // For other players / bots: use their real synced level/experience if available
+    if (typeof player.experience === 'number') {
+      return getXPProgress(player.experience).level;
+    }
+    if (player.level) {
+      return player.level;
+    }
+    // Fallback virtual level for bots without set level
     const hash = player.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 10 + ((hash + idx * 3) % 15);
+    return 1 + ((hash + idx * 3) % 15);
   };
 
   return (

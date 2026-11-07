@@ -167,7 +167,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       <div className="relative z-10 w-full max-w-6xl mx-auto flex-1 flex flex-col justify-between overflow-hidden">
         
         {/* Top Header Bar */}
-        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0">
+        <div className="flex items-center justify-between pb-1.5 border-b border-slate-800/80 shrink-0 gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm sm:text-base font-black text-amber-400 flex items-center gap-1.5">
               <span>🏆</span>
@@ -177,9 +177,29 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               Room {gameState.roomId}
             </span>
           </div>
-          <span className="text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
-            {gameState.turnCount} turns played
-          </span>
+
+          <div className="flex items-center gap-2">
+            {/* Total Wallet Balance Pill */}
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border border-amber-400/80 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full shadow-[0_0_12px_rgba(250,204,21,0.35)]">
+              <img
+                src="/play online modal and buttons/icon_coins.png"
+                alt="Coins"
+                className="w-4 h-4 sm:w-5 sm:h-5 object-contain drop-shadow"
+              />
+              <div className="flex items-baseline gap-1">
+                <span className="text-[9px] sm:text-[10px] font-bold text-amber-300 uppercase tracking-wider">
+                  Total Wallet:
+                </span>
+                <span className="font-mono font-black text-xs sm:text-sm text-yellow-300 drop-shadow">
+                  ₱{(wallet?.balance ?? 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <span className="hidden sm:inline-block text-[11px] font-semibold text-slate-400 bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
+              {gameState.turnCount} turns played
+            </span>
+          </div>
         </div>
 
         {/* Center Split Screen: Left = Winner Hero & Live XP Animation | Right = Rankings Table */}
@@ -373,11 +393,16 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                               YOU
                             </span>
                           )}
-                          {player.level && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                              Lv.{player.level}
-                            </span>
-                          )}
+                          {(() => {
+                            const lvl = isSelf
+                              ? getXPProgress(wallet?.experience ?? player.experience ?? 0).level
+                              : (player.experience !== undefined ? getXPProgress(player.experience).level : player.level);
+                            return lvl ? (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                Lv.{lvl}
+                              </span>
+                            ) : null;
+                          })()}
                         </div>
 
                         <span className="text-[9px] text-slate-400">
