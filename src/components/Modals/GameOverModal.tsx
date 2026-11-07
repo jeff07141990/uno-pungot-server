@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { PlayerWallet, PublicGameState } from '../../engine/types';
 import { Trophy, RotateCcw, Share2, Award, Zap } from 'lucide-react';
 import { getXPProgress } from '../../utils/levelUtils';
+import { economyService } from '../../services/economyService';
 
 interface GameOverModalProps {
   isOpen: boolean;
@@ -125,6 +126,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     return () => clearTimeout(timer);
   }, [isOpen, totalExperience, earnedXP]);
 
+  const cachedWallet = economyService.getCachedWallet(currentUserId);
+  const activeBalance = Math.max(wallet?.balance ?? 0, cachedWallet?.balance ?? 0);
+
   if (!isOpen) return null;
 
   const winner = gameState.players.find((p) => p.id === gameState.winnerId);
@@ -191,7 +195,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                   Total Wallet:
                 </span>
                 <span className="font-mono font-black text-xs sm:text-sm text-yellow-300 drop-shadow">
-                  ₱{(wallet?.balance ?? 0).toLocaleString()}
+                  ₱{activeBalance.toLocaleString()}
                 </span>
               </div>
             </div>

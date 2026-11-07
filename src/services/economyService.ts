@@ -40,16 +40,14 @@ class EconomyService {
         deviceStorage.setItem(`uno_player_wallet_${pid}`, json);
         deviceStorage.setItem(`uno_player_wallet_backup_${pid}`, json);
       }
+      this.cachedWallet = wallet;
     } catch {}
   }
 
   public getCachedWallet(specificPlayerId?: string): PlayerWallet | null {
-    if (this.cachedWallet && (!specificPlayerId || this.cachedWallet.playerId === specificPlayerId)) {
-      return this.cachedWallet;
-    }
+    // 1. Try reading dedicated player key from phone memory
+    let local: string | null = null;
     try {
-      // 1. Try reading dedicated player key from phone memory
-      let local: string | null = null;
       if (specificPlayerId) {
         local =
           deviceStorage.getItemSync(`uno_player_wallet_${specificPlayerId}`) ||
@@ -65,11 +63,25 @@ class EconomyService {
       if (local) {
         const parsed: PlayerWallet = JSON.parse(local);
         if (parsed) {
+          // If in-memory cachedWallet has higher balance/xp/level, prioritize the higher one!
+          if (
+            this.cachedWallet &&
+            (!specificPlayerId || this.cachedWallet.playerId === specificPlayerId) &&
+            ((this.cachedWallet.balance || 0) > (parsed.balance || 0) ||
+              (this.cachedWallet.experience || 0) > (parsed.experience || 0))
+          ) {
+            this.saveWalletToStorage(this.cachedWallet, specificPlayerId);
+            return this.cachedWallet;
+          }
           this.cachedWallet = parsed;
-          this.saveWalletToStorage(parsed, specificPlayerId);
+          return this.cachedWallet;
         }
       }
     } catch {}
+
+    if (this.cachedWallet && (!specificPlayerId || this.cachedWallet.playerId === specificPlayerId)) {
+      return this.cachedWallet;
+    }
     return this.cachedWallet;
   }
 
@@ -106,11 +118,16 @@ class EconomyService {
       // If the phone's native storage has higher progress (level/coins/xp) than the server,
       // always prioritize the phone's local memory to prevent resetting!
       const serverWallet: PlayerWallet = data.wallet;
+      const localBalance = localWallet?.balance || 0;
+      const serverBalance = serverWallet?.balance || 0;
+      const localLevel = localWallet?.level || 1;
+      const serverLevel = serverWallet?.level || 1;
+      const localExp = localWallet?.experience || 0;
+      const serverExp = serverWallet?.experience || 0;
+
       const localIsHigherProgress =
         localWallet &&
-        ((localWallet.level || 1) > (serverWallet.level || 1) ||
-          (localWallet.experience || 0) > (serverWallet.experience || 0) ||
-          (localWallet.balance || 0) > (serverWallet.balance || 0));
+        (localLevel > serverLevel || localExp > serverExp || localBalance > serverBalance);
 
       const walletToUse: PlayerWallet = localIsHigherProgress
         ? {
@@ -118,9 +135,13 @@ class EconomyService {
             playerId,
             playerName: playerName || localWallet!.playerName,
             playerAvatar: playerAvatar || localWallet!.playerAvatar,
-            balance: Math.max(localWallet!.balance || 0, serverWallet.balance || 0),
-            level: Math.max(localWallet!.level || 1, serverWallet.level || 1),
-            experience: Math.max(localWallet!.experience || 0, serverWallet.experience || 0),
+            balance: Math.max(localBalance, serverBalance),
+            level: Math.max(localLevel, serverLevel),
+            experience: Math.max(localExp, serverExp),
+            totalWins: Math.max(localWallet!.totalWins || 0, serverWallet.totalWins || 0),
+            totalLosses: Math.max(localWallet!.totalLosses || 0, serverWallet.totalLosses || 0),
+            winStreak: Math.max(localWallet!.winStreak || 0, serverWallet.winStreak || 0),
+            bestWinStreak: Math.max(localWallet!.bestWinStreak || 0, serverWallet.bestWinStreak || 0),
           }
         : serverWallet;
 
@@ -129,6 +150,13 @@ class EconomyService {
       this.cachedMissions = data.missions || [];
 
       this.saveWalletToStorage(walletToUse, playerId);
+
+      // If local progress had more coins than the server, asynchronously sync difference to server
+      if (localBalance > serverBalance) {
+        const diff = localBalance - serverBalance;
+        this.adminAdjustBalance(playerId, diff, 'Sync offline earnings to server').catch(() => {});
+      }
+
       this.notify();
       return { wallet: walletToUse, catalog: data.catalog, missions: data.missions || [] };
     } catch (err) {

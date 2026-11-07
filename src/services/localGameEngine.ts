@@ -32,6 +32,13 @@ export class LocalGameEngine {
   private playerHands: Map<string, Card[]> = new Map();
   private callbacks: LocalEngineCallbacks | null = null;
   private humanPlayerId: string = 'local_player';
+  private lastGameParams: {
+    humanName: string;
+    humanAvatar: string;
+    botCount: number;
+    variant: GameVariant;
+    houseRulesOverride?: Partial<HouseRules>;
+  } | null = null;
   private botTimer: NodeJS.Timeout | null = null;
   private unoWindowTimer: NodeJS.Timeout | null = null;
 
@@ -41,6 +48,18 @@ export class LocalGameEngine {
 
   public isRunning(): boolean {
     return this.active;
+  }
+
+  public restartBotGame() {
+    if (!this.lastGameParams) return;
+    this.startBotGame(
+      this.humanPlayerId,
+      this.lastGameParams.humanName,
+      this.lastGameParams.humanAvatar,
+      this.lastGameParams.botCount,
+      this.lastGameParams.variant,
+      this.lastGameParams.houseRulesOverride
+    );
   }
 
   public startBotGame(
@@ -54,6 +73,13 @@ export class LocalGameEngine {
     this.stop();
     this.active = true;
     this.humanPlayerId = humanId || 'local_player';
+    this.lastGameParams = {
+      humanName,
+      humanAvatar,
+      botCount,
+      variant,
+      houseRulesOverride,
+    };
     this.roomId = 'offline_' + Math.random().toString(36).substring(2, 7);
 
     const houseRules: HouseRules = {
@@ -68,7 +94,7 @@ export class LocalGameEngine {
     };
 
     const players: PublicPlayer[] = [];
-    const localWallet = economyService.getCachedWallet();
+    const localWallet = economyService.getCachedWallet(this.humanPlayerId);
 
     // Human player
     players.push({

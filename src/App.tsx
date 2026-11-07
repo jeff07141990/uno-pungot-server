@@ -234,6 +234,7 @@ export const App: React.FC = () => {
         setYourHand([...hand]);
 
         if (state.phase === 'playing') {
+          hasRecordedCurrentGameRef.current = false;
           if (previousPhaseRef.current !== 'playing') {
             setShowVsScreen(true);
             try {
@@ -284,12 +285,9 @@ export const App: React.FC = () => {
         } catch (_) {}
       },
       onWalletUpdate: (updatedWallet) => {
+        const currentUid = userIdRef.current || userId;
         setWallet(updatedWallet);
-        try {
-          const json = JSON.stringify(updatedWallet);
-          localStorage.setItem('uno_player_wallet', json);
-          localStorage.setItem('uno_player_wallet_backup', json);
-        } catch (_) {}
+        economyService.saveWalletToStorage(updatedWallet, currentUid);
       },
     });
 
@@ -385,12 +383,9 @@ export const App: React.FC = () => {
       },
       onWalletUpdate: (updatedWallet, levelUp, xpGained) => {
         if (updatedWallet) {
+          const currentUid = userIdRef.current || userId;
           setWallet(updatedWallet);
-          try {
-            const json = JSON.stringify(updatedWallet);
-            localStorage.setItem('uno_player_wallet', json);
-            localStorage.setItem('uno_player_wallet_backup', json);
-          } catch (_) {}
+          economyService.saveWalletToStorage(updatedWallet, currentUid);
           if (levelUp) {
             showToast(`🎉 LEVEL UP! Umabot ka sa Level ${levelUp.newLevel}! (+₱${levelUp.bonus})`, 'game_win');
           }
@@ -865,7 +860,13 @@ export const App: React.FC = () => {
             gameState={publicState}
             currentUserId={userId}
             wallet={wallet}
-            onPlayAgain={() => networkManager.restartGame(publicState.roomId, userId)}
+            onPlayAgain={() => {
+              if (localGameEngine.isRunning()) {
+                localGameEngine.restartBotGame();
+              } else {
+                networkManager.restartGame(publicState.roomId, userId);
+              }
+            }}
             onLeave={handleLeaveRoom}
             onToast={showToast}
           />
