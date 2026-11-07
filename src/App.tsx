@@ -860,6 +860,18 @@ export const App: React.FC = () => {
         onSendMessage={(text) => {
           if (publicState) {
             networkManager.sendChat(publicState.roomId, userId, text);
+            if (localGameEngine.isRunning()) {
+              const selfPlayer = publicState.players.find((p) => p.id === userId);
+              const localMsg: ChatMessage = {
+                id: `msg_${Date.now()}_${Math.random()}`,
+                senderId: userId,
+                senderName: selfPlayer?.name || userName || 'You',
+                senderAvatar: selfPlayer?.avatar || userAvatar || '😎',
+                text,
+                timestamp: Date.now(),
+              };
+              setMessages((prev) => [...prev, localMsg]);
+            }
           }
         }}
         mutedPlayerIds={mutedPlayers}

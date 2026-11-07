@@ -280,23 +280,23 @@ export const GameTable: React.FC<GameTableProps> = ({
     const latest = messages[messages.length - 1];
     if (latest && latest.id !== lastProcessedChatIdRef.current) {
       lastProcessedChatIdRef.current = latest.id;
-      // Match senderId or fallback to senderName matching player
-      const senderKey = latest.senderId || latest.senderName;
       setActiveAvatarBubbles((prev) => {
         const next = new Map(prev);
-        next.set(senderKey, { id: latest.id, text: latest.text });
+        if (latest.senderId) next.set(latest.senderId, { id: latest.id, text: latest.text });
+        if (latest.senderName) next.set(latest.senderName, { id: latest.id, text: latest.text });
         return next;
       });
 
       const timer = setTimeout(() => {
         setActiveAvatarBubbles((prev) => {
-          const current = prev.get(senderKey);
-          if (current?.id === latest.id) {
-            const next = new Map(prev);
-            next.delete(senderKey);
-            return next;
+          const next = new Map(prev);
+          if (latest.senderId && next.get(latest.senderId)?.id === latest.id) {
+            next.delete(latest.senderId);
           }
-          return prev;
+          if (latest.senderName && next.get(latest.senderName)?.id === latest.id) {
+            next.delete(latest.senderName);
+          }
+          return next;
         });
       }, 4000);
       return () => clearTimeout(timer);
@@ -1819,13 +1819,13 @@ export const GameTable: React.FC<GameTableProps> = ({
                   id={`opponent-${opp.id}`}
                   className="pointer-events-auto flex flex-col items-center relative transition-all"
                 >
-                  {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
-                  {(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name)) && (
-                    <AvatarChatBubble text={(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name))!.text} />
-                  )}
                   <div className="flex items-center gap-1 sm:gap-2">
                     {/* Avatar Box with Dynamic Expansion & Turn Lightup Halo */}
                     <div className="relative">
+                      {activeUnoShouts.some((s) => s.playerId === opp.id) && <UnoCallout />}
+                      {(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name)) && (
+                        <AvatarChatBubble text={(activeAvatarBubbles.get(opp.id) || activeAvatarBubbles.get(opp.name))!.text} />
+                      )}
                       {isTurn && secondsRemaining !== null && (
                         <AvatarTurnTimerRing
                           progressFraction={turnProgressFraction}
@@ -2279,16 +2279,18 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="flex items-end justify-between gap-1 sm:gap-4">
             {/* Bottom-Left: Avatar Box & Yellow Chat Button */}
             <div className="flex items-center gap-1.5 sm:gap-3">
-              <div className="flex flex-col items-center">
-                {activeUnoShouts.some((s) => s.playerId === selfPlayer.id) && <UnoCallout isSelf={true} />}
-                {(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || (currentUserId && activeAvatarBubbles.get(currentUserId))) && (
-                  <AvatarChatBubble
-                    text={(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || activeAvatarBubbles.get(currentUserId))!.text}
-                    isSelf={true}
-                  />
-                )}
+              <div className="flex flex-col items-center relative">
                 {/* Avatar Box with Turn Ring strictly wrapped to its dimensions */}
                 <div className="relative">
+                  {(activeUnoShouts.some((s) => s.playerId === selfPlayer.id || s.playerId === currentUserId)) && (
+                    <UnoCallout isSelf={true} />
+                  )}
+                  {(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || (currentUserId && activeAvatarBubbles.get(currentUserId))) && (
+                    <AvatarChatBubble
+                      text={(activeAvatarBubbles.get(selfPlayer.id) || activeAvatarBubbles.get(selfPlayer.name) || activeAvatarBubbles.get(currentUserId))!.text}
+                      isSelf={true}
+                    />
+                  )}
                   {isYourTurn && secondsRemaining !== null && (
                     <AvatarTurnTimerRing
                       progressFraction={turnProgressFraction}
