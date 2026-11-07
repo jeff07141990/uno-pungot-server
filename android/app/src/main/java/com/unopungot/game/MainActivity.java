@@ -38,8 +38,8 @@ public class MainActivity extends BridgeActivity {
                 cookieManager.setAcceptCookie(true);
                 cookieManager.setAcceptThirdPartyCookies(webView, true);
 
-                // Handle window.open() popups spawned by Firebase Auth
-                webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                // Handle window.open() popups spawned by Firebase Auth while preserving Capacitor's file chooser & media capture
+                webView.setWebChromeClient(new com.getcapacitor.BridgeWebChromeClient(this.bridge) {
                     @Override
                     public boolean onCreateWindow(android.webkit.WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
                         final android.app.Dialog authDialog = new android.app.Dialog(MainActivity.this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);

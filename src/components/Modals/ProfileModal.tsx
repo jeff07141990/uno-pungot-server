@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, UserCheck, Flame, Trophy, Percent, Camera, Upload, Trash2, Coins, Star, Shield, Award } from 'lucide-react';
 import { PlayerStats } from '../../services/historyService';
 import { PlayerWallet, PowerUpId, PowerUpItem } from '../../engine/types';
@@ -48,40 +48,65 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    setName(currentName);
+    setAvatar(currentAvatar);
+    if (isImageAvatar(currentAvatar)) {
+      setTab('photo');
+    }
+  }, [currentName, currentAvatar, isOpen]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Invalid file type. Please upload an image (JPG, PNG, GIF, WebP).');
+      setUploadError('Pumili ng tamang image file (JPG, PNG, GIF, WebP).');
       return;
     }
-    // 2MB limit
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Image too large. Please use an image smaller than 2MB.');
+    // 10MB limit (will be compressed to 128x128 thumbnail anyway)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Masyadong malaki ang image. Gamitin ang mas maliit sa 10MB.');
       return;
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      setUploadError('Hindi mabasa ang image file. Subukan ulit.');
+    };
     reader.onload = (ev) => {
       const result = ev.target?.result as string;
-      // Resize to a small square for performance
+      if (!result) return;
+      // Resize to square for performance
       const img = new Image();
+      img.onerror = () => {
+        setUploadError('Hindi ma-decode ang larawan.');
+      };
       img.onload = () => {
-        const size = 128;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d')!;
-        // Draw center-cropped square
-        const minDim = Math.min(img.width, img.height);
-        const sx = (img.width - minDim) / 2;
-        const sy = (img.height - minDim) / 2;
-        ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
-        setAvatar(dataUrl);
-        setTab('photo');
+        try {
+          const size = 128;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setAvatar(result);
+            setTab('photo');
+            return;
+          }
+          // Draw center-cropped square
+          const minDim = Math.min(img.width, img.height);
+          const sx = (img.width - minDim) / 2;
+          const sy = (img.height - minDim) / 2;
+          ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setAvatar(dataUrl);
+          setTab('photo');
+        } catch (_) {
+          setAvatar(result);
+          setTab('photo');
+        }
       };
       img.src = result;
     };
