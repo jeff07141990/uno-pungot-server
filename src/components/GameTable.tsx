@@ -1094,26 +1094,39 @@ export const GameTable: React.FC<GameTableProps> = ({
   // Animate opponent card plays to table and trigger power card pop-up (keyed strictly on new discard card ID)
   useEffect(() => {
     if (topDiscard && topDiscard.id !== prevDiscardIdRef.current) {
-      const lastPlayerId = prevTurnPlayerIdRef.current;
-      const lastPlayer = lastPlayerId ? players.find((p) => p.id === lastPlayerId) : null;
-      const actorName = lastPlayer ? (lastPlayer.id === currentUserId ? 'You' : lastPlayer.name) : 'Player';
+      // Determine the player who played this card:
+      // If we just played locally, it's currentUserId.
+      // Otherwise, check if activePlayer changed, or fall back to prevTurnPlayerIdRef.
+      const isLocalPlay = recentlyPlayedCardsRef.current.has(topDiscard.id);
+      let actorPlayer: PublicPlayer | undefined;
+
+      if (isLocalPlay) {
+        actorPlayer = players.find((p) => p.id === currentUserId);
+        recentlyPlayedCardsRef.current.delete(topDiscard.id);
+      } else {
+        const lastPlayerId = prevTurnPlayerIdRef.current;
+        actorPlayer = lastPlayerId ? players.find((p) => p.id === lastPlayerId) : undefined;
+        if (!actorPlayer && activePlayer) {
+          // If previous player was not captured, find previous active player in turn order
+          actorPlayer = activePlayer;
+        }
+      }
+
+      const actorName = actorPlayer ? (actorPlayer.id === currentUserId ? 'You' : actorPlayer.name) : 'Player';
 
       prevDiscardIdRef.current = topDiscard.id;
 
-      // Visual Pop-up announcement banner with glowing effects
+      // Visual Pop-up announcement banner with glowing effects (guaranteed on all power cards)
       triggerPowerAnnouncement(topDiscard, actorName);
 
-      const isLocalPlay = recentlyPlayedCardsRef.current.has(topDiscard.id);
-      if (!isLocalPlay) {
-        const opponentEl = lastPlayerId ? document.getElementById(`opponent-${lastPlayerId}`) : null;
+      if (!isLocalPlay && actorPlayer && actorPlayer.id !== currentUserId) {
+        const opponentEl = document.getElementById(`opponent-${actorPlayer.id}`);
         const startRect = opponentEl?.getBoundingClientRect();
         triggerFlyToTable(topDiscard, startRect);
-      } else {
-        recentlyPlayedCardsRef.current.delete(topDiscard.id);
       }
     }
     prevTurnPlayerIdRef.current = activePlayer?.id || null;
-  }, [topDiscard]);
+  }, [topDiscard, activePlayer?.id, players, currentUserId]);
 
   // Watch for Catch UNO announcements to display penalty hammer on the penalized player
   const prevLastActionRef = useRef<string | null>(null);
@@ -1781,26 +1794,6 @@ export const GameTable: React.FC<GameTableProps> = ({
                         )}
                       </div>
                     </>
-                  )}
-
-                  {/* 5. POWER CARD POP-UP ANNOUNCEMENT BANNER (Vibrant visual effects only, no voice) */}
-                  {powerAnnouncement && (
-                    <div className="absolute top-1/2 left-1/2 z-50 pointer-events-none animate-powerCardAnnounce whitespace-nowrap">
-                      <div className={`relative flex items-center gap-2.5 px-4 sm:px-6 py-2 sm:py-2.5 rounded-3xl bg-gradient-to-r ${powerAnnouncement.bgColor} text-white border-2 border-white shadow-[0_0_35px_rgba(250,204,21,0.95)] ring-4 ring-amber-400/50 backdrop-blur-md`}>
-                        <div className="relative">
-                          <span className="text-2xl sm:text-3xl filter drop-shadow block animate-bounce">{powerAnnouncement.icon}</span>
-                          <span className="absolute -inset-1 rounded-full bg-white/20 animate-ping pointer-events-none" />
-                        </div>
-                        <div className="flex flex-col text-left">
-                          <span className="font-black italic text-sm sm:text-lg tracking-wider uppercase text-yellow-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] leading-none">
-                            {powerAnnouncement.title}
-                          </span>
-                          <span className="text-[10px] sm:text-xs font-bold text-white/95 drop-shadow leading-tight mt-0.5">
-                            {powerAnnouncement.subtitle}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>
@@ -2769,6 +2762,28 @@ export const GameTable: React.FC<GameTableProps> = ({
           <CardView isBack={true} size="md" className="shadow-2xl" />
         </div>
       ))}
+
+      {/* 5. POWER CARD POP-UP ANNOUNCEMENT BANNER (Root Viewport Overlay - Centered & Highly Visible) */}
+      {powerAnnouncement && (
+        <div className="fixed inset-0 z-[70] pointer-events-none flex items-center justify-center select-none">
+          <div className="animate-powerCardAnnounce whitespace-nowrap pointer-events-none">
+            <div className={`relative flex items-center gap-2.5 px-4 sm:px-6 py-2 sm:py-3 rounded-3xl bg-gradient-to-r ${powerAnnouncement.bgColor} text-white border-2 border-white shadow-[0_0_40px_rgba(250,204,21,0.95)] ring-4 ring-amber-400/60 backdrop-blur-md`}>
+              <div className="relative">
+                <span className="text-2xl sm:text-3xl filter drop-shadow block animate-bounce">{powerAnnouncement.icon}</span>
+                <span className="absolute -inset-1 rounded-full bg-white/20 animate-ping pointer-events-none" />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-black italic text-sm sm:text-lg tracking-wider uppercase text-yellow-200 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] leading-none">
+                  {powerAnnouncement.title}
+                </span>
+                <span className="text-[10px] sm:text-xs font-bold text-white/95 drop-shadow leading-tight mt-0.5">
+                  {powerAnnouncement.subtitle}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
