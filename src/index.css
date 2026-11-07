@@ -1054,17 +1054,22 @@
 /* Marquee Animation for Live TV Ticker */
 @keyframes marqueeScroll {
   0% {
-    transform: translateX(100%);
+    transform: translate3d(100%, 0, 0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
   }
 }
 
 .animate-marquee {
   display: inline-block;
   white-space: nowrap;
-  animation: marqueeScroll 22s linear infinite;
+  animation: marqueeScroll 24s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  -webkit-perspective: 1000px;
 }
 
 .animate-marquee:hover {

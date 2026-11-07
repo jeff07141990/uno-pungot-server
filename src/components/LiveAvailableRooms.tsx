@@ -52,11 +52,12 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
     return (
       <div
         onClick={handleOpen}
-        className="w-full bg-black/40 hover:bg-black/60 backdrop-blur-xs border-b border-white/10 hover:border-amber-400/50 py-1 px-3 cursor-pointer transition-all flex items-center gap-2 overflow-hidden shadow-sm select-none"
+        className="w-full bg-black/60 hover:bg-black/80 backdrop-blur-md border-b border-white/10 hover:border-amber-400/50 py-1 px-3 cursor-pointer transition-colors flex items-center gap-2 overflow-hidden shadow-md select-none transform-gpu will-change-transform"
+        style={{ WebkitTransform: 'translateZ(0)', transform: 'translateZ(0)' }}
         title="I-click para buksan ang Live TV Rooms"
       >
         {/* Left Badge */}
-        <div className="flex items-center gap-1.5 shrink-0 z-10 bg-slate-950/60 px-2 py-0.5 rounded-full border border-purple-500/40">
+        <div className="flex items-center gap-1.5 shrink-0 z-10 bg-slate-950/80 px-2 py-0.5 rounded-full border border-purple-500/40 shadow-sm">
           <div className="relative flex items-center justify-center">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping absolute" />
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -65,13 +66,13 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
             TV
           </span>
           <span className="text-[11px] font-black text-amber-300 flex items-center gap-1">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+            <Radio className="w-3 h-3 text-emerald-400" />
             LIVE ROOMS ({rooms.length})
           </span>
         </div>
 
         {/* Running Marquee Ticker */}
-        <div className="flex-1 overflow-hidden relative">
+        <div className="flex-1 overflow-hidden relative" style={{ contain: 'paint' }}>
           <div className="animate-marquee text-[11px] font-semibold text-slate-200 hover:text-white transition-colors">
             {runningText}
           </div>
@@ -87,8 +88,11 @@ export const LiveAvailableRooms: React.FC<LiveAvailableRoomsProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="bg-slate-950/95 border border-purple-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[80vh] w-full max-w-md transition-all duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fadeIn transform-gpu">
+      <div
+        className="bg-slate-950/95 border border-purple-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl flex flex-col max-h-[80vh] w-full max-w-md transition-all duration-300 transform-gpu"
+        style={{ WebkitTransform: 'translateZ(0)', transform: 'translateZ(0)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
