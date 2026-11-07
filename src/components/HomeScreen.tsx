@@ -198,7 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
         <video
           ref={videoRef}
-          src="/home screen in game icons/Homscreen Background.mp4"
+          src="/home screen in game icons/home screen background.mp4"
           autoPlay
           loop
           playsInline
