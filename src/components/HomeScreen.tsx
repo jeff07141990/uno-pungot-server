@@ -246,7 +246,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   }, [isMuted, activeVideo]);
 
   return (
-    <div className="relative min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between p-2 sm:p-4 bg-slate-950 overflow-hidden select-none">
+    <div className="relative w-full w-screen min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between p-2 sm:p-4 bg-slate-950 overflow-hidden select-none">
       {/* Dynamic Animated Video Background with Seamless Crossfade Loop & Audio */}
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden transform-gpu bg-slate-950" style={{ WebkitTransform: 'translateZ(0)' }}>
         {/* Instant Static Poster Background so screen is never grey while video warms up */}
