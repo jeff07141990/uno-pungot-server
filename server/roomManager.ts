@@ -643,7 +643,7 @@ export class RoomManager {
 
     this.startTurnTimer(room, countdownMs);
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, 'Cards dealt! Game on!', 'card_deal');
+    this.broadcastToast(roomId, 'Cards dealt! Game on!');
 
     // Trigger bot if first player is bot (will respect 10s grace period)
     this.checkTriggerBot(roomId);
@@ -1934,7 +1934,7 @@ export class RoomManager {
     this.startTurnTimer(room);
     this.checkDeadlock(room);
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, desc, 'card_deal');
+    this.broadcastToast(roomId, desc);
 
     this.checkTriggerBot(roomId);
     return { success: true };

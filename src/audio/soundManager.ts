@@ -558,8 +558,8 @@ class SoundManager {
    * Realistic Casino Card Flick & Distribution sound (authentic card sliding and snapping onto felt)
    */
   public playCardDeal(ctx: AudioContext, variation: number = 0) {
-    // 1. Play realistic card deal audio file extracted from card deal.mp4
-    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.95, 60);
+    // 1. Play original card deal audio file
+    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.85);
     if (played) return;
 
     const now = ctx.currentTime;

@@ -506,7 +506,7 @@ export const App: React.FC = () => {
 
     // Helper to launch offline zero-latency bot game immediately
     const startOfflineBotGame = () => {
-      showToast('Naglalaro sa Offline Mode (Zero Lag)...', 'card_deal');
+      showToast('Naglalaro sa Offline Mode (Zero Lag)...');
       localGameEngine.startBotGame(activeUid, userName, userAvatar, botCount, variant);
     };
 
@@ -517,7 +517,7 @@ export const App: React.FC = () => {
     }
 
     try {
-      showToast('Naghahanda ng bot match...', 'card_deal');
+      showToast('Naghahanda ng bot match...');
 
       // 2-second timeout: if internet is slow or server unreachable, fallback to local engine instantly
       const controller = new AbortController();
