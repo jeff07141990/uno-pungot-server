@@ -59,7 +59,7 @@ interface HomeScreenProps {
   // Available live public rooms
   publicRooms?: any[];
   isLoadingRooms?: boolean;
-  onRefreshRooms?: () => void;
+  onRefreshRooms?: (silent?: boolean) => void;
   onSpectateRoom?: (roomId: string) => void;
 }
 
@@ -97,12 +97,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  // Auto-refresh public rooms every 5 seconds while on HomeScreen
+  // Auto-refresh public rooms every 5 seconds while on HomeScreen without flashing loaders
   useEffect(() => {
     if (onRefreshRooms) {
-      onRefreshRooms();
+      onRefreshRooms(true);
       const interval = setInterval(() => {
-        onRefreshRooms();
+        onRefreshRooms(true);
       }, 5000);
       return () => clearInterval(interval);
     }

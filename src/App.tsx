@@ -625,8 +625,8 @@ export const App: React.FC = () => {
     }, true);
   };
 
-  const handleFetchPublicRooms = async () => {
-    setIsLoadingRooms(true);
+  const handleFetchPublicRooms = async (silent: boolean = false) => {
+    if (!silent) setIsLoadingRooms(true);
     try {
       const res = await fetchWithFallback('/api/rooms');
       const data = await res.json();
@@ -634,7 +634,7 @@ export const App: React.FC = () => {
     } catch {
       setPublicRooms([]);
     } finally {
-      setIsLoadingRooms(false);
+      if (!silent) setIsLoadingRooms(false);
     }
   };
 
