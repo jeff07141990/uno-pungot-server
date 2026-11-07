@@ -246,6 +246,7 @@ export const VsTransitionScreen: React.FC<VsTransitionScreenProps> = ({
           loop
           muted
           playsInline
+          disablePictureInPicture
           preload="auto"
           className="w-full h-full object-cover select-none pointer-events-none"
           style={{

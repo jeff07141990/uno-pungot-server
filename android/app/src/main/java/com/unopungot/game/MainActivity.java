@@ -25,15 +25,19 @@ public class MainActivity extends BridgeActivity {
 
     private void enableEdgeToEdgeDisplay() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            getWindow().getAttributes().layoutInDisplayCutoutMode =
+            android.view.WindowManager.LayoutParams params = getWindow().getAttributes();
+            params.layoutInDisplayCutoutMode =
                 android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(params);
         }
+        getWindow().getDecorView().setBackgroundColor(android.graphics.Color.parseColor("#0B1120"));
     }
 
     private void configureWebView() {
         try {
             if (this.bridge != null && this.bridge.getWebView() != null) {
                 final android.webkit.WebView webView = this.bridge.getWebView();
+                webView.setBackgroundColor(android.graphics.Color.parseColor("#0B1120"));
                 android.webkit.WebSettings settings = webView.getSettings();
                 settings.setDomStorageEnabled(true);
                 settings.setDatabaseEnabled(true);
