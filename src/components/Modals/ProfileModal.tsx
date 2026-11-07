@@ -40,21 +40,20 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!isOpen) return null;
-
-  const handleSave = () => {
-    const trimmed = name.trim() || 'Player';
-    onSave(trimmed, avatar);
-    onClose();
-  };
-
   useEffect(() => {
+    if (!isOpen) return;
     setName(currentName);
     setAvatar(currentAvatar);
     if (isImageAvatar(currentAvatar)) {
       setTab('photo');
     }
   }, [currentName, currentAvatar, isOpen]);
+
+  const handleSave = () => {
+    const trimmed = name.trim() || 'Player';
+    onSave(trimmed, avatar);
+    onClose();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUploadError(null);
@@ -115,6 +114,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     // Reset so same file can be re-selected
     e.target.value = '';
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
