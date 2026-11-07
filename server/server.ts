@@ -2,12 +2,24 @@ import express from 'express';
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import { RoomManager } from './roomManager';
 import { economyManager } from './economyManager';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = path.resolve(__dirname, '../dist');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static assets from dist if present
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 const roomManager = new RoomManager();
 
@@ -389,6 +401,16 @@ const pingInterval = setInterval(() => {
 wss.on('close', () => {
   clearInterval(pingInterval);
 });
+
+// Fallback for SPA routing
+if (fs.existsSync(distPath)) {
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
