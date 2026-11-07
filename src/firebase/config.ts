@@ -123,8 +123,18 @@ export async function signInWithGoogle(): Promise<User> {
     await deviceStorage.setItem('uno_persistent_uid', user.uid);
     if (user.displayName) await deviceStorage.setItem('uno_player_name', user.displayName);
     return user;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Google Sign-in failed:', error);
+    // User-friendly translation for common OAuth / WebView errors
+    if (error?.message?.includes('missing initial state') || error?.code === 'auth/missing-initial-state') {
+      throw new Error('Pansamantalang na-block ng in-app browser ang Google pop-up. Naka-save pa rin ang iyong coins at data sa cellphone storage.');
+    }
+    if (error?.code === 'auth/popup-closed-by-user') {
+      throw new Error('Na-cancel ang Google Sign-In.');
+    }
+    if (error?.code === 'auth/popup-blocked') {
+      throw new Error('Naka-block ang pop-up window sa browser. Paki-allow ang pop-up.');
+    }
     throw error;
   }
 }

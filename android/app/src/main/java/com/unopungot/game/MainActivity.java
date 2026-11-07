@@ -19,6 +19,26 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         hideSystemBars();
         requestAudioPermissions();
+        configureWebView();
+    }
+
+    private void configureWebView() {
+        try {
+            if (this.bridge != null && this.bridge.getWebView() != null) {
+                android.webkit.WebView webView = this.bridge.getWebView();
+                android.webkit.WebSettings settings = webView.getSettings();
+                settings.setDomStorageEnabled(true);
+                settings.setDatabaseEnabled(true);
+                settings.setJavaScriptEnabled(true);
+                settings.setJavaScriptCanOpenWindowsAutomatically(true);
+                settings.setSupportMultipleWindows(true);
+
+                // Enable third-party cookies for Firebase OAuth state
+                android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
+                cookieManager.setAcceptCookie(true);
+                cookieManager.setAcceptThirdPartyCookies(webView, true);
+            }
+        } catch (Exception ignored) {}
     }
 
     private void requestAudioPermissions() {
