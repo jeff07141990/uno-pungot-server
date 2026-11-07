@@ -25,7 +25,7 @@ public class MainActivity extends BridgeActivity {
     private void configureWebView() {
         try {
             if (this.bridge != null && this.bridge.getWebView() != null) {
-                android.webkit.WebView webView = this.bridge.getWebView();
+                final android.webkit.WebView webView = this.bridge.getWebView();
                 android.webkit.WebSettings settings = webView.getSettings();
                 settings.setDomStorageEnabled(true);
                 settings.setDatabaseEnabled(true);
@@ -37,6 +37,49 @@ public class MainActivity extends BridgeActivity {
                 android.webkit.CookieManager cookieManager = android.webkit.CookieManager.getInstance();
                 cookieManager.setAcceptCookie(true);
                 cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+                // Handle window.open() popups spawned by Firebase Auth
+                webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                    @Override
+                    public boolean onCreateWindow(android.webkit.WebView view, boolean isDialog, boolean isUserGesture, android.os.Message resultMsg) {
+                        final android.app.Dialog authDialog = new android.app.Dialog(MainActivity.this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+                        final android.webkit.WebView popupWebView = new android.webkit.WebView(MainActivity.this);
+                        
+                        android.webkit.WebSettings popupSettings = popupWebView.getSettings();
+                        popupSettings.setJavaScriptEnabled(true);
+                        popupSettings.setDomStorageEnabled(true);
+                        popupSettings.setDatabaseEnabled(true);
+                        popupSettings.setSupportMultipleWindows(true);
+                        popupSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+                        android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(popupWebView, true);
+
+                        popupWebView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                            @Override
+                            public void onCloseWindow(android.webkit.WebView window) {
+                                try {
+                                    authDialog.dismiss();
+                                    popupWebView.destroy();
+                                } catch (Exception ignored) {}
+                            }
+                        });
+
+                        popupWebView.setWebViewClient(new android.webkit.WebViewClient() {
+                            @Override
+                            public boolean shouldOverrideUrlLoading(android.webkit.WebView v, android.webkit.WebResourceRequest request) {
+                                return false;
+                            }
+                        });
+
+                        authDialog.setContentView(popupWebView);
+                        authDialog.show();
+
+                        android.webkit.WebView.WebViewTransport transport = (android.webkit.WebView.WebViewTransport) resultMsg.obj;
+                        transport.setWebView(popupWebView);
+                        resultMsg.sendToTarget();
+                        return true;
+                    }
+                });
             }
         } catch (Exception ignored) {}
     }
