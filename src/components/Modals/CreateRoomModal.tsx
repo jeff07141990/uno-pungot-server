@@ -24,6 +24,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const [isPrivate, setIsPrivate] = useState(false);
   const [turnTimer, setTurnTimer] = useState<0 | 15 | 30 | 60>(30);
   const [startingHandSize, setStartingHandSize] = useState<number>(7);
+  const [gameTable, setGameTable] = useState<string>('game table 1.jpg');
   const [stacking, setStacking] = useState<boolean>(true);
   const [sevenZero, setSevenZero] = useState<boolean>(false);
   const [wildDraw4Challenge, setWildDraw4Challenge] = useState<boolean>(true);
@@ -42,6 +43,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       houseRules: {
         turnTimer,
         startingHandSize,
+        gameTable,
         stacking,
         sevenZero,
         wildDraw4Challenge,
@@ -310,6 +312,49 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                 <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-b from-[#1b1040] to-[#0d0728] border border-amber-400 flex items-center justify-center font-black text-xs sm:text-sm text-white shadow-[0_0_8px_rgba(251,191,36,0.6)] shrink-0">
                   {startingHandSize}
                 </div>
+              </div>
+            </div>
+
+            {/* 4. GAME TABLE SECTION */}
+            <div className="flex flex-col gap-0.5 sm:gap-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs sm:text-sm font-black uppercase text-white tracking-wider drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] flex items-center gap-1">
+                  <span>🎲</span> GAME TABLE
+                </span>
+                <span className="text-[10px] sm:text-xs font-black text-amber-300 capitalize">
+                  {gameTable.replace('.jpg', '')}
+                </span>
+              </div>
+
+              {/* Horizontal scrollable thumbnails */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-thin">
+                {Array.from({ length: 13 }, (_, i) => `game table ${i + 1}.jpg`).map((tableFile, idx) => {
+                  const isSelected = gameTable === tableFile;
+                  return (
+                    <button
+                      key={tableFile}
+                      type="button"
+                      onClick={() => setGameTable(tableFile)}
+                      className={`relative group shrink-0 w-14 sm:w-16 aspect-[16/10] rounded-lg overflow-hidden border transition-all cursor-pointer select-none ${
+                        isSelected
+                          ? 'border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)] scale-105 z-10 ring-1 ring-white'
+                          : 'border-slate-700/80 hover:border-slate-400 opacity-70 hover:opacity-100'
+                      }`}
+                      title={`Table ${idx + 1}`}
+                    >
+                      <img
+                        src={`/game table/${tableFile}`}
+                        alt={`Table ${idx + 1}`}
+                        className="w-full h-full object-cover select-none pointer-events-none"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center pb-0.5">
+                        <span className={`text-[7px] font-black ${isSelected ? 'text-amber-300' : 'text-slate-300'}`}>
+                          #{idx + 1}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

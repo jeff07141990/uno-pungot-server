@@ -61,6 +61,7 @@ export class LocalGameEngine {
       wildDraw4Challenge: true,
       startingHandSize: 7,
       allowSpectators: false,
+      gameTable: 'game table 1.jpg',
       ...houseRulesOverride,
     };
 

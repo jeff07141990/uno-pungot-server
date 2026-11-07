@@ -1329,11 +1329,15 @@ export const GameTable: React.FC<GameTableProps> = ({
           : 'bg-[#080b12]'
       }`}
     >
-      {/* FULL SCREEN PHOTO-REALISTIC YACHT POKER TABLE BACKDROP */}
+      {/* FULL SCREEN PHOTO-REALISTIC UNO GAME TABLE BACKDROP (Host selected) */}
       <div className="absolute inset-0 pointer-events-none select-none z-0 overflow-hidden">
         <img
-          src="/game-table.jpg"
-          alt="Full Screen UNO Yacht Game Table"
+          src={
+            gameState.houseRules?.gameTable
+              ? `/game table/${gameState.houseRules.gameTable}`
+              : '/game table/game table 1.jpg'
+          }
+          alt="Full Screen UNO Game Table"
           className={`w-full h-full object-cover select-none transition-all duration-700 ${
             isDarkSide ? 'filter hue-rotate-[110deg] brightness-75 contrast-125' : ''
           }`}

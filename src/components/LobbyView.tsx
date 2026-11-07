@@ -837,7 +837,65 @@ export const LobbyView: React.FC<LobbyViewProps> = ({
                 ) : null}
               </div>
 
-              {/* 6. House Rule Toggles (Stacking, 7-0 Swap, WD4 Challenge) */}
+              {/* 6. Game Table Background Theme (Host Editable: 13 Tables) */}
+              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    Game Table Background
+                  </span>
+                  <span className="text-xs font-black text-amber-300 capitalize">
+                    {gameState.houseRules.gameTable?.replace('.jpg', '') || 'Game Table 1'}
+                  </span>
+                </div>
+
+                <div className="text-[10px] text-slate-400">
+                  {isHost ? 'Pumili ng disenyo ng mesa para sa buong kwarto:' : 'Disenyo ng mesa na pinili ng Host:'}
+                </div>
+
+                {/* Horizontal scrollable or wrapped table preview grid */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 scrollbar-thin">
+                  {Array.from({ length: 13 }, (_, i) => `game table ${i + 1}.jpg`).map((tableFile, idx) => {
+                    const isSelected = (gameState.houseRules.gameTable || 'game table 1.jpg') === tableFile;
+                    return (
+                      <button
+                        key={tableFile}
+                        disabled={!isHost}
+                        onClick={() => {
+                          if (isHost && onUpdateRules) {
+                            onUpdateRules({ gameTable: tableFile });
+                            onToast(`Table theme pinalitan sa Table #${idx + 1}`);
+                          }
+                        }}
+                        className={`relative group shrink-0 w-20 sm:w-24 aspect-[16/10] rounded-xl overflow-hidden border-2 transition-all cursor-pointer select-none ${
+                          isSelected
+                            ? 'border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] scale-105 z-10 ring-2 ring-amber-300'
+                            : 'border-slate-700/80 hover:border-slate-400 opacity-70 hover:opacity-100'
+                        }`}
+                        title={`Table #${idx + 1}`}
+                      >
+                        <img
+                          src={`/game table/${tableFile}`}
+                          alt={`Table ${idx + 1}`}
+                          className="w-full h-full object-cover select-none pointer-events-none"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center pb-0.5">
+                          <span className={`text-[8.5px] font-black ${isSelected ? 'text-amber-300' : 'text-slate-300'}`}>
+                            Table {idx + 1}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[8px] font-black shadow">
+                            ✓
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 7. House Rule Toggles (Stacking, 7-0 Swap, WD4 Challenge) */}
               <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2.5">
                 <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                   <Flame className="w-4 h-4 text-rose-400" />

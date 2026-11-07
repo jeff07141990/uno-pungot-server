@@ -151,6 +151,7 @@ export class RoomManager {
       wildDraw4Challenge: true,
       startingHandSize: 7,
       allowSpectators: true,
+      gameTable: 'game table 1.jpg',
       ...options.houseRules,
     };
 

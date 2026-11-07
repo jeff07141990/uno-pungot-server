@@ -54,6 +54,7 @@ export interface HouseRules {
   wildDraw4Challenge: boolean; // bluff check on WD4
   startingHandSize: number; // 3 to 10, default 7
   allowSpectators: boolean;
+  gameTable?: string; // Selected table background e.g. 'game table 1.jpg'
 }
 
 export interface PublicPlayer {
