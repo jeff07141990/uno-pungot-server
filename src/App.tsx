@@ -17,6 +17,7 @@ import { historyService, PlayerStats } from './services/historyService';
 import { localGameEngine } from './services/localGameEngine';
 import { deviceStorage } from './services/deviceStorage';
 
+import { App as CapacitorApp } from '@capacitor/app';
 import { HomeScreen } from './components/HomeScreen';
 import { LobbyView } from './components/LobbyView';
 import { GameTable } from './components/GameTable';
@@ -137,8 +138,16 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleExitGame = () => {
-    // 1. Try Capacitor native app exit if running on Android/iOS
+  const handleExitGame = async () => {
+    // 1. Try official Capacitor App plugin
+    try {
+      await CapacitorApp.exitApp();
+      return;
+    } catch {
+      // Fallback
+    }
+
+    // 2. Try window.Capacitor legacy bridge
     try {
       const cap = (window as any).Capacitor;
       if (cap?.Plugins?.App?.exitApp) {
@@ -149,10 +158,10 @@ export const App: React.FC = () => {
       // Ignore
     }
 
-    // 2. Try window.close()
+    // 3. Try window.close()
     window.close();
 
-    // 3. Fallback toast if browser prevents closing tabs not opened by script
+    // 4. Fallback toast
     showToast('Maaari mo nang isara ang tab o app.', 'turn_alert');
   };
 
