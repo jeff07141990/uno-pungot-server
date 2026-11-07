@@ -5,6 +5,7 @@ import {
   HouseRules,
   PublicGameState,
   PublicPlayer,
+  PlayerWallet,
   SoundEffectType,
 } from '../engine/types';
 import { createDeckForVariant, shuffleDeck, reshuffleDiscards, COLORS } from '../engine/deck';
@@ -16,6 +17,7 @@ export interface LocalEngineCallbacks {
   onSyncState: (state: PublicGameState, yourHand: Card[], yourPlayerId?: string) => void;
   onToast: (text: string, sound?: SoundEffectType) => void;
   onUnoShout?: (playerId: string) => void;
+  onWalletUpdate?: (wallet: PlayerWallet, levelUp?: any, xpGained?: number) => void;
 }
 
 const BOT_NAMES = ['Aero Bot', 'Turbo Bot', 'Spark Bot', 'Nova Bot', 'Blaze Bot', 'Luna Bot', 'Titan Bot'];
@@ -486,6 +488,10 @@ export class LocalGameEngine {
       this.callbacks?.onToast('🏆 PANALO KA! +₱200 Victory Coins & +120 XP!', 'game_win');
     } else {
       this.callbacks?.onToast(`🎮 Tapos na ang laban! Nanalo si ${winner.name}! +35 XP`, 'turn_alert');
+    }
+
+    if (this.callbacks?.onWalletUpdate) {
+      this.callbacks.onWalletUpdate(updatedWallet, undefined, humanWon ? 120 : 35);
     }
 
     this.broadcast();

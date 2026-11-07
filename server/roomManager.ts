@@ -1089,12 +1089,18 @@ export class RoomManager {
         const hasBooster = Boolean(winnerId && publicState.activeCoinBoosters?.includes(winnerId));
 
         if (winnerId) {
+          const playerMetadata: Record<string, { name: string; avatar: string }> = {};
+          for (const p of publicState.players) {
+            playerMetadata[p.id] = { name: p.name, avatar: p.avatar };
+          }
+
           const { winnerCoins, streak, updatedWallets, levelUps, xpGains } = economyManager.awardMatchFinish(
             winnerId,
             loser?.id || null,
             allHumanIds,
             hasBooster,
-            publicState.finishOrder
+            publicState.finishOrder,
+            playerMetadata
           );
 
           // Attach level and xpGained to publicState players
@@ -2531,12 +2537,18 @@ export class RoomManager {
 
     // Award deadlock XP & send wallet updates
     const allHumanIds = publicState.players.filter((p) => !p.isBot).map((p) => p.id);
+    const playerMetadata: Record<string, { name: string; avatar: string }> = {};
+    for (const p of publicState.players) {
+      playerMetadata[p.id] = { name: p.name, avatar: p.avatar };
+    }
+
     const { updatedWallets, levelUps, xpGains } = economyManager.awardMatchFinish(
       winnerPlayer.id,
       loserPlayer.id,
       allHumanIds,
       false,
-      publicState.finishOrder
+      publicState.finishOrder,
+      playerMetadata
     );
 
     for (const p of publicState.players) {

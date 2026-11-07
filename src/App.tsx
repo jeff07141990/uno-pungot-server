@@ -243,6 +243,34 @@ export const App: React.FC = () => {
         } else if (state.phase === 'ended') {
           setShowVsScreen(false);
           setView('game');
+
+          if (!hasRecordedCurrentGameRef.current && state.winnerId) {
+            hasRecordedCurrentGameRef.current = true;
+            const currentUid = userIdRef.current || userId;
+            const winner = state.players.find((p) => p.id === state.winnerId);
+            const userWon = state.winnerId === currentUid;
+            const userScore = state.players.find((p) => p.id === currentUid)?.score || 0;
+
+            historyService.recordMatch(
+              {
+                roomId: state.roomId,
+                roomName: state.roomName,
+                winnerId: state.winnerId,
+                winnerName: winner?.name || 'Player',
+                winnerAvatar: winner?.avatar || '🏆',
+                playersCount: state.players.length,
+                playerNames: state.players.map((p) => p.name),
+                cardsPlayed: state.turnCount,
+                durationSeconds: state.startedAt && state.endedAt ? Math.round((state.endedAt - state.startedAt) / 1000) : 60,
+                endedAt: state.endedAt || Date.now(),
+                userWon,
+                userScore,
+              },
+              currentUid
+            ).then(() => {
+              historyService.getPlayerStats(currentUid).then(setPlayerStats);
+            });
+          }
         }
         previousPhaseRef.current = state.phase;
       },
@@ -252,6 +280,14 @@ export const App: React.FC = () => {
       onUnoShout: (shoutingPlayerId) => {
         try {
           soundManager.play('uno_call');
+        } catch (_) {}
+      },
+      onWalletUpdate: (updatedWallet) => {
+        setWallet(updatedWallet);
+        try {
+          const json = JSON.stringify(updatedWallet);
+          localStorage.setItem('uno_player_wallet', json);
+          localStorage.setItem('uno_player_wallet_backup', json);
         } catch (_) {}
       },
     });
@@ -611,6 +647,15 @@ export const App: React.FC = () => {
     setYourHand([]);
     setMessages([]);
     setView('home');
+
+    // Refresh wallet so Home screen immediately reflects updated coins and level
+    const currentUid = userIdRef.current || userId;
+    economyService.fetchWallet(currentUid, userName, userAvatar).then((data) => {
+      setWallet(data.wallet);
+      setCatalog(data.catalog);
+      setMissions(data.missions);
+    }).catch(() => {});
+
     // Clear URL join param
     if (window.history.pushState) {
       const newUrl = window.location.origin + window.location.pathname;

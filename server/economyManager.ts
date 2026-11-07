@@ -449,7 +449,8 @@ export class EconomyManager {
     loserId: string | null,
     allPlayerIds: string[],
     hasCoinBooster: boolean = false,
-    finishOrder: string[] = []
+    finishOrder: string[] = [],
+    playerMetadata?: Record<string, { name: string; avatar: string }>
   ): {
     winnerCoins: number;
     streak: number;
@@ -464,7 +465,12 @@ export class EconomyManager {
     const xpGains: Record<string, number> = {};
 
     if (winnerId) {
-      const winnerWallet = this.getOrCreateWallet(winnerId);
+      const winnerMeta = playerMetadata?.[winnerId];
+      const winnerWallet = this.getOrCreateWallet(
+        winnerId,
+        winnerMeta?.name || 'Player',
+        winnerMeta?.avatar || '🦊'
+      );
       winnerWallet.totalWins += 1;
       winnerWallet.winStreak += 1;
       currentStreak = winnerWallet.winStreak;
@@ -514,7 +520,12 @@ export class EconomyManager {
 
     for (const pid of allPlayerIds) {
       if (pid === winnerId) continue;
-      const wallet = this.getOrCreateWallet(pid);
+      const meta = playerMetadata?.[pid];
+      const wallet = this.getOrCreateWallet(
+        pid,
+        meta?.name || 'Player',
+        meta?.avatar || '🦊'
+      );
       wallet.winStreak = 0;
       if (pid === loserId) {
         wallet.totalLosses += 1;
