@@ -44,13 +44,13 @@ class SoundManager {
   /**
    * Helper to play an external audio file with high reliability on mobile & desktop browsers.
    */
-  public playAudioFile(path: string, volumeScale: number = 1.0): boolean {
+  public playAudioFile(path: string, volumeScale: number = 1.0, minIntervalMs: number = 350): boolean {
     if (this.isMuted || this.volume <= 0 || typeof window === 'undefined') return false;
     
-    // Prevent double-trigger / echoing within a short window (350ms)
+    // Prevent double-trigger / echoing within a short window
     const now = Date.now();
     const lastPlayed = this.lastPlayedTimes.get(path) || 0;
-    if (now - lastPlayed < 350) {
+    if (minIntervalMs > 0 && now - lastPlayed < minIntervalMs) {
       return true;
     }
     this.lastPlayedTimes.set(path, now);
@@ -558,8 +558,8 @@ class SoundManager {
    * Realistic Casino Card Flick & Distribution sound (authentic card sliding and snapping onto felt)
    */
   public playCardDeal(ctx: AudioContext, variation: number = 0) {
-    // 1. Play realistic card deal audio file if loaded
-    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.9);
+    // 1. Play realistic card deal audio file extracted from card deal.mp4
+    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.95, 60);
     if (played) return;
 
     const now = ctx.currentTime;
