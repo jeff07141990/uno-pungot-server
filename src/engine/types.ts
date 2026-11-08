@@ -152,9 +152,16 @@ export interface PublicGameState {
 }
 
 export type PowerUpId =
+  | 'wild'
+  | 'reverse'
+  | 'skip'
+  | 'skip2'
+  | 'draw2'
+  | 'wild4'
+  | 'targeted_draw2'
+  | 'forced_swap'
   | 'shield'
   | 'swap'
-  | 'reverse'
   | 'color'
   | 'extra_turn'
   | 'peek'
@@ -218,7 +225,7 @@ export interface PlayerWallet {
   level: number;
   experience: number;
   lastDailyClaimDate: string | null; // YYYY-MM-DD
-  inventory: Record<PowerUpId, number>;
+  inventory: Partial<Record<PowerUpId, number>> | Record<string, number>;
   achievements: string[];
   createdAt: number;
   updatedAt: number;

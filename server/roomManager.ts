@@ -2904,9 +2904,16 @@ export class RoomManager {
    */
   public createPowerUpCard(powerUpId: PowerUpId): Card {
     const typeMap: Record<PowerUpId, CardType> = {
+      skip2: 'skip2',
+      targeted_draw2: 'targeted_draw2',
+      forced_swap: 'forced_swap',
+      wild4: 'wild4',
+      draw2: 'draw2',
+      reverse: 'reverse',
+      skip: 'skip',
+      wild: 'wild',
       shield: 'power_shield',
       swap: 'power_swap',
-      reverse: 'power_reverse',
       color: 'power_color',
       extra_turn: 'power_extra_turn',
       peek: 'power_peek',
@@ -2917,7 +2924,7 @@ export class RoomManager {
     return {
       id: `pcard-${powerUpId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       color: 'wild',
-      type: typeMap[powerUpId] || 'power_shield',
+      type: typeMap[powerUpId] || (powerUpId as CardType),
       powerUpId,
     };
   }

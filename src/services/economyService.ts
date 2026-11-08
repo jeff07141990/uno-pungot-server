@@ -228,7 +228,7 @@ class EconomyService {
         this.saveWalletToStorage(wallet);
       }
       return {
-        wallet,
+        wallet: wallet as PlayerWallet,
         catalog: this.cachedCatalog || ({} as any),
         missions: this.cachedMissions,
       };

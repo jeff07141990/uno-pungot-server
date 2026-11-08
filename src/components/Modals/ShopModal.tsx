@@ -42,11 +42,83 @@ interface ShopModalProps {
 }
 
 export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
+  skip2: {
+    id: 'skip2',
+    name: 'Wild Skip Two (2x)',
+    description: 'Nilalaktawan ang susunod na 2 kalaban!',
+    price: 150,
+    icon: '⏩',
+    badge: 'Skip 2x',
+    enabled: true,
+  },
+  targeted_draw2: {
+    id: 'targeted_draw2',
+    name: 'Targeted Draw 2 🎯',
+    description: 'Pumili ng kalaban na pipiliting bumunot ng +2 cards!',
+    price: 180,
+    icon: '🎯',
+    badge: 'Target +2',
+    enabled: true,
+  },
+  forced_swap: {
+    id: 'forced_swap',
+    name: 'Forced Swap 🔀',
+    description: 'Makipagpalit ng buong baraha sa napiling kalaban!',
+    price: 250,
+    icon: '🔀',
+    badge: 'Swap Hands',
+    enabled: true,
+  },
+  wild4: {
+    id: 'wild4',
+    name: 'Wild Draw 4 (+4)',
+    description: 'Pababunutin ng 4 na cards ang susunod na player!',
+    price: 200,
+    icon: '➕',
+    badge: '+4 Attack',
+    enabled: true,
+  },
+  draw2: {
+    id: 'draw2',
+    name: 'Wild Draw 2 (+2)',
+    description: 'Pababunutin ng 2 cards ang susunod na kalaban!',
+    price: 120,
+    icon: '✌️',
+    badge: '+2 Attack',
+    enabled: true,
+  },
+  reverse: {
+    id: 'reverse',
+    name: 'Wild Reverse 🔄',
+    description: 'Binaliktad ang direksyon ng ikot ng laro!',
+    price: 100,
+    icon: '🔄',
+    badge: 'Reverse',
+    enabled: true,
+  },
+  skip: {
+    id: 'skip',
+    name: 'Wild Skip ⊘',
+    description: 'Nilaktawan ang turn ng susunod na player!',
+    price: 100,
+    icon: '🚫',
+    badge: 'Skip Turn',
+    enabled: true,
+  },
+  wild: {
+    id: 'wild',
+    name: 'Wild Standard',
+    description: 'Malayang ilapag kahit kailan sa iyong tira!',
+    price: 80,
+    icon: '🌈',
+    badge: 'Universal',
+    enabled: true,
+  },
   shield: {
     id: 'shield',
     name: 'Shield Protection',
-    description: 'Block the next attack!',
-    price: 100,
+    description: 'I-block ang incoming draw penalty attack!',
+    price: 120,
     icon: '🛡️',
     badge: 'Defense',
     enabled: true,
@@ -54,8 +126,8 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
   extra_turn: {
     id: 'extra_turn',
     name: 'Extra Turn',
-    description: 'Play one more turn!',
-    price: 250,
+    description: 'Tumira muli agad nang walang abala!',
+    price: 200,
     icon: '⚡',
     badge: 'Special',
     enabled: true,
@@ -63,8 +135,8 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
   swap: {
     id: 'swap',
     name: 'Card Swap',
-    description: 'Swap hands with another player!',
-    price: 150,
+    description: 'Magpalit ng baraha sa kalaban!',
+    price: 220,
     icon: '🔄',
     badge: 'Tactical',
     enabled: true,
@@ -72,25 +144,16 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
   color: {
     id: 'color',
     name: 'Color Changer',
-    description: 'Change the color anytime!',
-    price: 120,
-    icon: '🎨',
-    badge: 'Control',
-    enabled: true,
-  },
-  reverse: {
-    id: 'reverse',
-    name: 'Reverse Master',
-    description: 'Reverse the turn!',
+    description: 'Palitan ang kulay sa mesa!',
     price: 100,
-    icon: '🔁',
+    icon: '🎨',
     badge: 'Control',
     enabled: true,
   },
   peek: {
     id: 'peek',
     name: 'Peek Card',
-    description: 'View a player\'s card!',
+    description: 'Silipin ang baraha ng kalaban!',
     price: 80,
     icon: '👁️',
     badge: 'Scout',
@@ -99,8 +162,8 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
   booster: {
     id: 'booster',
     name: 'Coin Booster',
-    description: 'Earn extra coins!',
-    price: 200,
+    description: 'Dagdag na panalong coins sa laro!',
+    price: 150,
     icon: '💰',
     badge: 'Reward',
     enabled: true,
@@ -108,7 +171,7 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
   reflect: {
     id: 'reflect',
     name: 'Attack Reflect',
-    description: 'Send the attack back!',
+    description: 'Ibalik ang attack penalty pabalik sa umatake!',
     price: 180,
     icon: '🪞',
     badge: 'Defense',
@@ -495,12 +558,22 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                     const isProcessing = buyingId === item.id;
                     const customSkin = skins[`power_${item.id}`];
 
-                    const previewCard: Card = {
-                      id: `shop-${item.id}`,
-                      color: 'wild',
-                      type: (`power_${item.id}`) as CardType,
-                      powerUpId: item.id,
-                    };
+                  const allWildTypes: Record<string, CardType> = {
+                    skip2: 'skip2',
+                    targeted_draw2: 'targeted_draw2',
+                    forced_swap: 'forced_swap',
+                    wild4: 'wild4',
+                    draw2: 'draw2',
+                    reverse: 'reverse',
+                    skip: 'skip',
+                    wild: 'wild',
+                  };
+                  const previewCard: Card = {
+                    id: `shop-${item.id}`,
+                    color: 'wild',
+                    type: allWildTypes[item.id] || ((`power_${item.id}`) as CardType),
+                    powerUpId: item.id,
+                  };
 
                     return (
                       <div
@@ -632,10 +705,20 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                       .filter((item) => (wallet?.inventory?.[item.id] || 0) > 0)
                       .map((item) => {
                         const count = wallet?.inventory?.[item.id] || 0;
+                        const allWildTypes: Record<string, CardType> = {
+                          skip2: 'skip2',
+                          targeted_draw2: 'targeted_draw2',
+                          forced_swap: 'forced_swap',
+                          wild4: 'wild4',
+                          draw2: 'draw2',
+                          reverse: 'reverse',
+                          skip: 'skip',
+                          wild: 'wild',
+                        };
                         const previewCard: Card = {
                           id: `inv-${item.id}`,
                           color: 'wild',
-                          type: (`power_${item.id}`) as CardType,
+                          type: allWildTypes[item.id] || ((`power_${item.id}`) as CardType),
                           powerUpId: item.id,
                         };
 
@@ -698,16 +781,30 @@ export const ShopModal: React.FC<ShopModalProps> = ({
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
           <div className="shop-card-panel rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl relative">
             <div className="flex justify-center">
-              <CardView
-                card={{
-                  id: `confirm-${confirmItem.id}`,
-                  color: 'wild',
-                  type: ('power_' + confirmItem.id) as CardType,
-                  powerUpId: confirmItem.id,
-                }}
-                size="md"
-                isPlayable={true}
-              />
+              {(() => {
+                const allWildTypes: Record<string, CardType> = {
+                  skip2: 'skip2',
+                  targeted_draw2: 'targeted_draw2',
+                  forced_swap: 'forced_swap',
+                  wild4: 'wild4',
+                  draw2: 'draw2',
+                  reverse: 'reverse',
+                  skip: 'skip',
+                  wild: 'wild',
+                };
+                return (
+                  <CardView
+                    card={{
+                      id: `confirm-${confirmItem.id}`,
+                      color: 'wild',
+                      type: allWildTypes[confirmItem.id] || ((`power_${confirmItem.id}`) as CardType),
+                      powerUpId: confirmItem.id,
+                    }}
+                    size="md"
+                    isPlayable={true}
+                  />
+                );
+              })()}
             </div>
 
             <div>

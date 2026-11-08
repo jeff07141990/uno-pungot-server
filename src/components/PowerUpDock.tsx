@@ -100,10 +100,20 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
                   const canUseNow =
                     remainingUses > 0 && (isYourTurn || (isReactive && hasPendingPenalty));
 
+                  const allWildTypes: Record<string, CardType> = {
+                    skip2: 'skip2',
+                    targeted_draw2: 'targeted_draw2',
+                    forced_swap: 'forced_swap',
+                    wild4: 'wild4',
+                    draw2: 'draw2',
+                    reverse: 'reverse',
+                    skip: 'skip',
+                    wild: 'wild',
+                  };
                   const previewCard: Card = {
                     id: `dock-${item.id}`,
                     color: 'wild',
-                    type: (`power_${item.id}`) as CardType,
+                    type: allWildTypes[item.id] || ((`power_${item.id}`) as CardType),
                     powerUpId: item.id,
                   };
 
