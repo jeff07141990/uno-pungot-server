@@ -45,6 +45,32 @@ app.post('/api/rooms', (req, res) => {
   res.json({ roomId });
 });
 
+// App version and automatic update check endpoint
+app.get('/api/app-version', (_req, res) => {
+  res.json({
+    latestVersion: '1.0.11',
+    latestVersionCode: 12,
+    minSupportedVersion: '1.0.10',
+    title: 'Bagong Update: UNO Pungot Edition v1.0.11',
+    releaseNotes: [
+      '⚡ Online Update System activated',
+      '🌐 Cloud Server connection retry & wake-up optimizations',
+      '🔧 Mas maayos at mabilis na multiplayer matchmaking'
+    ],
+    downloadUrl: 'https://uno-pungot-server.onrender.com/download/uno-latest.apk'
+  });
+});
+
+// Direct APK download route
+app.get('/download/uno-latest.apk', (_req, res) => {
+  const localApk = path.resolve(__dirname, '../UNO-Pungot-Updated.apk');
+  if (fs.existsSync(localApk)) {
+    res.download(localApk, 'UNO-Pungot-Edition-v1.0.11.apk');
+  } else {
+    res.status(404).send('APK update file not ready on server.');
+  }
+});
+
 // --- VIRTUAL PESO COIN ECONOMY REST ENDPOINTS ---
 
 // 1. Get or create player wallet & inventory

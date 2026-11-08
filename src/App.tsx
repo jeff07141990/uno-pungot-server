@@ -40,6 +40,8 @@ import { MissionsModal } from './components/Modals/MissionsModal';
 import { LeaderboardModal } from './components/Modals/LeaderboardModal';
 import { AdminModal } from './components/Modals/AdminModal';
 import { GooglePromptModal } from './components/Modals/GooglePromptModal';
+import { UpdateModal } from './components/Modals/UpdateModal';
+import { checkAppUpdate, AppVersionInfo } from './services/versionService';
 import { economyService } from './services/economyService';
 import { firebaseState } from './firebase/config';
 import { DailyMission, PlayerWallet, PowerUpId, PowerUpItem } from './engine/types';
@@ -98,6 +100,8 @@ export const App: React.FC = () => {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isGooglePromptOpen, setIsGooglePromptOpen] = useState(false);
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<AppVersionInfo | null>(null);
   const [wallet, setWallet] = useState<PlayerWallet | null>(() => economyService.getCachedWallet());
   const [catalog, setCatalog] = useState<Record<PowerUpId, PowerUpItem> | null>(() => economyService.getCachedCatalog());
   const [missions, setMissions] = useState<DailyMission[]>(() => economyService.getCachedMissions());
@@ -205,9 +209,16 @@ export const App: React.FC = () => {
       // Check if URL contains ?join=ROOM_CODE
       const urlParams = new URLSearchParams(window.location.search);
       const joinCode = urlParams.get('join');
-      if (joinCode) {
-        handleJoinRoom(joinCode, uid);
-      }
+      // Check for remote game updates
+      setTimeout(() => {
+        const candidateHosts = networkManager.getCandidateHosts();
+        checkAppUpdate(candidateHosts).then((info) => {
+          if (info) {
+            setUpdateInfo(info);
+            setIsUpdateOpen(true);
+          }
+        });
+      }, 2500);
     });
 
     historyService.getPlayerStats(userId).then(setPlayerStats);
@@ -431,7 +442,7 @@ export const App: React.FC = () => {
     for (const host of candidates) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         const res = await fetch(`${host}${path}`, {
           ...options,
           signal: controller.signal,
@@ -1074,6 +1085,13 @@ export const App: React.FC = () => {
             window.location.reload();
           }, 600);
         }}
+      />
+
+      {/* Online In-App Auto Update Modal */}
+      <UpdateModal
+        isOpen={isUpdateOpen}
+        updateInfo={updateInfo}
+        onClose={() => setIsUpdateOpen(false)}
       />
     </div>
   );
