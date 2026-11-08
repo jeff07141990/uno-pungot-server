@@ -7,6 +7,7 @@ import {
 } from '../engine/types';
 import { networkManager } from './networkManager';
 import { deviceStorage } from './deviceStorage';
+import { firestoreStorage } from './firestoreStorage';
 import { getLevelFromXP } from '../utils/levelUtils';
 
 class EconomyService {
@@ -25,8 +26,8 @@ class EconomyService {
   }
 
   /**
-   * Persist wallet to Native Preferences (Android SharedPreferences) & localStorage.
-   * Keyed per-player (by Google UID or persistent UID) so records are safely isolated in phone memory.
+   * Persist wallet to Native Preferences (Android SharedPreferences), localStorage, AND Firebase Cloud Firestore.
+   * Keyed per-player (by Google UID or persistent UID) so records are safely isolated and permanent!
    */
   public saveWalletToStorage(wallet: PlayerWallet, specificPlayerId?: string): void {
     try {
@@ -39,6 +40,8 @@ class EconomyService {
       if (pid) {
         deviceStorage.setItem(`uno_player_wallet_${pid}`, json);
         deviceStorage.setItem(`uno_player_wallet_backup_${pid}`, json);
+        // Persist to Cloud Firestore (silent background save)
+        firestoreStorage.saveWallet(pid, wallet).catch(() => {});
       }
       this.cachedWallet = wallet;
     } catch {}
@@ -102,8 +105,33 @@ class EconomyService {
     catalog: Record<PowerUpId, PowerUpItem>;
     missions: DailyMission[];
   }> {
-    // 1. First retrieve any local record bound to this Google UID / player ID in Phone memory
-    const localWallet = this.getCachedWallet(playerId);
+    // 1. Retrieve local record from Phone memory and Cloud Firestore
+    let localWallet = this.getCachedWallet(playerId);
+    let firestoreWallet: PlayerWallet | null = null;
+    try {
+      firestoreWallet = await firestoreStorage.getWallet(playerId);
+    } catch {}
+
+    // Combine local & firestore: pick whichever has higher progress
+    if (firestoreWallet) {
+      if (!localWallet) {
+        localWallet = firestoreWallet;
+      } else {
+        const fLevel = firestoreWallet.level || 1;
+        const lLevel = localWallet.level || 1;
+        const fBalance = firestoreWallet.balance || 0;
+        const lBalance = localWallet.balance || 0;
+        if (fLevel > lLevel || (fLevel === lLevel && fBalance > lBalance)) {
+          localWallet = {
+            ...localWallet,
+            ...firestoreWallet,
+            balance: Math.max(lBalance, fBalance),
+            level: Math.max(lLevel, fLevel),
+            experience: Math.max(localWallet.experience || 0, firestoreWallet.experience || 0),
+          };
+        }
+      }
+    }
 
     try {
       const url = `${networkManager.getHttpApiUrl()}/api/economy/wallet/${encodeURIComponent(
@@ -114,9 +142,7 @@ class EconomyService {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
 
-      // --- PHONE MEMORY HYDRATION GUARD ---
-      // If the phone's native storage has higher progress (level/coins/xp) than the server,
-      // always prioritize the phone's local memory to prevent resetting!
+      // --- HYDRATION GUARD: Prioritize highest balance, level & XP across Phone + Cloud Firestore ---
       const serverWallet: PlayerWallet = data.wallet;
       const localBalance = localWallet?.balance || 0;
       const serverBalance = serverWallet?.balance || 0;
@@ -151,7 +177,7 @@ class EconomyService {
 
       this.saveWalletToStorage(walletToUse, playerId);
 
-      // If local progress had more coins than the server, asynchronously sync difference to server
+      // If local/cloud progress had more coins than server, asynchronously sync difference to server
       if (localBalance > serverBalance) {
         const diff = localBalance - serverBalance;
         this.adminAdjustBalance(playerId, diff, 'Sync offline earnings to server').catch(() => {});
