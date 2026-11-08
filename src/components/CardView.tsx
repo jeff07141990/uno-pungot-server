@@ -115,29 +115,13 @@ export const CardView: React.FC<CardViewProps> = ({
     ? `${card.color}_${card.value}`
     : `${card.color}_${card.type}`;
 
-  // Check if a custom image skin was uploaded for this specific card or general type
+  // Check if a custom image skin was uploaded by user for this specific card or general type
   const powerSkinKey = !ignorePowerSkin && card.powerUpId ? skins[`power_${card.powerUpId}`] : undefined;
   const customSkinSrc =
     skins[specificKey] ||
     skins[card.type] ||
     powerSkinKey ||
-    (card.type === 'power_shield' || card.powerUpId === 'shield'
-      ? skins.power_shield || '/cards/shield.png'
-      : card.type === 'power_extra_turn' || card.powerUpId === 'extra_turn'
-      ? skins.power_extra_turn || '/cards/extra_turn.png'
-      : card.type === 'power_swap' || card.powerUpId === 'swap'
-      ? skins.power_swap || '/cards/swap.png'
-      : card.type === 'power_color' || card.powerUpId === 'color'
-      ? skins.power_color || '/cards/color.png'
-      : card.type === 'power_reverse' || card.powerUpId === 'reverse'
-      ? skins.power_reverse || '/cards/reverse_power.png'
-      : card.type === 'power_peek' || card.powerUpId === 'peek'
-      ? skins.power_peek || '/cards/peek.png'
-      : card.type === 'power_booster' || card.powerUpId === 'booster'
-      ? skins.power_booster || '/cards/booster.png'
-      : card.type === 'power_reflect' || card.powerUpId === 'reflect'
-      ? skins.power_reflect || '/cards/reflect.png'
-      : card.type === 'skip'
+    (card.type === 'skip'
       ? skins.skip || '/cards/skip.png'
       : card.type === 'reverse'
       ? skins.reverse || '/cards/reverse.png'
