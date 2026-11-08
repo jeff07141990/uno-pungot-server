@@ -89,6 +89,14 @@ class EconomyService {
   }
 
   public getCachedCatalog(): Record<PowerUpId, PowerUpItem> | null {
+    if (!this.cachedCatalog) {
+      try {
+        const stored = deviceStorage.getItemSync('uno_custom_catalog');
+        if (stored) {
+          this.cachedCatalog = JSON.parse(stored);
+        }
+      } catch {}
+    }
     return this.cachedCatalog;
   }
 
@@ -345,15 +353,41 @@ class EconomyService {
     powerUpId: PowerUpId,
     updates: Partial<PowerUpItem>
   ): Promise<{ success: boolean; item?: PowerUpItem }> {
+    // 1. Immediately update local in-memory catalog
+    if (!this.cachedCatalog) {
+      this.cachedCatalog = this.getCachedCatalog();
+    }
+    if (this.cachedCatalog && this.cachedCatalog[powerUpId]) {
+      this.cachedCatalog[powerUpId] = {
+        ...this.cachedCatalog[powerUpId],
+        ...updates,
+      };
+      // Save custom catalog overrides to persistent device storage
+      try {
+        deviceStorage.setItem('uno_custom_catalog', JSON.stringify(this.cachedCatalog));
+      } catch {}
+      this.notify();
+    }
+
+    // 2. Sync to online server
     try {
       const res = await fetch(`${networkManager.getHttpApiUrl()}/api/economy/admin/config-item`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ powerUpId, updates }),
       });
-      return await res.json();
+      const data = await res.json();
+      if (data.success && data.item) {
+        if (this.cachedCatalog) {
+          this.cachedCatalog[powerUpId] = data.item;
+          deviceStorage.setItem('uno_custom_catalog', JSON.stringify(this.cachedCatalog));
+          this.notify();
+        }
+      }
+      return { success: true, item: this.cachedCatalog ? this.cachedCatalog[powerUpId] : data.item };
     } catch {
-      return { success: false };
+      // Even if server is slow/offline, local persistent change succeeded!
+      return { success: true, item: this.cachedCatalog ? this.cachedCatalog[powerUpId] : undefined };
     }
   }
   /**

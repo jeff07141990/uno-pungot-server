@@ -149,7 +149,10 @@ export const AdminModal: React.FC<AdminModalProps> = ({
     const res = await economyService.adminUpdateItem(id, { price });
     if (res.success) {
       setEditingPrice(null);
-      loadData();
+      await loadData();
+      setStatusMsg({ text: `Matagumpay na binago ang presyo sa ₱${price}!`, isError: false });
+    } else {
+      setStatusMsg({ text: 'Hindi na-save ang presyo. Subukan muli.', isError: true });
     }
   };
 
