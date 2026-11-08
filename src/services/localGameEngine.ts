@@ -1,11 +1,13 @@
 import {
   Card,
   CardColor,
+  CardType,
   GameVariant,
   HouseRules,
   PublicGameState,
   PublicPlayer,
   PlayerWallet,
+  PowerUpId,
   SoundEffectType,
 } from '../engine/types';
 import { createDeckForVariant, shuffleDeck, reshuffleDiscards, COLORS } from '../engine/deck';
@@ -47,6 +49,10 @@ export class LocalGameEngine {
   }
 
   public isRunning(): boolean {
+    return this.active;
+  }
+
+  public isActive(): boolean {
     return this.active;
   }
 
@@ -545,6 +551,40 @@ export class LocalGameEngine {
     if (!this.callbacks) return;
     const humanHand = this.playerHands.get(this.humanPlayerId) || [];
     this.callbacks.onSyncState({ ...this.publicState }, [...humanHand], this.humanPlayerId);
+  }
+
+  public addPowerUpCardToHand(playerId: string, powerUpId: PowerUpId): boolean {
+    if (!this.active || this.publicState.phase !== 'playing') return false;
+    const hand = this.playerHands.get(playerId);
+    if (!hand) return false;
+
+    const typeMap: Record<PowerUpId, CardType> = {
+      shield: 'power_shield',
+      swap: 'power_swap',
+      reverse: 'power_reverse',
+      color: 'power_color',
+      extra_turn: 'power_extra_turn',
+      peek: 'power_peek',
+      booster: 'power_booster',
+      reflect: 'power_reflect',
+    };
+
+    const card: Card = {
+      id: `pcard-${powerUpId}-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      color: 'wild',
+      type: typeMap[powerUpId] || 'power_shield',
+      powerUpId,
+    };
+
+    hand.push(card);
+    const player = this.publicState.players.find((p) => p.id === playerId);
+    if (player) {
+      player.cardCount = hand.length;
+    }
+
+    this.callbacks?.onToast(`🃏 Nakakuha ka ng ${powerUpId.toUpperCase()} power card!`, 'power_general');
+    this.broadcast();
+    return true;
   }
 
   public stop() {

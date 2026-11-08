@@ -113,7 +113,10 @@ app.post('/api/economy/buy-powerup', (req, res) => {
     }
     const result = economyManager.buyPowerUp(playerId, powerUpId, quantity || 1);
     
-    // Store strictly in player inventory (do not inject into playing hand cards)
+    // If the player is currently playing in an active room, directly inject the purchased power-up card into their hand!
+    if (result.success) {
+      roomManager.addPowerUpCardToHand(playerId, powerUpId);
+    }
 
     res.json(result);
   } catch (err: any) {
