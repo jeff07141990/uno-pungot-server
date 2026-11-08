@@ -116,17 +116,17 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
         {/* Center Content: Two Columns separated by Gold Divider */}
         <form
           onSubmit={handleSubmit}
-          className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-4 items-center px-1 sm:px-3 overflow-hidden"
+          className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-3 items-center px-1 sm:px-3 overflow-hidden pb-1"
         >
           {/* ================= LEFT SIDE: GAME SELECT (3x2 Grid) ================= */}
           <div className="md:col-span-5 flex flex-col justify-center items-center md:items-start h-full">
             {/* Title: GAME SELECT in bold white with black stroke font */}
-            <h2 className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-white mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] flex items-center gap-1">
+            <h2 className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-white mb-0.5 sm:mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] flex items-center gap-1">
               <span>GAME SELECT</span>
             </h2>
 
-            {/* 3x2 Grid of Uno Cards - scaled down slightly so all 6 cards fit 100% on screen without scrollbar */}
-            <div className="grid grid-cols-3 gap-1 sm:gap-1.5 w-full max-w-[240px] sm:max-w-[280px] md:max-w-[310px]">
+            {/* 3x2 Grid of Uno Cards - responsive height so it never pushes the bottom button */}
+            <div className="grid grid-cols-3 gap-1 sm:gap-1.5 w-full max-w-[210px] sm:max-w-[260px] md:max-w-[290px]">
               {VARIANTS.map((v) => {
                 const isSelected = variant === v.id;
                 const isComingSoon = v.comingSoon;
@@ -161,7 +161,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 
                     {/* Card container with white border & rounded corners */}
                     <div
-                      className={`relative w-full aspect-[2/3] max-h-[88px] sm:max-h-[110px] md:max-h-[135px] rounded-lg overflow-hidden transition-all duration-200 z-10 ${
+                      className={`relative w-full aspect-[2/3] max-h-[72px] sm:max-h-[96px] md:max-h-[115px] rounded-lg overflow-hidden transition-all duration-200 z-10 ${
                         isSelected && !isComingSoon
                           ? 'shadow-[0_0_16px_rgba(250,204,21,0.95)] border-2 border-white'
                           : 'shadow-md border border-white/80 hover:border-amber-300'
@@ -193,11 +193,11 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
 
           {/* ================= VERTICAL GOLD DIVIDER ================= */}
           <div className="hidden md:flex md:col-span-1 justify-center h-full items-center">
-            <div className="w-[2px] h-[80%] bg-gradient-to-b from-amber-400/20 via-amber-400 to-amber-400/20 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+            <div className="w-[2px] h-[75%] bg-gradient-to-b from-amber-400/20 via-amber-400 to-amber-400/20 rounded-full shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
           </div>
 
           {/* ================= RIGHT SIDE: ENTRY FEE, TIMER, CARDS ================= */}
-          <div className="md:col-span-6 flex flex-col justify-center gap-1.5 sm:gap-2.5">
+          <div className="md:col-span-6 flex flex-col justify-center gap-1 sm:gap-2">
             
             {/* 1. ENTRY FEE SECTION */}
             <div className="flex flex-col gap-0.5 sm:gap-1">
@@ -335,7 +335,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                       key={tableFile}
                       type="button"
                       onClick={() => setGameTable(tableFile)}
-                      className={`relative group shrink-0 w-14 sm:w-16 aspect-[16/10] rounded-lg overflow-hidden border transition-all cursor-pointer select-none ${
+                      className={`relative group shrink-0 w-11 sm:w-14 aspect-[16/10] rounded-md overflow-hidden border transition-all cursor-pointer select-none ${
                         isSelected
                           ? 'border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)] scale-105 z-10 ring-1 ring-white'
                           : 'border-slate-700/80 hover:border-slate-400 opacity-70 hover:opacity-100'
@@ -358,18 +358,18 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
               </div>
             </div>
 
-            {/* BOTTOM CREATE BUTTON - Fits completely inside container */}
-            <div className="pt-1 flex items-center justify-center sm:justify-end gap-2">
+            {/* BOTTOM CREATE BUTTON - Guaranteed fully visible above screen bottom */}
+            <div className="pt-0.5 sm:pt-1 pb-1 sm:pb-2 flex items-center justify-center sm:justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-[10px] sm:text-xs border border-slate-700 transition cursor-pointer"
+                className="px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-bold text-[10px] sm:text-xs border border-slate-700 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-1.5 sm:px-6 sm:py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black text-[11px] sm:text-xs uppercase tracking-wider shadow-[0_3px_12px_rgba(251,191,36,0.7),inset_0_1.5px_3px_rgba(255,255,255,0.9)] border border-white hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1"
+                className="px-4 py-1.5 sm:px-6 sm:py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-slate-950 font-black text-[10px] sm:text-xs uppercase tracking-wider shadow-[0_3px_12px_rgba(251,191,36,0.7),inset_0_1.5px_3px_rgba(255,255,255,0.9)] border border-white hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center gap-1"
               >
                 <span>CREATE LOBBY</span>
               </button>
