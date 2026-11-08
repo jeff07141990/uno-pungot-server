@@ -507,19 +507,19 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         key={item.id}
                         onClick={() => setSelectedPowerUpId(item.id)}
                         style={{ scrollSnapAlign: 'center' }}
-                        className={`w-32 sm:w-44 md:w-52 shrink-0 flex flex-col items-center text-center justify-between transition-all duration-200 cursor-pointer relative group p-1.5 sm:p-2 rounded-2xl bg-slate-950/40 border ${
+                        className={`w-28 sm:w-36 md:w-40 aspect-[2/3] shrink-0 flex flex-col items-center text-center justify-between transition-all duration-200 cursor-pointer relative group p-2 sm:p-2.5 rounded-2xl bg-slate-950/50 border ${
                           isSelected
-                            ? 'border-amber-400/80 shadow-[0_0_15px_rgba(250,204,21,0.3)] bg-purple-950/30'
-                            : 'border-slate-800/80 hover:border-slate-700'
+                            ? 'border-amber-400/90 shadow-[0_0_15px_rgba(250,204,21,0.35)] bg-purple-950/40 ring-1 ring-amber-400/50'
+                            : 'border-slate-800 hover:border-slate-700'
                         }`}
                       >
                         {/* Dynamic Aura Behind Card */}
-                        <div className="absolute top-1 inset-x-0 h-28 flex items-center justify-center pointer-events-none overflow-visible z-0">
-                          <div className={`w-20 h-24 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-80' : 'opacity-30'}`} />
+                        <div className="absolute top-1 inset-x-0 h-24 flex items-center justify-center pointer-events-none overflow-visible z-0">
+                          <div className={`w-16 h-20 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-80' : 'opacity-25'}`} />
                         </div>
 
-                        {/* Card Visual Display (Elevated to top and enlarged) */}
-                        <div className="relative mt-1 mb-0.5 sm:mt-2 sm:mb-1 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-10 shrink-0 transform scale-110 sm:scale-125 origin-center transition-transform">
+                        {/* Card Visual Display (Scaled to fit nicely in 2:3 box) */}
+                        <div className="relative mt-1 mb-0.5 drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] z-10 shrink-0 transform scale-100 sm:scale-110 origin-center transition-transform">
                           <CardView card={previewCard} size="md" isPlayable={false} />
 
                           {/* Admin PNG Icon Upload Overlay */}
@@ -568,25 +568,25 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           )}
                         </div>
 
-                        {/* Item Name & Description (Small, clean font) */}
-                        <div className="w-full mt-2 sm:mt-3 mb-0.5 z-10 px-1">
-                          <h3 className="font-bold text-white text-[10px] sm:text-xs truncate drop-shadow leading-tight">
+                        {/* Item Name & Description (Wrapped text with clean spacing) */}
+                        <div className="w-full my-auto z-10 px-0.5">
+                          <h3 className="font-bold text-white text-[10px] sm:text-xs leading-tight drop-shadow break-words text-center">
                             {item.name}
                           </h3>
-                          <p className="text-[8px] sm:text-[10px] text-slate-300 font-normal line-clamp-1 mt-0.5">
+                          <p className="text-[8px] sm:text-[9.5px] text-slate-300 font-normal leading-snug break-words line-clamp-2 mt-0.5 text-center">
                             {item.description}
                           </p>
                         </div>
 
                         {/* Price & Buy Button - Always Visible */}
-                        <div className="w-full flex items-center justify-between gap-1 sm:gap-2 mt-auto pt-1 border-t border-slate-800/80 z-10">
+                        <div className="w-full flex items-center justify-between gap-1 mt-auto pt-1 border-t border-slate-800/80 z-10 shrink-0">
                           <div className="flex items-center gap-1 shrink-0">
                             <img
                               src="/shop_coin_icon.png"
                               alt="Coins"
-                              className="w-4 h-4 sm:w-6 sm:h-6 object-contain shrink-0"
+                              className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain shrink-0"
                             />
-                            <span className="font-black text-yellow-300 text-xs sm:text-base font-mono">
+                            <span className="font-black text-yellow-300 text-[11px] sm:text-xs font-mono">
                               {item.price}
                             </span>
                           </div>
@@ -597,7 +597,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                               e.stopPropagation();
                               handlePurchaseItem(item);
                             }}
-                            className="shop-buy-btn px-2.5 sm:px-4 py-1 text-[10px] sm:text-xs tracking-wider active:scale-95 cursor-pointer shadow shrink-0"
+                            className="shop-buy-btn px-2 sm:px-3 py-0.5 sm:py-1 text-[9px] sm:text-[10px] tracking-wider active:scale-95 cursor-pointer shadow shrink-0"
                           >
                             {isProcessing ? '...' : 'Buy'}
                           </button>
