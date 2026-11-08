@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   Sparkles,
   CheckCircle2,
+  Check,
   AlertCircle,
   Coins,
   Shield,
@@ -131,6 +132,16 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   const [buyingId, setBuyingId] = useState<PowerUpId | null>(null);
   const [confirmItem, setConfirmItem] = useState<PowerUpItem | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [justPurchasedId, setJustPurchasedId] = useState<PowerUpId | null>(null);
+  const purchaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (purchaseTimeoutRef.current) {
+        clearTimeout(purchaseTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Admin In-Shop Edit Mode
   const [isAdmin, setIsAdmin] = useState(() => {
@@ -186,7 +197,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({
     setFeedback(null);
     try {
       await onBuyItem(item.id, 1);
-      setFeedback({ text: `Matagumpay na nabili ang ${item.name}! (₱${item.price}) 🎉` });
+      // Alisin ang top green banner at mag-trigger ng green check animation sa mismong card
+      setFeedback(null);
+      setJustPurchasedId(item.id);
+      if (purchaseTimeoutRef.current) {
+        clearTimeout(purchaseTimeoutRef.current);
+      }
+      purchaseTimeoutRef.current = setTimeout(() => {
+        setJustPurchasedId(null);
+      }, 1600);
       setConfirmItem(null);
     } catch (e: any) {
       setFeedback({ text: e.message || 'Nabigo ang pagbili.', isError: true });
@@ -324,22 +343,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
         className="hidden"
       />
 
-      {/* FEEDBACK BANNER */}
-      {feedback && (
+      {/* FEEDBACK BANNER (Error only - success uses green checkmark on card) */}
+      {feedback && feedback.isError && (
         <div className="px-2 sm:px-6 pt-1 z-20">
-          <div
-            className={`p-1.5 sm:p-2 rounded-xl border text-[10px] sm:text-xs font-bold flex items-center justify-between gap-2 shadow-lg animate-fadeIn ${
-              feedback.isError
-                ? 'bg-rose-950/90 border-rose-500 text-rose-200'
-                : 'bg-emerald-950/90 border-emerald-500 text-emerald-200'
-            }`}
-          >
+          <div className="p-1.5 sm:p-2 rounded-xl border text-[10px] sm:text-xs font-bold flex items-center justify-between gap-2 shadow-lg animate-fadeIn bg-rose-950/90 border-rose-500 text-rose-200">
             <div className="flex items-center gap-1.5">
-              {feedback.isError ? (
-                <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              ) : (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              )}
+              <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
               <span>{feedback.text}</span>
             </div>
             <button
@@ -521,6 +530,18 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         {/* Card Visual Display (Larger, prominent card) */}
                         <div className="relative mt-1 mb-0.5 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-10 shrink-0 transform scale-100 sm:scale-105 origin-center transition-transform">
                           <CardView card={previewCard} size="lg" isPlayable={false} />
+
+                          {/* Purchased Green Checkmark Fade-Out Indicator */}
+                          {justPurchasedId === item.id && (
+                            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/45 rounded-xl animate-pop-check-fade pointer-events-none">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-green-400 border-2 border-white flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.8)]">
+                                <Check className="w-6 h-6 sm:w-7 sm:h-7 text-white stroke-[3.5]" />
+                              </div>
+                              <span className="mt-1 text-[8px] sm:text-[9px] font-black tracking-widest text-emerald-300 drop-shadow uppercase">
+                                Nabili!
+                              </span>
+                            </div>
+                          )}
 
                           {/* Admin PNG Icon Upload Overlay */}
                           {adminEditMode && (
