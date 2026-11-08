@@ -518,9 +518,9 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           <div className={`w-16 h-20 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-80' : 'opacity-25'}`} />
                         </div>
 
-                        {/* Card Visual Display (Larger card preview) */}
-                        <div className="relative mt-0.5 mb-0.5 drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] z-10 shrink-0 transform scale-115 sm:scale-130 origin-center transition-transform">
-                          <CardView card={previewCard} size="md" isPlayable={false} />
+                        {/* Card Visual Display (Larger, prominent card) */}
+                        <div className="relative mt-1 mb-0.5 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-10 shrink-0 transform scale-100 sm:scale-105 origin-center transition-transform">
+                          <CardView card={previewCard} size="lg" isPlayable={false} />
 
                           {/* Admin PNG Icon Upload Overlay */}
                           {adminEditMode && (
@@ -568,12 +568,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           )}
                         </div>
 
-                        {/* Item Name & Description (Small, clean and compact font) */}
-                        <div className="w-full my-auto z-10 px-0.5">
-                          <h3 className="font-bold text-white text-[9px] sm:text-[10.5px] leading-tight drop-shadow break-words text-center">
+                        {/* Item Name & Description (Lowered down, smaller font) */}
+                        <div className="w-full mt-auto mb-1 z-10 px-0.5">
+                          <h3 className="font-bold text-white text-[8px] sm:text-[9.5px] leading-tight drop-shadow break-words text-center">
                             {item.name}
                           </h3>
-                          <p className="text-[7.5px] sm:text-[8.5px] text-slate-300 font-normal leading-tight break-words line-clamp-2 mt-0.5 text-center">
+                          <p className="text-[6.5px] sm:text-[7.5px] text-slate-300 font-normal leading-tight break-words line-clamp-1 mt-0.5 text-center">
                             {item.description}
                           </p>
                         </div>
