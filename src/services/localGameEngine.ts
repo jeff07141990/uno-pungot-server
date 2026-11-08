@@ -549,13 +549,35 @@ export class LocalGameEngine {
 
   private broadcast() {
     if (!this.callbacks) return;
-    const humanHand = this.playerHands.get(this.humanPlayerId) || [];
-    this.callbacks.onSyncState({ ...this.publicState }, [...humanHand], this.humanPlayerId);
+    let targetUid = this.humanPlayerId;
+    let humanHand = this.playerHands.get(targetUid);
+    if (!humanHand) {
+      const human = this.publicState.players.find((p) => !p.isBot);
+      if (human) {
+        targetUid = human.id;
+        humanHand = this.playerHands.get(targetUid);
+      }
+    }
+    this.callbacks.onSyncState({ ...this.publicState }, [...(humanHand || [])], targetUid);
   }
 
   public addPowerUpCardToHand(playerId: string, powerUpId: PowerUpId): boolean {
     if (!this.active || this.publicState.phase !== 'playing') return false;
-    const hand = this.playerHands.get(playerId);
+    
+    // Resilient hand lookup: try playerId, this.humanPlayerId, or the non-bot player
+    let targetPlayerId = playerId;
+    let hand = this.playerHands.get(targetPlayerId);
+    if (!hand) {
+      targetPlayerId = this.humanPlayerId;
+      hand = this.playerHands.get(targetPlayerId);
+    }
+    if (!hand) {
+      const human = this.publicState.players.find((p) => !p.isBot);
+      if (human) {
+        targetPlayerId = human.id;
+        hand = this.playerHands.get(targetPlayerId);
+      }
+    }
     if (!hand) return false;
 
     const typeMap: Record<PowerUpId, CardType> = {
@@ -577,13 +599,23 @@ export class LocalGameEngine {
     };
 
     hand.push(card);
-    const player = this.publicState.players.find((p) => p.id === playerId);
+    const player = this.publicState.players.find((p) => p.id === targetPlayerId);
     if (player) {
       player.cardCount = hand.length;
     }
 
+    // Track match usage limit
+    if (!this.publicState.matchPowerUpUses) {
+      this.publicState.matchPowerUpUses = {};
+    }
+    this.publicState.matchPowerUpUses[targetPlayerId] =
+      (this.publicState.matchPowerUpUses[targetPlayerId] || 0) + 1;
+
     // Consume inventory item since it became a card in hand
     economyService.consumePowerUp(playerId, powerUpId);
+    if (targetPlayerId !== playerId) {
+      economyService.consumePowerUp(targetPlayerId, powerUpId);
+    }
 
     this.callbacks?.onToast(`🃏 Nakakuha ka ng ${powerUpId.toUpperCase()} power card!`, 'power_general');
     this.broadcast();
