@@ -415,6 +415,11 @@ export const App: React.FC = () => {
         }, 2500);
       },
       onError: (err) => {
+        // If the player is currently playing in a local offline match, ignore stale server socket messages
+        if (localGameEngine.isRunning()) {
+          console.warn('Ignored network error during active local offline game:', err);
+          return;
+        }
         showToast(err, 'error');
       },
     });
@@ -549,6 +554,7 @@ export const App: React.FC = () => {
 
     // Helper to launch offline zero-latency bot game immediately
     const startOfflineBotGame = () => {
+      networkManager.disconnect();
       showToast('Naglalaro sa Offline Mode (Zero Lag)...');
       localGameEngine.startBotGame(activeUid, userName, userAvatar, botCount, variant);
     };
