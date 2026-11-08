@@ -10,6 +10,7 @@ import {
   PublicGameState,
 } from '../engine/types';
 import { CardView } from './CardView';
+import { DEFAULT_CATALOG } from './Modals/ShopModal';
 
 interface PowerUpDockProps {
   gameState: PublicGameState;
@@ -47,9 +48,14 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
     onUsePowerUp(powerUpId);
   };
 
-  const availableItems = catalog
-    ? Object.values(catalog).filter((item) => (inventory[item.id] || 0) > 0)
-    : [];
+  const effectiveCatalog: Record<PowerUpId, PowerUpItem> = {
+    ...DEFAULT_CATALOG,
+    ...(catalog || {}),
+  };
+
+  const availableItems = Object.values(effectiveCatalog).filter(
+    (item) => (inventory[item.id] || 0) > 0
+  );
 
   return (
     <>
@@ -96,7 +102,8 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
               <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
                 {availableItems.map((item) => {
                   const owned = inventory[item.id] || 0;
-                  const canUseNow = remainingUses > 0 && isYourTurn;
+                  // Allow adding the power-up card to hand as long as player has remaining uses and inventory
+                  const canUseNow = remainingUses > 0;
 
                   const allWildTypes: Record<string, CardType> = {
                     skip2: 'skip2',
@@ -125,7 +132,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
                           ? 'bg-purple-950/70 hover:bg-purple-900 border-amber-400/90 text-white cursor-pointer shadow-lg hover:scale-105'
                           : 'bg-slate-950/70 border-slate-800 text-slate-500 opacity-60 cursor-not-allowed'
                       }`}
-                      title={`${item.name} (${item.description})`}
+                      title={canUseNow ? `${item.name} - Pindutin para idagdag sa kamay!` : 'Naabot na ang limit ng Power-Ups sa labang ito'}
                     >
                       {/* Mini Card View */}
                       <div className="w-10 h-14 sm:w-12 sm:h-16 flex items-center justify-center my-0.5 pointer-events-none">

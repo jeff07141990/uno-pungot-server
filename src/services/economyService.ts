@@ -172,6 +172,18 @@ class EconomyService {
         localWallet &&
         (localLevel > serverLevel || localExp > serverExp || localBalance > serverBalance);
 
+      // Safely merge inventory so items purchased offline/locally or online are never lost
+      const mergedInventory: Record<string, number> = {
+        ...(serverWallet?.inventory || {}),
+        ...(localWallet?.inventory || {}),
+      };
+      if (serverWallet?.inventory && localWallet?.inventory) {
+        const localInv = localWallet.inventory as Record<string, number>;
+        for (const [k, v] of Object.entries(serverWallet.inventory)) {
+          mergedInventory[k] = Math.max(v || 0, localInv[k] || 0);
+        }
+      }
+
       const walletToUse: PlayerWallet = localIsHigherProgress
         ? {
             ...localWallet!,
@@ -185,8 +197,12 @@ class EconomyService {
             totalLosses: Math.max(localWallet!.totalLosses || 0, serverWallet.totalLosses || 0),
             winStreak: Math.max(localWallet!.winStreak || 0, serverWallet.winStreak || 0),
             bestWinStreak: Math.max(localWallet!.bestWinStreak || 0, serverWallet.bestWinStreak || 0),
+            inventory: mergedInventory,
           }
-        : serverWallet;
+        : {
+            ...serverWallet,
+            inventory: mergedInventory,
+          };
 
       this.cachedWallet = walletToUse;
       // Sanitize catalog so only valid All Wild items are kept
@@ -381,6 +397,21 @@ class EconomyService {
       return { success: false, message: 'Hindi ma-claim ang mission reward.' };
     }
   }
+
+  public consumePowerUp(playerId: string, powerUpId: PowerUpId): boolean {
+    const wallet = this.getCachedWallet(playerId);
+    if (!wallet || !wallet.inventory) return false;
+    const current = wallet.inventory[powerUpId] || 0;
+    if (current <= 0) return false;
+
+    wallet.inventory[powerUpId] = current - 1;
+    wallet.updatedAt = Date.now();
+    this.cachedWallet = wallet;
+    this.saveWalletToStorage(wallet, playerId);
+    this.notify();
+    return true;
+  }
+
 
   public async getLeaderboards(): Promise<{
     topWins: PlayerWallet[];

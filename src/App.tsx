@@ -1010,8 +1010,12 @@ export const App: React.FC = () => {
             showToast(res.message, 'turn_alert');
             // If playing in a match, immediately inject the power-up card into the player's active hand!
             const activeUid = userIdRef.current || userId;
-            if (view === 'game' && localGameEngine.isActive()) {
-              localGameEngine.addPowerUpCardToHand(activeUid, powerUpId);
+            if (view === 'game') {
+              if (localGameEngine.isActive()) {
+                localGameEngine.addPowerUpCardToHand(activeUid, powerUpId);
+              } else if (publicState?.roomId) {
+                networkManager.spawnPowerUpCard(publicState.roomId, activeUid, powerUpId);
+              }
             }
           } else {
             throw new Error(res.message);

@@ -582,6 +582,9 @@ export class LocalGameEngine {
       player.cardCount = hand.length;
     }
 
+    // Consume inventory item since it became a card in hand
+    economyService.consumePowerUp(playerId, powerUpId);
+
     this.callbacks?.onToast(`🃏 Nakakuha ka ng ${powerUpId.toUpperCase()} power card!`, 'power_general');
     this.broadcast();
     return true;
