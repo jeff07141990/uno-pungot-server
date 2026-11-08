@@ -356,7 +356,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden p-1.5 sm:p-4 gap-2 sm:gap-3">
         {/* LEFT SIDEBAR NAVIGATION */}
         <div className="w-full md:w-36 lg:w-44 flex md:flex-col gap-1 sm:gap-1.5 shrink-0 overflow-x-auto md:overflow-visible pb-0.5 md:pb-0">
-          {/* Wild Cards Tab */}
+          {/* Power-Ups Tab */}
           <button
             onClick={() => setActiveCategory('powerups')}
             className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
@@ -366,10 +366,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
             }`}
           >
             <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
-              <Layers className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} />
+              <Zap className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} />
             </div>
             <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'powerups' ? 'text-[#1a0b02]' : 'text-white'}`}>
-              Wild Cards
+              Power-Ups
             </span>
           </button>
 
@@ -449,24 +449,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           </button>
         </div>
 
-        {/* RIGHT SECTION: WILD CARDS SLIDER (Even, Compact, Uncut) */}
-        <div className="flex-1 flex flex-col overflow-hidden p-0.5 sm:p-2 relative justify-start">
-          {/* Header info */}
-          <div className="flex items-center justify-between pb-1 sm:pb-2 mb-0.5 border-b border-purple-800/30">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
-                <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
-              </div>
-              <h2 className="text-xs sm:text-base font-black tracking-wider uppercase text-amber-400 drop-shadow">
-                {activeCategory === 'powerups' && 'WILD CARDS'}
-                {activeCategory === 'skins' && 'CARD SKINS'}
-                {activeCategory === 'avatars' && 'AVATAR ICONS'}
-                {activeCategory === 'frames' && 'AVATAR FRAMES'}
-                {activeCategory === 'inventory' && 'MY INVENTORY'}
-              </h2>
-            </div>
-          </div>
-
+        {/* RIGHT SECTION: POWER-UPS / CARDS SLIDER (Elevated Cards, Maximized Height) */}
+        <div className="flex-1 flex flex-col overflow-hidden p-0 relative justify-start">
           {/* CARDS DISPLAY AREA */}
           <div className="flex-1 flex flex-col justify-center overflow-hidden min-h-0">
             {activeCategory === 'powerups' ? (
@@ -534,8 +518,8 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           <div className={`w-20 h-24 animated-gradient-aura transition-opacity ${isSelected ? 'opacity-80' : 'opacity-30'}`} />
                         </div>
 
-                        {/* Card Visual Display (Scaled md for mobile landscape) */}
-                        <div className="relative my-0.5 sm:my-1 drop-shadow-[0_8px_16px_rgba(0,0,0,0.85)] z-10 shrink-0">
+                        {/* Card Visual Display (Elevated to top and enlarged) */}
+                        <div className="relative mt-1 mb-0.5 sm:mt-2 sm:mb-1 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-10 shrink-0 transform scale-110 sm:scale-125 origin-center transition-transform">
                           <CardView card={previewCard} size="md" isPlayable={false} />
 
                           {/* Admin PNG Icon Upload Overlay */}
@@ -584,12 +568,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           )}
                         </div>
 
-                        {/* Item Name & Description */}
-                        <div className="w-full my-0.5 sm:my-1 z-10">
-                          <h3 className="font-black text-white text-xs sm:text-sm truncate drop-shadow">
+                        {/* Item Name & Description (Small, clean font) */}
+                        <div className="w-full mt-2 sm:mt-3 mb-0.5 z-10 px-1">
+                          <h3 className="font-bold text-white text-[10px] sm:text-xs truncate drop-shadow leading-tight">
                             {item.name}
                           </h3>
-                          <p className="text-[9px] sm:text-[11px] text-slate-300 font-medium line-clamp-1 mt-0.5">
+                          <p className="text-[8px] sm:text-[10px] text-slate-300 font-normal line-clamp-1 mt-0.5">
                             {item.description}
                           </p>
                         </div>
