@@ -629,26 +629,26 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                 </div>
               </div>
             ) : activeCategory === 'inventory' ? (
-              /* MY INVENTORY DISPLAY */
-              <div className="space-y-4">
+              /* MY INVENTORY DISPLAY - Compact 2:3 layout matching power-ups tab */
+              <div className="w-full h-full overflow-y-auto no-scrollbar py-1 px-1 sm:px-2">
                 {items.filter((item) => (wallet?.inventory?.[item.id] || 0) > 0).length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-64 text-center p-6 bg-black/30 rounded-2xl border border-purple-900/40 space-y-3">
-                    <Package className="w-12 h-12 text-slate-400" />
+                  <div className="flex flex-col items-center justify-center min-h-[220px] text-center p-4 bg-black/30 rounded-2xl border border-purple-900/40 space-y-2">
+                    <Package className="w-10 h-10 text-slate-400" />
                     <div>
-                      <h3 className="text-base font-black text-white">Walang Laman ang Iyong Imbentaryo</h3>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Pumunta sa tab ng WILD CARDS upang bumili ng mga espesyal na card na magagamit sa laban!
+                      <h3 className="text-sm font-black text-white">Walang Laman ang Iyong Imbentaryo</h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Pumunta sa tab ng Power-Ups upang bumili ng mga espesyal na card na magagamit sa laban!
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveCategory('powerups')}
                       className="shop-buy-btn px-4 py-1.5 text-xs font-black cursor-pointer"
                     >
-                      Bumili ng Wild Cards
+                      Bumili ng Power-Ups
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pb-4">
                     {items
                       .filter((item) => (wallet?.inventory?.[item.id] || 0) > 0)
                       .map((item) => {
@@ -673,33 +673,33 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         return (
                           <div
                             key={item.id}
-                            className="p-3.5 sm:p-4 flex flex-col items-center text-center justify-between relative group"
+                            className="w-28 sm:w-36 md:w-40 aspect-[2/3] shrink-0 flex flex-col items-center text-center justify-between relative group p-2 sm:p-2.5 rounded-2xl bg-slate-950/50 border border-slate-800 hover:border-slate-700 shadow-md"
                           >
                             {/* Stock Quantity Badge */}
-                            <div className="absolute top-2 right-2 z-20 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-xs shadow-lg flex items-center gap-1">
-                              <span>Stock:</span>
-                              <span>{count}x</span>
+                            <div className="absolute -top-1.5 -right-1.5 z-20 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black text-[10px] sm:text-xs shadow-lg flex items-center gap-0.5 border border-amber-300">
+                              <span>x</span>
+                              <span>{count}</span>
                             </div>
 
-                            {/* Card Visual Display */}
-                            <div className="relative my-2 drop-shadow-[0_16px_28px_rgba(0,0,0,0.95)] card-float-anim z-10">
-                              <CardView card={previewCard} size="xl" isPlayable={false} />
+                            {/* Card Visual Display (Prominent card, fitted within box) */}
+                            <div className="relative mt-1 mb-0.5 drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-10 shrink-0 transform scale-100 sm:scale-105 origin-center transition-transform">
+                              <CardView card={previewCard} size="lg" isPlayable={false} />
                             </div>
 
-                            {/* Item Name & Short Description */}
-                            <div className="w-full mt-1 mb-1.5 z-10">
-                              <h3 className="font-black text-white text-base sm:text-lg tracking-normal drop-shadow">
+                            {/* Item Name & Description (Small, compact matching power-ups tab) */}
+                            <div className="w-full mt-auto mb-1 z-10 px-0.5">
+                              <h3 className="font-bold text-white text-[8px] sm:text-[9.5px] leading-tight drop-shadow break-words text-center">
                                 {item.name}
                               </h3>
-                              <p className="text-xs sm:text-sm text-slate-300 font-semibold line-clamp-2 mt-0.5">
+                              <p className="text-[6.5px] sm:text-[7.5px] text-slate-300 font-normal leading-tight break-words line-clamp-1 mt-0.5 text-center">
                                 {item.description}
                               </p>
                             </div>
 
-                            {/* In-Game Ready Badge */}
-                            <div className="w-full pt-2 flex items-center justify-center">
-                              <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
-                                ✓ Handa nang gamitin sa laban
+                            {/* Ready in-game status indicator */}
+                            <div className="w-full pt-1 border-t border-slate-800/80 z-10 shrink-0 flex items-center justify-center">
+                              <span className="text-[7.5px] sm:text-[8.5px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full truncate">
+                                ✓ Handa sa laban
                               </span>
                             </div>
                           </div>
