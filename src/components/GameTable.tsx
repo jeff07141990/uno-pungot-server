@@ -2451,10 +2451,14 @@ export const GameTable: React.FC<GameTableProps> = ({
               )}
             </div>
 
-            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button */}
+            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button (Always Visible) */}
             {(() => {
-              // Rule: Appears if player has 1 card remaining, OR
-              // if player has 2 cards, it's their turn, and at least one card is playable!
+              // Rule:
+              // - Always visible!
+              // - Normal / Compact when player has 3 or more cards.
+              // - Enlarges and pulses/bounces when player has 2 cards (ready to declare) or 1 card (UNO).
+              // - If pressed when having 3+ cards (or when not valid), server/engine penalizes with FALSE UNO (+1 card)!
+              const isUrgent = yourHand.length <= 2;
               const hasPlayableCardInHand = yourHand.some((card) =>
                 isCardPlayable(
                   card,
@@ -2465,16 +2469,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                   gameState.variant
                 )
               );
-              const shouldShowUnoButton =
+              const shouldPromptUno =
                 yourHand.length === 1 ||
                 (yourHand.length === 2 && isYourTurn && hasPlayableCardInHand);
 
-              if (!shouldShowUnoButton) return null;
-
               return (
-                <div className="flex flex-col items-center relative animate-fadeIn">
-                  {/* Warning indicator: Remind to press UNO */}
-                  {!selfPlayer.calledUno && (
+                <div className="flex flex-col items-center relative transition-all duration-300">
+                  {/* Warning indicator: Remind to press UNO when urgent */}
+                  {!selfPlayer.calledUno && shouldPromptUno && (
                     <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
                       <span className="animate-ping">⚠️</span>
                       <span>
@@ -2494,18 +2496,39 @@ export const GameTable: React.FC<GameTableProps> = ({
 
                   <div
                     onClick={handleCallUnoClick}
-                    className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
-                      !selfPlayer.calledUno
-                        ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_25px_rgba(239,68,68,0.95)]'
-                        : 'ring-2 ring-emerald-400 opacity-80'
+                    className={`rounded-full bg-white shadow-buzzer-base flex items-center justify-center cursor-pointer select-none transition-all duration-300 active:scale-90 ${
+                      isUrgent
+                        ? 'w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 p-1 sm:p-1.5 scale-105 sm:scale-110 ' +
+                          (!selfPlayer.calledUno
+                            ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_30px_rgba(239,68,68,0.95)]'
+                            : 'ring-2 ring-emerald-400 opacity-80')
+                        : 'w-9 h-9 sm:w-11 sm:h-11 md:w-12 md:h-12 p-0.5 sm:p-1 opacity-70 hover:opacity-100 hover:scale-110 ring-1 ring-red-400/60 shadow-md'
                     }`}
-                    title="Shout UNO!"
+                    title={
+                      isUrgent
+                        ? 'Sumigaw ng UNO!'
+                        : 'Mag-ingat! False UNO (+1 penalty card) kapag pinindot nang sobra sa 2 baraha!'
+                    }
                   >
-                    <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
-                      <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
+                    <div
+                      className={`w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-0.5 active:shadow-none flex flex-col items-center justify-center border transition-all ${
+                        isUrgent ? 'border-2 border-red-400/80' : 'border border-red-300/60'
+                      }`}
+                    >
+                      <span
+                        className={`text-white font-black tracking-tight uppercase leading-none opacity-90 drop-shadow ${
+                          isUrgent ? 'text-[7px] sm:text-[9px]' : 'text-[5px] sm:text-[6px]'
+                        }`}
+                      >
                         CALL
                       </span>
-                      <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                      <span
+                        className={`text-yellow-300 font-black italic tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] ${
+                          isUrgent
+                            ? 'text-xs sm:text-sm md:text-base'
+                            : 'text-[9px] sm:text-[11px]'
+                        }`}
+                      >
                         UNO
                       </span>
                     </div>
