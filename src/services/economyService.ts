@@ -280,22 +280,84 @@ class EconomyService {
     powerUpId: PowerUpId,
     quantity: number = 1
   ): Promise<{ success: boolean; message: string; wallet?: PlayerWallet }> {
-    try {
-      const res = await fetch(`${networkManager.getHttpApiUrl()}/api/economy/buy-powerup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerId, powerUpId, quantity }),
-      });
-      const data = await res.json();
-      if (data.wallet) {
-        this.cachedWallet = data.wallet;
-        this.saveWalletToStorage(data.wallet);
-        this.notify();
+    const candidateHosts = networkManager.getCandidateHosts();
+    let lastResult: any = null;
+
+    for (const host of candidateHosts) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(`${host}/api/economy/buy-powerup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId, powerUpId, quantity }),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.wallet) {
+            networkManager.setWorkingHost(host);
+            this.cachedWallet = data.wallet;
+            this.saveWalletToStorage(data.wallet, playerId);
+            this.notify();
+            return data;
+          }
+          lastResult = data;
+        }
+      } catch (err) {
+        // Try next candidate host
       }
-      return data;
-    } catch (err: any) {
-      return { success: false, message: 'Hindi makontak ang tindahan. Subukan muli mamaya.' };
     }
+
+    // If server returned a business response (e.g. not enough coins), return it
+    if (lastResult && lastResult.message && !lastResult.message.includes('hindi magagamit')) {
+      return lastResult;
+    }
+
+    // Client-side Local Fallback: Allow offline purchasing seamlessly!
+    const defaultPrices: Record<string, { name: string; price: number }> = {
+      skip2: { name: 'Wild Skip Two (2x)', price: 150 },
+      targeted_draw2: { name: 'Targeted Draw 2 🎯', price: 180 },
+      forced_swap: { name: 'Forced Swap 🔀', price: 250 },
+      wild4: { name: 'Wild Draw 4 (+4)', price: 200 },
+      draw2: { name: 'Wild Draw 2 (+2)', price: 120 },
+      reverse: { name: 'Wild Reverse 🔄', price: 100 },
+      skip: { name: 'Wild Skip ⊘', price: 100 },
+      wild: { name: 'Wild Standard', price: 80 },
+    };
+
+    const itemInfo = defaultPrices[powerUpId] || { name: powerUpId, price: 100 };
+    const totalCost = itemInfo.price * quantity;
+    const localWallet = this.getCachedWallet(playerId);
+
+    if (localWallet) {
+      if (localWallet.balance < totalCost) {
+        return {
+          success: false,
+          message: `Kulang ang iyong barya! Kailangan ng ₱${totalCost}, ngunit mayroon ka lamang ₱${localWallet.balance}.`,
+          wallet: localWallet,
+        };
+      }
+
+      localWallet.balance -= totalCost;
+      localWallet.inventory = localWallet.inventory || {};
+      localWallet.inventory[powerUpId] = (localWallet.inventory[powerUpId] || 0) + quantity;
+      localWallet.updatedAt = Date.now();
+
+      this.cachedWallet = localWallet;
+      this.saveWalletToStorage(localWallet, playerId);
+      this.notify();
+
+      return {
+        success: true,
+        message: `Matagumpay na nabili ang ${quantity}x ${itemInfo.name} para sa ₱${totalCost}!`,
+        wallet: localWallet,
+      };
+    }
+
+    return { success: false, message: 'Hindi makumpleto ang pagbili. Subukan muli.' };
   }
 
   public async claimMissionReward(
