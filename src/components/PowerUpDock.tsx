@@ -96,9 +96,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
               <div className="grid grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
                 {availableItems.map((item) => {
                   const owned = inventory[item.id] || 0;
-                  const isReactive = item.id === 'shield' || item.id === 'reflect';
-                  const canUseNow =
-                    remainingUses > 0 && (isYourTurn || (isReactive && hasPendingPenalty));
+                  const canUseNow = remainingUses > 0 && isYourTurn;
 
                   const allWildTypes: Record<string, CardType> = {
                     skip2: 'skip2',

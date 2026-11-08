@@ -152,21 +152,14 @@ export interface PublicGameState {
 }
 
 export type PowerUpId =
-  | 'wild'
-  | 'reverse'
-  | 'skip'
   | 'skip2'
-  | 'draw2'
-  | 'wild4'
   | 'targeted_draw2'
   | 'forced_swap'
-  | 'shield'
-  | 'swap'
-  | 'color'
-  | 'extra_turn'
-  | 'peek'
-  | 'booster'
-  | 'reflect';
+  | 'wild4'
+  | 'draw2'
+  | 'reverse'
+  | 'skip'
+  | 'wild';
 
 export interface PowerUpItem {
   id: PowerUpId;

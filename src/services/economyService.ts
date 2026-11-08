@@ -93,7 +93,16 @@ class EconomyService {
       try {
         const stored = deviceStorage.getItemSync('uno_custom_catalog');
         if (stored) {
-          this.cachedCatalog = JSON.parse(stored);
+          const parsed = JSON.parse(stored);
+          // Purge old legacy keys if present
+          const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild'];
+          const cleaned: Record<string, PowerUpItem> = {};
+          for (const k of validKeys) {
+            if (parsed[k]) cleaned[k] = parsed[k];
+          }
+          if (Object.keys(cleaned).length > 0) {
+            this.cachedCatalog = cleaned as Record<PowerUpId, PowerUpItem>;
+          }
         }
       } catch {}
     }
@@ -180,7 +189,15 @@ class EconomyService {
         : serverWallet;
 
       this.cachedWallet = walletToUse;
-      this.cachedCatalog = data.catalog;
+      // Sanitize catalog so only valid All Wild items are kept
+      const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild'];
+      const cleanedCatalog: Record<string, PowerUpItem> = {};
+      if (data.catalog) {
+        for (const k of validKeys) {
+          if (data.catalog[k]) cleanedCatalog[k] = data.catalog[k];
+        }
+      }
+      this.cachedCatalog = cleanedCatalog as Record<PowerUpId, PowerUpItem>;
       this.cachedMissions = data.missions || [];
 
       this.saveWalletToStorage(walletToUse, playerId);
@@ -192,7 +209,7 @@ class EconomyService {
       }
 
       this.notify();
-      return { wallet: walletToUse, catalog: data.catalog, missions: data.missions || [] };
+      return { wallet: walletToUse, catalog: this.cachedCatalog, missions: data.missions || [] };
     } catch (err) {
       console.warn('Economy API unavailable, loading offline local wallet fallback:', err);
       // Fallback local wallet from phone memory

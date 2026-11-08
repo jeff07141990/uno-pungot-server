@@ -567,13 +567,6 @@ export class LocalGameEngine {
       reverse: 'reverse',
       skip: 'skip',
       wild: 'wild',
-      shield: 'power_shield',
-      swap: 'power_swap',
-      color: 'power_color',
-      extra_turn: 'power_extra_turn',
-      peek: 'power_peek',
-      booster: 'power_booster',
-      reflect: 'power_reflect',
     };
 
     const card: Card = {

@@ -114,69 +114,6 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
     badge: 'Universal',
     enabled: true,
   },
-  shield: {
-    id: 'shield',
-    name: 'Shield Protection',
-    description: 'I-block ang incoming draw penalty attack!',
-    price: 120,
-    icon: '🛡️',
-    badge: 'Defense',
-    enabled: true,
-  },
-  extra_turn: {
-    id: 'extra_turn',
-    name: 'Extra Turn',
-    description: 'Tumira muli agad nang walang abala!',
-    price: 200,
-    icon: '⚡',
-    badge: 'Special',
-    enabled: true,
-  },
-  swap: {
-    id: 'swap',
-    name: 'Card Swap',
-    description: 'Magpalit ng baraha sa kalaban!',
-    price: 220,
-    icon: '🔄',
-    badge: 'Tactical',
-    enabled: true,
-  },
-  color: {
-    id: 'color',
-    name: 'Color Changer',
-    description: 'Palitan ang kulay sa mesa!',
-    price: 100,
-    icon: '🎨',
-    badge: 'Control',
-    enabled: true,
-  },
-  peek: {
-    id: 'peek',
-    name: 'Peek Card',
-    description: 'Silipin ang baraha ng kalaban!',
-    price: 80,
-    icon: '👁️',
-    badge: 'Scout',
-    enabled: true,
-  },
-  booster: {
-    id: 'booster',
-    name: 'Coin Booster',
-    description: 'Dagdag na panalong coins sa laro!',
-    price: 150,
-    icon: '💰',
-    badge: 'Reward',
-    enabled: true,
-  },
-  reflect: {
-    id: 'reflect',
-    name: 'Attack Reflect',
-    description: 'Ibalik ang attack penalty pabalik sa umatake!',
-    price: 180,
-    icon: '🪞',
-    badge: 'Defense',
-    enabled: true,
-  },
 };
 
 export const ShopModal: React.FC<ShopModalProps> = ({
@@ -190,7 +127,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   onOpenMissions,
 }) => {
   const [activeCategory, setActiveCategory] = useState<'powerups' | 'skins' | 'avatars' | 'frames' | 'inventory'>('powerups');
-  const [selectedPowerUpId, setSelectedPowerUpId] = useState<PowerUpId>('shield');
+  const [selectedPowerUpId, setSelectedPowerUpId] = useState<PowerUpId>('skip2');
   const [buyingId, setBuyingId] = useState<PowerUpId | null>(null);
   const [confirmItem, setConfirmItem] = useState<PowerUpItem | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; isError?: boolean } | null>(null);
@@ -228,7 +165,15 @@ export const ShopModal: React.FC<ShopModalProps> = ({
   if (!isOpen) return null;
 
   const currentCoins = wallet?.balance ?? 2500;
-  const activeCatalog = catalog && Object.keys(catalog).length > 0 ? catalog : DEFAULT_CATALOG;
+  const mergedCatalog: Record<PowerUpId, PowerUpItem> = { ...DEFAULT_CATALOG };
+  if (catalog) {
+    for (const key of Object.keys(DEFAULT_CATALOG) as PowerUpId[]) {
+      if (catalog[key]) {
+        mergedCatalog[key] = { ...DEFAULT_CATALOG[key], ...catalog[key] };
+      }
+    }
+  }
+  const activeCatalog = mergedCatalog;
   const items = Object.values(activeCatalog);
   const selectedItem = activeCatalog[selectedPowerUpId] || items[0];
 

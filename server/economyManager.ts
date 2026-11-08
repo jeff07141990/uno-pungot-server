@@ -83,69 +83,6 @@ export const DEFAULT_POWER_UP_CATALOG: Record<PowerUpId, PowerUpItem> = {
     badge: 'Universal',
     enabled: true,
   },
-  shield: {
-    id: 'shield',
-    name: 'Shield Protection',
-    description: 'I-block ang incoming draw penalty attack!',
-    price: 120,
-    icon: '🛡️',
-    badge: 'Defense',
-    enabled: true,
-  },
-  extra_turn: {
-    id: 'extra_turn',
-    name: 'Extra Turn',
-    description: 'Tumira muli agad nang walang abala!',
-    price: 200,
-    icon: '⚡',
-    badge: 'Special',
-    enabled: true,
-  },
-  swap: {
-    id: 'swap',
-    name: 'Card Swap',
-    description: 'Magpalit ng baraha sa kalaban!',
-    price: 220,
-    icon: '🔄',
-    badge: 'Tactical',
-    enabled: true,
-  },
-  color: {
-    id: 'color',
-    name: 'Color Changer',
-    description: 'Palitan ang kulay sa mesa!',
-    price: 100,
-    icon: '🎨',
-    badge: 'Control',
-    enabled: true,
-  },
-  peek: {
-    id: 'peek',
-    name: 'Peek Card',
-    description: 'Silipin ang baraha ng kalaban!',
-    price: 80,
-    icon: '👁️',
-    badge: 'Scout',
-    enabled: true,
-  },
-  booster: {
-    id: 'booster',
-    name: 'Coin Booster',
-    description: 'Dagdag na panalong coins sa laro!',
-    price: 150,
-    icon: '💰',
-    badge: 'Reward',
-    enabled: true,
-  },
-  reflect: {
-    id: 'reflect',
-    name: 'Attack Reflect',
-    description: 'Ibalik ang attack penalty pabalik sa umatake!',
-    price: 180,
-    icon: '🪞',
-    badge: 'Defense',
-    enabled: true,
-  },
 };
 
 export const MISSION_DEFINITIONS = [
@@ -214,10 +151,18 @@ export class EconomyManager {
       if (fs.existsSync(this.dataFilePath)) {
         const raw = fs.readFileSync(this.dataFilePath, 'utf-8');
         const parsed = JSON.parse(raw);
+        const validCatalog: Record<PowerUpId, PowerUpItem> = { ...DEFAULT_POWER_UP_CATALOG };
+        if (parsed.catalog) {
+          for (const key of Object.keys(DEFAULT_POWER_UP_CATALOG) as PowerUpId[]) {
+            if (parsed.catalog[key]) {
+              validCatalog[key] = { ...DEFAULT_POWER_UP_CATALOG[key], ...parsed.catalog[key] };
+            }
+          }
+        }
         return {
           wallets: parsed.wallets || {},
           transactions: parsed.transactions || [],
-          catalog: { ...DEFAULT_POWER_UP_CATALOG, ...(parsed.catalog || {}) },
+          catalog: validCatalog,
           missions: parsed.missions || {},
           systemConfig: {
             startingBalance: 1000,

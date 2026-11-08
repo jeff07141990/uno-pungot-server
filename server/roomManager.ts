@@ -2705,19 +2705,8 @@ export class RoomManager {
     // 2. Turn order checks:
     const activePlayer = publicState.players[publicState.activePlayerIndex];
     const isPlayerTurn = activePlayer?.id === playerId;
-
-    // Reactive power-ups allowed when facing pending penalties or incoming attack:
-    const isReactive = powerUpId === 'shield' || powerUpId === 'reflect';
-    if (!isPlayerTurn && !isReactive) {
+    if (!isPlayerTurn) {
       return { success: false, message: 'Maaari mo lamang gamitin ang Power-Up na ito sa iyong turn!' };
-    }
-
-    // Shield or reflect requires an active incoming attack/draw penalty or being on turn
-    if (isReactive && !isPlayerTurn && publicState.pendingDrawPenalty <= 0) {
-      return {
-        success: false,
-        message: 'Maaari mo lamang gamitin ang Shield o Reflect kung may paparating na parusa o sa iyong turn!',
-      };
     }
 
     // 3. Server Inventory verification & deduction
@@ -2732,152 +2721,15 @@ export class RoomManager {
     let toastText = '';
     let sound: SoundEffectType = 'power_general';
 
-    switch (powerUpId) {
-      // 1. SHIELD PROTECTION: Blocks incoming Draw 2 / Draw 4 penalty completely
-      case 'shield': {
-        sound = 'power_draw2';
-        if (publicState.pendingDrawPenalty > 0) {
-          const blocked = publicState.pendingDrawPenalty;
-          publicState.pendingDrawPenalty = 0;
-          toastText = `🛡️ SHIELD ACTIVATED! ${player.name} blocked the +${blocked} penalty completely!`;
-        } else {
-          toastText = `🛡️ SHIELD READY! ${player.name} activated Shield Protection!`;
-        }
-        break;
-      }
+    // Spawn card directly into hand
+    const hand = room.playerHands.get(playerId) || [];
+    const card = this.createPowerUpCard(powerUpId);
+    hand.push(card);
+    room.playerHands.set(playerId, hand);
+    player.cardCount = hand.length;
 
-      // 2. CARD SWAP: Exchange 1 random card with a selected opponent
-      case 'swap': {
-        sound = 'card_deal';
-        const validOpponents = publicState.players.filter(
-          (p) => p.id !== playerId && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
-        );
-        if (validOpponents.length === 0) {
-          return { success: false, message: 'Walang kalaban na may hawak na baraha para makipagpalit.' };
-        }
-        const target =
-          validOpponents.find((p) => p.id === targetPlayerId) ||
-          validOpponents[Math.floor(Math.random() * validOpponents.length)];
-
-        const myHand = room.playerHands.get(playerId) || [];
-        const theirHand = room.playerHands.get(target.id) || [];
-
-        if (myHand.length > 0 && theirHand.length > 0) {
-          const myRandomIndex = Math.floor(Math.random() * myHand.length);
-          const theirRandomIndex = Math.floor(Math.random() * theirHand.length);
-
-          const myCard = myHand.splice(myRandomIndex, 1)[0];
-          const theirCard = theirHand.splice(theirRandomIndex, 1)[0];
-
-          myHand.push(theirCard);
-          theirHand.push(myCard);
-
-          player.cardCount = myHand.length;
-          target.cardCount = theirHand.length;
-
-          toastText = `🔄 CARD SWAP! ${player.name} randomly swapped 1 card with ${target.name}!`;
-        } else {
-          toastText = `🔄 CARD SWAP attempted, ngunit walang barahang maipapalit.`;
-        }
-        break;
-      }
-
-      // 3. REVERSE MASTER: Reverse the playing direction immediately
-      case 'reverse': {
-        sound = 'power_reverse';
-        publicState.direction = (publicState.direction * -1) as 1 | -1;
-        toastText = `🔁 REVERSE MASTER! ${player.name} reversed the game direction!`;
-        break;
-      }
-
-      // 4. COLOR CHANGER: Select a new active color
-      case 'color': {
-        sound = 'power_wild';
-        const validColors: CardColor[] =
-          publicState.activeFlipSide === 'dark'
-            ? ['teal', 'orange', 'purple', 'pink']
-            : ['red', 'blue', 'green', 'yellow'];
-        const newColor = chosenColor && validColors.includes(chosenColor) ? chosenColor : validColors[0];
-        publicState.currentColor = newColor;
-        toastText = `🎨 COLOR CHANGER! ${player.name} changed table color to ${newColor.toUpperCase()}!`;
-        break;
-      }
-
-      // 5. EXTRA TURN: Grant one additional turn
-      case 'extra_turn': {
-        sound = 'power_general';
-        toastText = `⚡ EXTRA TURN! ${player.name} takes another turn immediately!`;
-        // Reset turn timer for extra turn
-        this.startTurnTimer(room);
-        break;
-      }
-
-      // 6. PEEK CARD: Reveal 1 random opponent card privately to user
-      case 'peek': {
-        sound = 'power_general';
-        const opponents = publicState.players.filter(
-          (p) => p.id !== playerId && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
-        );
-        const target =
-          opponents.find((p) => p.id === targetPlayerId) ||
-          opponents[Math.floor(Math.random() * opponents.length)];
-
-        if (target) {
-          const targetHand = room.playerHands.get(target.id) || [];
-          if (targetHand.length > 0) {
-            const peekedCard = targetHand[Math.floor(Math.random() * targetHand.length)];
-            const client = room.sockets.get(playerId);
-            if (client && client.readyState === WebSocket.OPEN) {
-              client.send(
-                JSON.stringify({
-                  type: 'PEEK_RESULT',
-                  targetPlayerName: target.name,
-                  card: peekedCard,
-                })
-              );
-            }
-          }
-        }
-        toastText = `👁️ PEEK CARD! ${player.name} peeked at an opponent's card!`;
-        break;
-      }
-
-      // 7. COIN BOOSTER: Double match victory reward
-      case 'booster': {
-        sound = 'power_general';
-        if (!publicState.activeCoinBoosters) {
-          publicState.activeCoinBoosters = [];
-        }
-        if (!publicState.activeCoinBoosters.includes(playerId)) {
-          publicState.activeCoinBoosters.push(playerId);
-        }
-        toastText = `💰 COIN BOOSTER ACTIVE! ${player.name}'s victory reward will be doubled to ₱400!`;
-        break;
-      }
-
-      // 8. ATTACK REFLECT: Reflect incoming Draw 2 or Draw 4 to the attacker
-      case 'reflect': {
-        sound = 'power_draw2';
-        if (publicState.pendingDrawPenalty > 0) {
-          const reflectedPenalty = publicState.pendingDrawPenalty;
-          publicState.pendingDrawPenalty = 0;
-
-          // Find the previous player index who attacked
-          const attackerIdx = (publicState.activePlayerIndex - publicState.direction + publicState.players.length) % publicState.players.length;
-          const attacker = publicState.players[attackerIdx];
-          const attackerHand = room.playerHands.get(attacker.id) || [];
-
-          const drawn = this.drawFromPile(room, reflectedPenalty);
-          attackerHand.push(...drawn);
-          attacker.cardCount = attackerHand.length;
-
-          toastText = `🪞 ATTACK REFLECT! ${player.name} reflected +${reflectedPenalty} back to ${attacker.name}!`;
-        } else {
-          toastText = `🪞 ATTACK REFLECT activated by ${player.name}!`;
-        }
-        break;
-      }
-    }
+    toastText = `🃏 Naglabas si ${player.name} ng ${economyManager.getCatalog()[powerUpId]?.name || 'Power-Up'} sa kanyang mga baraha!`;
+    sound = 'card_deal';
 
     publicState.lastActionText = toastText;
     this.broadcastState(roomId);
@@ -2912,13 +2764,6 @@ export class RoomManager {
       reverse: 'reverse',
       skip: 'skip',
       wild: 'wild',
-      shield: 'power_shield',
-      swap: 'power_swap',
-      color: 'power_color',
-      extra_turn: 'power_extra_turn',
-      peek: 'power_peek',
-      booster: 'power_booster',
-      reflect: 'power_reflect',
     };
 
     return {
