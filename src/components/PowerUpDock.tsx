@@ -32,9 +32,6 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
   onUsePowerUp,
   onOpenShop,
 }) => {
-  const [selectedPowerUp, setSelectedPowerUp] = useState<PowerUpItem | null>(null);
-  const [selectedTargetId, setSelectedTargetId] = useState<string>('');
-  const [selectedColor, setSelectedColor] = useState<CardColor>('red');
   const [isExpanded, setIsExpanded] = useState(false);
 
   const inventory = wallet?.inventory || ({} as Record<PowerUpId, number>);
@@ -45,15 +42,9 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
   const isYourTurn = activePlayer?.id === currentUserId;
   const hasPendingPenalty = gameState.pendingDrawPenalty > 0;
 
-  // Active opponents for target selection
-  const opponents = gameState.players.filter(
-    (p) => p.id !== currentUserId && !p.isFinished && p.cardCount > 0
-  );
-
-  const handleTriggerActivation = () => {
-    if (!selectedPowerUp) return;
-    onUsePowerUp(selectedPowerUp.id, selectedTargetId || opponents[0]?.id, selectedColor);
-    setSelectedPowerUp(null);
+  const handleSelectPowerUpCard = (powerUpId: PowerUpId) => {
+    setIsExpanded(false);
+    onUsePowerUp(powerUpId);
   };
 
   const availableItems = catalog
@@ -120,13 +111,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
                     <button
                       key={item.id}
                       disabled={!canUseNow}
-                      onClick={() => {
-                        setIsExpanded(false);
-                        if (item.id === 'swap' || item.id === 'peek') {
-                          setSelectedTargetId(opponents[0]?.id || '');
-                        }
-                        setSelectedPowerUp(item);
-                      }}
+                      onClick={() => handleSelectPowerUpCard(item.id)}
                       className={`relative flex flex-col items-center justify-between p-2 rounded-2xl border transition-all active:scale-95 ${
                         canUseNow
                           ? 'bg-purple-950/70 hover:bg-purple-900 border-amber-400/90 text-white cursor-pointer shadow-lg hover:scale-105'
@@ -172,89 +157,6 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
           </span>
         </button>
       </div>
-
-      {/* Target & Color Selection Confirmation Modal */}
-      {selectedPowerUp && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl">
-              <span>{selectedPowerUp.icon}</span>
-            </div>
-
-            <div>
-              <h3 className="text-base font-black text-white">Gamitin ang {selectedPowerUp.name}?</h3>
-              <p className="text-xs text-slate-300 mt-1">{selectedPowerUp.description}</p>
-            </div>
-
-            {/* Target Opponent Selection (for Swap or Peek) */}
-            {(selectedPowerUp.id === 'swap' || selectedPowerUp.id === 'peek') && (
-              <div className="text-left space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">Pumili ng Kalaban:</label>
-                <div className="space-y-1">
-                  {opponents.map((opp) => (
-                    <button
-                      key={opp.id}
-                      onClick={() => setSelectedTargetId(opp.id)}
-                      className={`w-full p-2 rounded-xl border flex items-center justify-between text-xs font-bold transition ${
-                        selectedTargetId === opp.id
-                          ? 'bg-amber-500/20 border-amber-400 text-amber-200'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-750'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{opp.avatar || '🐼'}</span>
-                        <span>{opp.name}</span>
-                      </div>
-                      <span className="text-[10px] text-slate-400">{opp.cardCount} cards</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Color Changer Selection */}
-            {selectedPowerUp.id === 'color' && (
-              <div className="text-left space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">Pumili ng Kulay:</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {(['red', 'blue', 'green', 'yellow'] as CardColor[]).map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedColor(c)}
-                      className={`py-2 rounded-xl text-xs font-black uppercase transition border-2 ${
-                        c === 'red'
-                          ? 'bg-red-600 text-white'
-                          : c === 'blue'
-                          ? 'bg-blue-600 text-white'
-                          : c === 'green'
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-amber-400 text-slate-950'
-                      } ${selectedColor === c ? 'border-white scale-105 shadow-lg' : 'border-transparent opacity-75'}`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                onClick={() => setSelectedPowerUp(null)}
-                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs active:scale-95 transition"
-              >
-                Kanselahin
-              </button>
-              <button
-                onClick={handleTriggerActivation}
-                className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 text-slate-950 font-black text-xs shadow-lg active:scale-95 transition cursor-pointer"
-              >
-                I-Activate Na!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   );
 };

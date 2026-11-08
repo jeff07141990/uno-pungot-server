@@ -830,14 +830,13 @@ export const App: React.FC = () => {
             unreadChatCount={unreadChatCount}
             wallet={wallet}
             catalog={catalog}
-            onUsePowerUp={(powerUpId, targetPlayerId, chosenColor) => {
-              networkManager.usePowerUp(
-                publicState.roomId,
-                userIdRef.current || userId,
-                powerUpId,
-                targetPlayerId,
-                chosenColor
-              );
+            onUsePowerUp={(powerUpId) => {
+              const activeUid = userIdRef.current || userId;
+              if (localGameEngine.isActive()) {
+                localGameEngine.addPowerUpCardToHand(activeUid, powerUpId);
+              } else {
+                networkManager.spawnPowerUpCard(publicState.roomId, activeUid, powerUpId);
+              }
             }}
             onOpenShop={() => setIsShopOpen(true)}
             isVsIntroActive={showVsScreen}

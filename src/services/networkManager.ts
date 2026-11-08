@@ -438,6 +438,15 @@ class NetworkManager {
       chosenColor,
     });
   }
+
+  public spawnPowerUpCard(roomId: string, playerId: string, powerUpId: PowerUpId) {
+    this.send({
+      type: 'SPAWN_POWERUP_CARD',
+      roomId,
+      playerId,
+      powerUpId,
+    });
+  }
 }
 
 export const networkManager = new NetworkManager();

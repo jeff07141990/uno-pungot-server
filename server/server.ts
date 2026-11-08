@@ -407,6 +407,15 @@ wss.on('connection', (ws: WebSocket) => {
           }
           break;
         }
+
+        case 'SPAWN_POWERUP_CARD': {
+          const { roomId, playerId, powerUpId } = data;
+          const ok = roomManager.addPowerUpCardToHand(playerId, powerUpId);
+          if (!ok) {
+            ws.send(JSON.stringify({ type: 'ERROR', message: 'Hindi mailipat ang card sa kamay.' }));
+          }
+          break;
+        }
       }
     } catch (err) {
       console.error('Socket message parse error:', err);
