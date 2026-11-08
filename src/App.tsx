@@ -442,7 +442,7 @@ export const App: React.FC = () => {
     for (const host of candidates) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
         const res = await fetch(`${host}${path}`, {
           ...options,
           signal: controller.signal,

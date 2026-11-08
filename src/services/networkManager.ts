@@ -88,15 +88,27 @@ class NetworkManager {
     const list: string[] = [];
     const custom = this.getCustomServer();
     if (custom) list.push(custom);
+
+    // If currently running in a browser, prioritize same-origin or localhost:3001 immediately
+    if (typeof window !== 'undefined') {
+      const { hostname, protocol } = window.location;
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        list.push(`http://${hostname}:3001`);
+      } else if (hostname.startsWith('192.168.') || hostname.startsWith('10.')) {
+        list.push(`http://${hostname}:3001`);
+      }
+    }
+
     if (this.detectedWorkingHost) list.push(this.detectedWorkingHost);
-    // Include Render online production server
-    list.push('https://uno-pungot-server.onrender.com');
-    // Include both local LAN host machine IP addresses
+
+    // Common local network addresses
+    list.push('http://localhost:3001');
     list.push('http://192.168.1.80:3001');
     list.push('http://192.168.1.2:3001');
-    if (typeof window !== 'undefined' && window.location.hostname && window.location.hostname !== 'localhost') {
-      list.push(`http://${window.location.hostname}:3001`);
-    }
+
+    // Cloud production server as backup
+    list.push('https://uno-pungot-server.onrender.com');
+
     return Array.from(new Set(list));
   }
 
@@ -220,6 +232,14 @@ class NetworkManager {
             asSpectator: this.isSpectator,
           });
         }
+
+        // Flush any buffered messages
+        while (this.pendingQueue.length > 0) {
+          const item = this.pendingQueue.shift();
+          if (item && this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify(item));
+          }
+        }
       };
 
       this.ws.onmessage = (event) => {
@@ -331,9 +351,14 @@ class NetworkManager {
     return this.status;
   }
 
+  private pendingQueue: Record<string, unknown>[] = [];
+
   private send(data: Record<string, unknown>) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
+    } else {
+      // Buffer outgoing action until socket connects
+      this.pendingQueue.push(data);
     }
   }
 
