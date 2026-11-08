@@ -62,16 +62,20 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center select-none overflow-hidden p-1 sm:p-3 bg-slate-950 text-white">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center select-none overflow-hidden p-1 sm:p-3 bg-slate-950 text-white animate-fadeIn"
+      style={{ willChange: 'opacity, transform' }}
+    >
       {/* Background Image: modal background.jpg */}
       <img
         src="/play online modal and buttons/modal background.jpg"
         alt="Background"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
         draggable={false}
       />
       {/* Subtle overlay for optimal contrast and readability */}
-      <div className="absolute inset-0 bg-[#06041c]/40 backdrop-blur-[1px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[#06041c]/40 pointer-events-none" />
 
       {/* Main Container - Authentic "Play Online" Style, 100% fits on screen */}
       <div className="relative z-10 w-full max-w-5xl h-full max-h-[98vh] flex flex-col justify-between overflow-hidden py-1 px-1 sm:px-2">
@@ -345,6 +349,8 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
                       <img
                         src={`/game table/${tableFile}`}
                         alt={`Table ${idx + 1}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover select-none pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center pb-0.5">
