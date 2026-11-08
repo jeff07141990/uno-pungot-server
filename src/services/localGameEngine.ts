@@ -380,7 +380,20 @@ export class LocalGameEngine {
     if (!player) return;
     const hand = this.playerHands.get(playerId) || [];
 
-    if (hand.length > 1) {
+    const isPlayerTurn = this.publicState.players[this.publicState.activePlayerIndex]?.id === playerId;
+    const hasPlayableCard = hand.some((c) =>
+      isCardPlayable(
+        c,
+        this.publicState.topDiscard,
+        this.publicState.currentColor,
+        this.publicState.pendingDrawPenalty,
+        this.publicState.houseRules.stacking,
+        this.publicState.variant
+      )
+    );
+    const canCallUno = hand.length === 1 || (hand.length === 2 && isPlayerTurn && hasPlayableCard);
+
+    if (!canCallUno) {
       // False UNO penalty (+1 card)
       if (this.drawPile.length === 0) {
         const reshuffled = reshuffleDiscards(this.drawPile, this.discardPile);
@@ -393,7 +406,7 @@ export class LocalGameEngine {
       player.calledUno = false;
       this.publicState.drawPileCount = this.drawPile.length;
 
-      this.callbacks?.onToast(`⚠️ FALSE UNO! Hindi pa 1 card si ${player.name}! (+1 Penalty Card)`, 'uno_call');
+      this.callbacks?.onToast(`⚠️ FALSE UNO! Hindi pa pwede mag-UNO si ${player.name}! (+1 Penalty Card)`, 'uno_call');
       this.broadcast();
       return;
     }

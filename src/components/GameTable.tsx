@@ -2451,44 +2451,68 @@ export const GameTable: React.FC<GameTableProps> = ({
               )}
             </div>
 
-            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button - ONLY appears when player has exactly 1 card! */}
-            {yourHand.length === 1 && (
-              <div className="flex flex-col items-center relative animate-fadeIn">
-                {/* Warning indicator if player has 1 card and has not called UNO */}
-                {!selfPlayer.calledUno && (
-                  <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
-                    <span className="animate-ping">⚠️</span>
-                    <span>PINDUTIN ANG UNO! Baka ka maunahan (+1 Penalty Card)!</span>
-                  </div>
-                )}
-                {/* Success indicator when already called UNO */}
-                {selfPlayer.calledUno && (
-                  <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
-                    <span>✅</span>
-                    <span>LIGTAS! Naka-UNO ka na!</span>
-                  </div>
-                )}
+            {/* Bottom-Right: 3D Red "CALL UNO" Buzzer Button */}
+            {(() => {
+              // Rule: Appears if player has 1 card remaining, OR
+              // if player has 2 cards, it's their turn, and at least one card is playable!
+              const hasPlayableCardInHand = yourHand.some((card) =>
+                isCardPlayable(
+                  card,
+                  topDiscard,
+                  currentColor,
+                  pendingDrawPenalty,
+                  houseRules.stacking,
+                  gameState.variant
+                )
+              );
+              const shouldShowUnoButton =
+                yourHand.length === 1 ||
+                (yourHand.length === 2 && isYourTurn && hasPlayableCardInHand);
 
-                <div
-                  onClick={handleCallUnoClick}
-                  className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
-                    !selfPlayer.calledUno
-                      ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_25px_rgba(239,68,68,0.95)]'
-                      : 'ring-2 ring-emerald-400 opacity-80'
-                  }`}
-                  title="Shout UNO!"
-                >
-                  <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
-                    <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
-                      CALL
-                    </span>
-                    <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-                      UNO
-                    </span>
+              if (!shouldShowUnoButton) return null;
+
+              return (
+                <div className="flex flex-col items-center relative animate-fadeIn">
+                  {/* Warning indicator: Remind to press UNO */}
+                  {!selfPlayer.calledUno && (
+                    <div className="absolute -top-14 right-0 whitespace-nowrap bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-yellow-200 text-[10px] sm:text-xs font-black px-3 py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-bounce flex items-center gap-1.5 z-40">
+                      <span className="animate-ping">⚠️</span>
+                      <span>
+                        {yourHand.length === 2
+                          ? 'PINDUTIN BAGO TUMIRA! (UNO Declaration)'
+                          : 'PINDUTIN ANG UNO! Baka ka maunahan (+1 Penalty Card)!'}
+                      </span>
+                    </div>
+                  )}
+                  {/* Success indicator when already called UNO */}
+                  {selfPlayer.calledUno && (
+                    <div className="absolute -top-8 right-0 whitespace-nowrap bg-emerald-600/95 text-yellow-200 text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400 shadow z-40 flex items-center gap-1">
+                      <span>✅</span>
+                      <span>LIGTAS! Naka-UNO ka na!</span>
+                    </div>
+                  )}
+
+                  <div
+                    onClick={handleCallUnoClick}
+                    className={`w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-full bg-white shadow-buzzer-base p-1 sm:p-1.5 flex items-center justify-center cursor-pointer select-none transition-transform active:scale-95 ${
+                      !selfPlayer.calledUno
+                        ? 'animate-bounce ring-4 ring-red-500 shadow-[0_0_25px_rgba(239,68,68,0.95)]'
+                        : 'ring-2 ring-emerald-400 opacity-80'
+                    }`}
+                    title="Shout UNO!"
+                  >
+                    <div className="w-full h-full rounded-full bg-gradient-to-b from-red-500 via-red-600 to-red-800 shadow-buzzer active:translate-y-1 active:shadow-none flex flex-col items-center justify-center border-2 border-red-400/80 transition-all">
+                      <span className="text-white font-black text-[7px] sm:text-[9px] tracking-tight uppercase leading-none opacity-90 drop-shadow">
+                        CALL
+                      </span>
+                      <span className="text-yellow-300 font-black italic text-xs sm:text-sm md:text-base tracking-wider drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                        UNO
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
       </div>

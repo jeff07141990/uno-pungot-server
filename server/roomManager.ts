@@ -814,7 +814,10 @@ export class RoomManager {
 
     // UNO check: if player now has 1 card
     if (hand.length === 1) {
-      if (activePlayer.isBot) {
+      if (activePlayer.calledUno) {
+        // Player already called UNO beforehand (e.g. while having 2 cards)! Safe!
+        publicState.unoCallWindow = null;
+      } else if (activePlayer.isBot) {
         // Bots do NOT automatically get calledUno=true immediately.
         // Instead, the hammer appears! Bot will only call UNO after a 2.5s-4.0s delay (if not caught first).
         activePlayer.calledUno = false;
@@ -858,6 +861,7 @@ export class RoomManager {
             }
           }, botCallDelay);
         }
+      } else {
         // Human player forgot or hasn't called UNO yet: open a 3.5s reaction window for opponents
         publicState.unoCallWindow = {
           targetPlayerId: activePlayer.id,
@@ -2010,18 +2014,32 @@ export class RoomManager {
     if (!player) return { success: false };
 
     const hand = room.playerHands.get(playerId) || [];
-    if (hand.length > 1) {
-      // False UNO penalty: Player called UNO when they don't have exactly 1 card!
+    // Allow UNO call if player has 1 card OR (has 2 cards, it's their turn, and has at least one playable card)
+    const isPlayerTurn = room.publicState.players[room.publicState.activePlayerIndex]?.id === playerId;
+    const hasPlayableCard = hand.some((c) =>
+      isCardPlayable(
+        c,
+        room.publicState.topDiscard,
+        room.publicState.currentColor,
+        room.publicState.pendingDrawPenalty,
+        room.publicState.houseRules.stacking,
+        room.publicState.variant
+      )
+    );
+    const canCallUno = hand.length === 1 || (hand.length === 2 && isPlayerTurn && hasPlayableCard);
+
+    if (!canCallUno) {
+      // False UNO penalty: Player called UNO when they don't have exactly 1 card or a playable 2nd card!
       const drawn = this.drawFromPile(room, 1);
       hand.push(...drawn);
       player.cardCount = hand.length;
       player.calledUno = false;
 
-      const desc = `⚠️ FALSE UNO! Hindi pa 1 card si ${player.name}! (+1 Penalty Card)`;
+      const desc = `⚠️ FALSE UNO! Hindi pa pwede mag-UNO si ${player.name}! (+1 Penalty Card)`;
       room.publicState.lastActionText = desc;
       this.broadcastState(roomId);
       this.broadcastToast(roomId, desc, 'uno_penalty');
-      return { success: false, message: 'Hindi pa 1 card ang hawak mo! +1 penalty card.' };
+      return { success: false, message: 'Hindi pa pwede mag-UNO! +1 penalty card.' };
     }
 
     player.calledUno = true;
