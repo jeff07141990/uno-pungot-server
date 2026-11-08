@@ -356,7 +356,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
       <div className="relative z-10 flex-1 flex flex-col md:flex-row overflow-hidden p-1.5 sm:p-4 gap-2 sm:gap-3">
         {/* LEFT SIDEBAR NAVIGATION */}
         <div className="w-full md:w-36 lg:w-44 flex md:flex-col gap-1 sm:gap-1.5 shrink-0 overflow-x-auto md:overflow-visible pb-0.5 md:pb-0">
-          {/* Power-Ups Tab */}
+          {/* Wild Cards Tab */}
           <button
             onClick={() => setActiveCategory('powerups')}
             className={`flex-1 md:w-full py-1.5 sm:py-2.5 px-2 sm:px-3 flex items-center justify-center md:justify-start gap-1.5 sm:gap-2.5 cursor-pointer shrink-0 font-black text-[11px] sm:text-xs tracking-wide rounded-xl ${
@@ -366,12 +366,10 @@ export const ShopModal: React.FC<ShopModalProps> = ({
             }`}
           >
             <div className="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shrink-0">
-              <svg className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} viewBox="0 0 24 24" fill="currentColor">
-                <path d="M13 2 L3 14 L11 14 L10 22 L21 9 L13 9 Z" />
-              </svg>
+              <Layers className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${activeCategory === 'powerups' ? 'text-[#301602]' : 'text-amber-400'}`} />
             </div>
             <span className={`text-[11px] sm:text-xs font-black ${activeCategory === 'powerups' ? 'text-[#1a0b02]' : 'text-white'}`}>
-              Power-Ups
+              Wild Cards
             </span>
           </button>
 
@@ -451,16 +449,16 @@ export const ShopModal: React.FC<ShopModalProps> = ({
           </button>
         </div>
 
-        {/* RIGHT SECTION: POWER-UPS SLIDER (Even, Compact, Uncut) */}
+        {/* RIGHT SECTION: WILD CARDS SLIDER (Even, Compact, Uncut) */}
         <div className="flex-1 flex flex-col overflow-hidden p-0.5 sm:p-2 relative justify-start">
           {/* Header info */}
           <div className="flex items-center justify-between pb-1 sm:pb-2 mb-0.5 border-b border-purple-800/30">
             <div className="flex items-center gap-1.5">
               <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-500/20 border border-amber-400/50 flex items-center justify-center shrink-0">
-                <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400 fill-amber-400" />
+                <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" />
               </div>
               <h2 className="text-xs sm:text-base font-black tracking-wider uppercase text-amber-400 drop-shadow">
-                {activeCategory === 'powerups' && 'POWER-UPS'}
+                {activeCategory === 'powerups' && 'WILD CARDS'}
                 {activeCategory === 'skins' && 'CARD SKINS'}
                 {activeCategory === 'avatars' && 'AVATAR ICONS'}
                 {activeCategory === 'frames' && 'AVATAR FRAMES'}
@@ -634,14 +632,14 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                     <div>
                       <h3 className="text-base font-black text-white">Walang Laman ang Iyong Imbentaryo</h3>
                       <p className="text-xs text-slate-400 mt-1">
-                        Pumunta sa tab ng POWER-UPS upang bumili ng mga espesyal na card na magagamit sa laban!
+                        Pumunta sa tab ng WILD CARDS upang bumili ng mga espesyal na card na magagamit sa laban!
                       </p>
                     </div>
                     <button
                       onClick={() => setActiveCategory('powerups')}
                       className="shop-buy-btn px-4 py-1.5 text-xs font-black cursor-pointer"
                     >
-                      Bumili ng Power-Ups
+                      Bumili ng Wild Cards
                     </button>
                   </div>
                 ) : (

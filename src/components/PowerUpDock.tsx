@@ -53,16 +53,16 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
 
   return (
     <>
-      {/* Inline Power-Ups Button */}
+      {/* Inline Wild Cards Button */}
       <div className="relative flex flex-col items-end gap-1 select-none pointer-events-auto">
         {/* Expanded Tray */}
         {isExpanded && (
           <div className="absolute top-full right-0 mt-1 bg-[#120826]/95 border-2 border-amber-400 rounded-3xl p-3.5 shadow-2xl backdrop-blur-xl max-w-[340px] sm:max-w-[380px] w-[320px] animate-fadeIn flex flex-col gap-2.5 z-50">
             <div className="flex items-center justify-between border-b border-purple-800/60 pb-2">
               <div className="flex items-center gap-2">
-                <span className="text-lg">⚡</span>
+                <span className="text-lg">🃏</span>
                 <span className="text-xs sm:text-sm font-black text-amber-300 uppercase tracking-wider">
-                  Power-Up Inventory
+                  Wild Cards Inventory
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -81,7 +81,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
 
             {availableItems.length === 0 ? (
               <div className="text-center py-5 text-xs text-slate-300 space-y-2.5">
-                <p>Wala kang available na Power-Ups sa imbentaryo.</p>
+                <p>Wala kang available na Wild Cards sa imbentaryo.</p>
                 <button
                   onClick={() => {
                     setIsExpanded(false);
@@ -148,7 +148,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
           </div>
         )}
 
-        {/* Compact Power-Up trigger button (sits in header next to exit) */}
+        {/* Compact Wild Cards trigger button (sits in header next to exit) */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={`w-9 h-9 sm:w-10 sm:h-10 aspect-square flex items-center justify-center rounded-xl border-2 transition-all active:scale-95 cursor-pointer ${
@@ -158,10 +158,10 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
               ? 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 border-white shadow-[0_0_10px_rgba(250,204,21,0.5)]'
               : 'bg-[#180a32]/90 border-purple-600/70 text-slate-300'
           }`}
-          title="Power-Ups"
+          title="Wild Cards"
         >
           <span className="text-lg">
-            {hasPendingPenalty ? '🛡️' : '⚡'}
+            {hasPendingPenalty ? '🛡️' : '🃏'}
           </span>
         </button>
       </div>
