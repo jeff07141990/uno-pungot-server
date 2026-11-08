@@ -32,18 +32,38 @@ export const getCustomCardSkins = (): CustomCardSkinMap => {
 
 export const saveCustomCardSkin = (type: keyof CustomCardSkinMap, dataUrl: string) => {
   if (typeof window === 'undefined') return;
-  const current = getCustomCardSkins();
-  current[type] = dataUrl;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-  window.dispatchEvent(new Event('uno_skins_updated'));
+  try {
+    // Only store user customizations in STORAGE_KEY to avoid exceeding 5MB localStorage limit!
+    let userCustom: Record<string, string> = {};
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        userCustom = JSON.parse(raw);
+      } catch {}
+    }
+    userCustom[type as string] = dataUrl;
+    const serialized = JSON.stringify(userCustom);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    window.dispatchEvent(new Event('uno_skins_updated'));
+  } catch (err) {
+    console.error('Failed to save custom card skin to localStorage:', err);
+  }
 };
 
 export const removeCustomCardSkin = (type: keyof CustomCardSkinMap) => {
   if (typeof window === 'undefined') return;
-  const current = getCustomCardSkins();
-  delete current[type];
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
-  window.dispatchEvent(new Event('uno_skins_updated'));
+  try {
+    let userCustom: Record<string, string> = {};
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        userCustom = JSON.parse(raw);
+      } catch {}
+    }
+    delete userCustom[type as string];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userCustom));
+    window.dispatchEvent(new Event('uno_skins_updated'));
+  } catch {}
 };
 
 export const resetAllCardSkins = () => {

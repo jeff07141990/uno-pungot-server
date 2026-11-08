@@ -191,9 +191,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
     reader.onload = () => {
       const result = reader.result as string;
       if (result) {
-        try {
+        // Automatically optimize & scale image with canvas to ensure fast load and fit within storage
+        const img = new window.Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            // Standard Uno card aspect ratio ~ 2:3 (e.g. 360 x 540)
+            const maxW = 400;
+            const maxH = 600;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxW || height > maxH) {
+              const ratio = Math.min(maxW / width, maxH / height);
+              width = Math.round(width * ratio);
+              height = Math.round(height * ratio);
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const isPng = file.type === 'image/png';
+              const optimized = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', isPng ? 0.9 : 0.85);
+              saveCustomCardSkin(selectedUploadKey, optimized);
+              setSkins(getCustomCardSkins());
+              return;
+            }
+            saveCustomCardSkin(selectedUploadKey, result);
+            setSkins(getCustomCardSkins());
+          } catch {
+            saveCustomCardSkin(selectedUploadKey, result);
+            setSkins(getCustomCardSkins());
+          }
+        };
+        img.onerror = () => {
           saveCustomCardSkin(selectedUploadKey, result);
-        } catch {}
+          setSkins(getCustomCardSkins());
+        };
+        img.src = result;
       }
     };
     reader.readAsDataURL(file);
