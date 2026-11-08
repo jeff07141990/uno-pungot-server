@@ -175,7 +175,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
 
       {/* Target & Color Selection Confirmation Modal */}
       {selectedPowerUp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
           <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-5 max-w-sm w-full shadow-2xl space-y-3.5 text-center">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl">
               <span>{selectedPowerUp.icon}</span>
