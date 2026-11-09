@@ -717,7 +717,10 @@ export const App: React.FC = () => {
           onExitGame={handleExitGame}
           wallet={wallet}
           updateInfo={updateInfo}
-          onOpenUpdate={() => setIsUpdateOpen(true)}
+          onOpenUpdate={() => {
+            const gdriveUrl = updateInfo?.downloadUrl || 'https://drive.google.com/file/d/1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY/view?usp=sharing';
+            window.open(gdriveUrl, '_system');
+          }}
           onOpenShop={() => setIsShopOpen(true)}
           onOpenMissions={() => setIsMissionsOpen(true)}
           onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
@@ -1101,13 +1104,6 @@ export const App: React.FC = () => {
             window.location.reload();
           }, 600);
         }}
-      />
-
-      {/* Online In-App Auto Update Modal */}
-      <UpdateModal
-        isOpen={isUpdateOpen}
-        updateInfo={updateInfo}
-        onClose={() => setIsUpdateOpen(false)}
       />
     </div>
   );
