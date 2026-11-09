@@ -12,8 +12,26 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
   if (!isOpen || !updateInfo) return null;
 
   const handleUpdate = () => {
-    const targetUrl = updateInfo.downloadUrl || 'https://drive.google.com/file/d/1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY/view?usp=sharing';
+    let targetUrl = updateInfo.downloadUrl;
+    if (!targetUrl || targetUrl.includes('/file/d/')) {
+      targetUrl = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
+    }
+    // Open system downloader/external browser
     window.open(targetUrl, '_system');
+
+    // Also trigger hidden anchor for direct APK download stream
+    try {
+      const a = document.createElement('a');
+      a.href = targetUrl;
+      a.download = `UNO-Pungot-v${updateInfo.latestVersion}.apk`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {}
+
+    // Close modal immediately so player stays inside the game
+    onClose();
   };
 
   return (

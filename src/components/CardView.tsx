@@ -115,12 +115,15 @@ export const CardView: React.FC<CardViewProps> = ({
     ? `${card.color}_${card.value}`
     : `${card.color}_${card.type}`;
 
-  // Check if a custom image skin was uploaded by user for this specific card or general type
+  // Priority lookup for custom uploaded skins:
+  // 1. Exact specific key (e.g. red_5, blue_skip, red_reverse)
+  // 2. Power-up skin key (power_skip2, power_shield, etc.)
+  // 3. General card type (e.g. skip, reverse, draw2, wild, wild4, flip, etc.)
   const powerSkinKey = !ignorePowerSkin && card.powerUpId ? skins[`power_${card.powerUpId}`] : undefined;
   const customSkinSrc =
     skins[specificKey] ||
-    skins[card.type] ||
     powerSkinKey ||
+    skins[card.type] ||
     (card.type === 'skip'
       ? skins.skip || '/cards/skip.png'
       : card.type === 'reverse'
@@ -131,6 +134,10 @@ export const CardView: React.FC<CardViewProps> = ({
       ? skins.wild
       : card.type === 'wild4'
       ? skins.wild4 || '/cards/wild4.png'
+      : card.type === 'discard_all'
+      ? skins.discard_all || '/cards/discard_all.png'
+      : card.type === 'punch'
+      ? skins.punch || skins.power_punch || '/cards/wild_punch.png'
       : undefined);
 
   if (customSkinSrc) {
@@ -318,6 +325,20 @@ export const CardView: React.FC<CardViewProps> = ({
           <div className="flex flex-col items-center">
             <span className="text-xl sm:text-2xl drop-shadow">🔀</span>
             <span className="font-black text-white text-[9px] sm:text-[10px] tracking-tight drop-shadow-md">SWAP</span>
+          </div>
+        );
+      case 'discard_all':
+        return (
+          <div className="flex flex-col items-center">
+            <span className="text-xl sm:text-2xl drop-shadow">🎴</span>
+            <span className="font-black text-white text-[8px] sm:text-[9px] tracking-tight drop-shadow-md">DISCARD</span>
+          </div>
+        );
+      case 'punch':
+        return (
+          <div className="flex flex-col items-center">
+            <span className="text-xl sm:text-2xl drop-shadow">🥊</span>
+            <span className="font-black text-white text-[8px] sm:text-[9px] tracking-tight drop-shadow-md">PUNCH</span>
           </div>
         );
       case 'flip':

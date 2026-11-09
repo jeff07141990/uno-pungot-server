@@ -259,12 +259,13 @@ export class RoomManager {
       const player = room.publicState.players[existingIndex];
       const wasDisconnected = player.isDisconnected;
       player.isDisconnected = false;
+      player.isAutoplayBot = false; // Restore manual control immediately
       player.name = playerName || player.name;
       player.avatar = playerAvatar || player.avatar;
       room.sockets.set(playerId, ws);
       this.broadcastState(roomId);
       if (wasDisconnected) {
-        this.broadcastToast(roomId, `${player.name} reconnected!`, 'turn_alert');
+        this.broadcastToast(roomId, `${player.name} reconnected! Manual control restored.`, 'turn_alert');
       }
       return { success: true };
     }
@@ -322,11 +323,6 @@ export class RoomManager {
     room.publicState.players.push(newPlayer);
     room.sockets.set(playerId, ws);
 
-    // Rule A: Once the first player joins, lock the selected entry fee
-    if (isEntryFeeRoom) {
-      room.publicState.isEntryFeeLocked = true;
-    }
-
     this.broadcastState(roomId);
     this.broadcastToast(roomId, `${newPlayer.name} joined the room!`, 'card_draw');
     return { success: true };
@@ -352,7 +348,7 @@ export class RoomManager {
   }
 
   /**
-   * Host updates entry fee before non-host players join.
+   * Host updates entry fee while in lobby.
    */
   public updateEntryFee(roomId: string, hostId: string, entryFee: EntryFeeAmount): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
@@ -360,23 +356,38 @@ export class RoomManager {
       return { success: false, message: 'Only host can change entry fee in lobby.' };
     }
 
-    if (room.publicState.isEntryFeeLocked) {
-      return { success: false, message: 'Naka-lock na ang entry fee dahil may sumali nang ibang manlalaro.' };
+    const previousFee = room.publicState.entryFee;
+    if (previousFee === entryFee) {
+      return { success: true };
+    }
+
+    // Refund any previous payments if fee changed
+    if (previousFee > 0) {
+      room.publicState.players.forEach((p) => {
+        if (p.hasPaidEntry && !p.isBot) {
+          const refundRes = economyManager.refundEntryFee(p.id, roomId, previousFee);
+          const ws = room.sockets.get(p.id);
+          if (ws && ws.readyState === WebSocket.OPEN && refundRes.wallet) {
+            ws.send(JSON.stringify({ type: 'WALLET_UPDATE', wallet: refundRes.wallet }));
+          }
+        }
+        p.hasPaidEntry = entryFee === 0;
+        p.isReady = entryFee === 0;
+      });
+    } else {
+      room.publicState.players.forEach((p) => {
+        p.hasPaidEntry = entryFee === 0;
+        p.isReady = entryFee === 0;
+      });
     }
 
     room.publicState.entryFee = entryFee;
-    const paidCount = Math.max(1, room.publicState.players.filter((p) => p.hasPaidEntry).length);
-    room.publicState.prizePool = entryFee * paidCount;
-
-    // Reset host payment status if fee changes
-    const host = room.publicState.players.find((p) => p.isHost);
-    if (host) {
-      host.hasPaidEntry = false;
-      host.isReady = entryFee === 0;
-    }
+    room.publicState.isEntryFeeLocked = false;
+    const paidCount = room.publicState.players.filter((p) => p.hasPaidEntry).length;
+    room.publicState.prizePool = entryFee * (entryFee === 0 ? 0 : paidCount);
 
     this.broadcastState(roomId);
-    this.broadcastToast(roomId, `Entry fee updated to ₱${entryFee}. Total Prize Pool: ₱${room.publicState.prizePool}`, 'turn_alert');
+    this.broadcastToast(roomId, `Entry fee updated to ${entryFee === 0 ? 'Free' : `₱${entryFee}`}. Total Prize Pool: ₱${room.publicState.prizePool}`, 'turn_alert');
     return { success: true };
   }
 
@@ -483,9 +494,6 @@ export class RoomManager {
     };
 
     room.publicState.players.push(botPlayer);
-    if (isEntryFeeRoom) {
-      room.publicState.isEntryFeeLocked = true;
-    }
     this.broadcastState(roomId);
     return true;
   }
@@ -625,6 +633,7 @@ export class RoomManager {
     for (const p of room.publicState.players) {
       p.finishRank = null;
       p.isFinished = false;
+      p.isAutoplayBot = false; // Always start with full manual control!
       room.publicState.matchPowerUpUses[p.id] = 0;
     }
     room.publicState.turnCount = 1;
@@ -726,7 +735,8 @@ export class RoomManager {
     playerId: string,
     cardId: string,
     chosenColor?: CardColor,
-    targetPlayerId?: string
+    targetPlayerId?: string,
+    isManualAction: boolean = false
   ): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
     if (!room || room.publicState.phase !== 'playing') {
@@ -742,6 +752,12 @@ export class RoomManager {
 
     if (activePlayer.id !== playerId) {
       return { success: false, message: "It's not your turn!" };
+    }
+
+    // If this action was made manually by the player, immediately cancel autoplay bot mode
+    if (isManualAction && activePlayer.isAutoplayBot) {
+      activePlayer.isAutoplayBot = false;
+      this.broadcastToast(roomId, `👤 Nagbalik si ${activePlayer.name}! Manual control restored.`, 'turn_alert');
     }
 
     if (publicState.pendingChallenge) {
@@ -773,6 +789,12 @@ export class RoomManager {
     );
 
     if (!playable) {
+      if (card.type === 'punch' && publicState.pendingDrawPenalty < 8) {
+        return {
+          success: false,
+          message: `Magagamit lamang ang Wild Punch kung ang natambak na penalty ay +8 o higit pa! (Kasalukuyang penalty: +${publicState.pendingDrawPenalty})`,
+        };
+      }
       return { success: false, message: 'This card cannot be played on the current discard.' };
     }
 
@@ -975,6 +997,8 @@ export class RoomManager {
     chosenColor?: CardColor,
     targetPlayerId?: string
   ) {
+    if (player.isFinished) return;
+
     const { publicState } = room;
     const roomId = publicState.roomId;
 
@@ -1451,7 +1475,60 @@ export class RoomManager {
       actionDescription += ` — FORCED SWAP with ${targetPlayer?.name}!`;
       publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
     }
-    // 13. Dare & Wild Dare
+    // 13. Wild Discard All
+    else if (card.type === 'discard_all') {
+      sound = 'discard_all';
+      const playerHand = room.playerHands.get(activePlayer.id) || [];
+      const discardedCards: Card[] = [];
+      const remainingCards: Card[] = [];
+
+      for (const c of playerHand) {
+        if (c.color === chosenColor) {
+          discardedCards.push(c);
+        } else {
+          remainingCards.push(c);
+        }
+      }
+
+      if (discardedCards.length > 0) {
+        room.discardPile.push(...discardedCards);
+        room.playerHands.set(activePlayer.id, remainingCards);
+        activePlayer.cardCount = remainingCards.length;
+        actionDescription += ` — 🎴 WILD DISCARD ALL! Itinapon ni ${activePlayer.name} ang lahat ng ${discardedCards.length} ${chosenColor?.toUpperCase()} card(s)!`;
+      } else {
+        actionDescription += ` — 🎴 WILD DISCARD ALL! Walang ${chosenColor?.toUpperCase()} card sa kamay ni ${activePlayer.name}.`;
+      }
+
+      if (remainingCards.length === 0) {
+        this.handlePlayerFinished(room, activePlayer, card, chosenColor, targetPlayerId);
+        return { sound, actionDescription };
+      }
+
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    }
+    // 14. Wild Punch
+    else if (card.type === 'punch') {
+      sound = 'vs_impact';
+      const penalty = publicState.pendingDrawPenalty;
+
+      if (penalty > 0) {
+        // Counter the attack back to the previous attacker!
+        const prevIdx = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, -1);
+        const attacker = publicState.players[prevIdx];
+        const attackerHand = room.playerHands.get(attacker.id) ?? [];
+        const drawn = this.drawFromPile(room, penalty);
+        attackerHand.push(...drawn);
+        attacker.cardCount = attackerHand.length;
+
+        actionDescription += ` — 🥊 WILD PUNCH COUNTER! Pinalo pabalik ni ${activePlayer.name} ang +${penalty} penalty kay ${attacker.name}! Binunot ni ${attacker.name} ang ${penalty} cards!`;
+        publicState.pendingDrawPenalty = 0;
+      } else {
+        actionDescription += ` — 🥊 WILD PUNCH! Walang incoming penalty. Pinalitan ang kulay sa ${chosenColor?.toUpperCase()}!`;
+      }
+
+      publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
+    }
+    // 15. Dare & Wild Dare
     else if (card.type === 'dare' || card.type === 'wild_dare') {
       sound = 'dare';
       const nextIdx = this.getNextActivePlayerIndex(room, publicState.activePlayerIndex, 1);
@@ -1849,7 +1926,12 @@ export class RoomManager {
    * Draw card when on turn.
    * Auto-passes turn to the next player immediately upon drawing.
    */
-  public drawCard(roomId: string, playerId: string, targetCardIndex?: number): { success: boolean; message?: string } {
+  public drawCard(
+    roomId: string,
+    playerId: string,
+    targetCardIndex?: number,
+    isManualAction: boolean = false
+  ): { success: boolean; message?: string } {
     const room = this.rooms.get(roomId);
     if (!room || room.publicState.phase !== 'playing') {
       return { success: false, message: 'Game is not active.' };
@@ -1864,6 +1946,12 @@ export class RoomManager {
 
     if (activePlayer.id !== playerId) {
       return { success: false, message: "It's not your turn!" };
+    }
+
+    // If this action was made manually by the player, immediately cancel autoplay bot mode
+    if (isManualAction && activePlayer.isAutoplayBot) {
+      activePlayer.isAutoplayBot = false;
+      this.broadcastToast(roomId, `👤 Nagbalik si ${activePlayer.name}! Manual control restored.`, 'turn_alert');
     }
 
     const hand = room.playerHands.get(playerId) ?? [];
@@ -1911,8 +1999,8 @@ export class RoomManager {
     );
 
     if (isPlayableDrawn) {
-      // If the player is a BOT, automatically play the drawn card if playable
-      if (activePlayer.isBot) {
+      // If the player is a BOT or in Autoplay Bot mode, automatically play the drawn card if playable
+      if (activePlayer.isBot || activePlayer.isAutoplayBot) {
         publicState.lastActionText = `${activePlayer.name} drew and played ${singleCard.color.toUpperCase()} ${singleCard.type}!`;
         this.broadcastState(roomId);
         this.broadcastToast(roomId, `${activePlayer.name} drew a matching card and played it!`, 'card_play');
@@ -2088,6 +2176,19 @@ export class RoomManager {
       return { success: true };
     }
 
+    // False accusation penalty! If the player pressed hammer / clicked profile when target is NOT liable:
+    const callerHand = room.playerHands.get(callerId);
+    if (callerHand) {
+      const drawnPenalty = this.drawFromPile(room, 1);
+      callerHand.push(...drawnPenalty);
+      caller.cardCount = callerHand.length;
+      const penaltyDesc = `⚠️ Maling akusasyon! Hindi pa pwedeng pukpukin si ${target.name}. Si ${caller.name} ay nakatanggap ng +1 Penalty Card!`;
+      room.publicState.lastActionText = penaltyDesc;
+      this.broadcastState(roomId);
+      this.broadcastToast(roomId, penaltyDesc, 'uno_penalty');
+      return { success: false, message: penaltyDesc };
+    }
+
     return { success: false, message: 'Target player has not missed an UNO call.' };
   }
 
@@ -2170,6 +2271,7 @@ export class RoomManager {
       p.calledUno = false;
       p.isFinished = false;
       p.finishRank = null;
+      p.isAutoplayBot = false;
       p.isReady = p.isHost || p.isBot;
     }
 
@@ -2180,6 +2282,7 @@ export class RoomManager {
 
   /**
    * Turn timer management.
+   * Ensures every turn has a maximum 15s timeout before Bot AI takes over and automatically plays.
    */
   private startTurnTimer(room: InternalRoomState, delayMs: number = 0) {
     if (room.timerInterval) {
@@ -2187,21 +2290,21 @@ export class RoomManager {
       room.timerInterval = null;
     }
 
-    const { houseRules } = room.publicState;
-    if (houseRules.turnTimer <= 0) {
-      room.publicState.turnDeadline = null;
-      return;
-    }
+    // Always enforce maximum 15s turn timer for smooth flow and autoplay
+    const timerSeconds = room.publicState.houseRules?.turnTimer && room.publicState.houseRules.turnTimer > 0
+      ? Math.min(15, room.publicState.houseRules.turnTimer)
+      : 15;
 
-    const deadline = Date.now() + delayMs + houseRules.turnTimer * 1000;
+    const deadline = Date.now() + delayMs + timerSeconds * 1000;
     room.publicState.turnDeadline = deadline;
 
-    room.timerInterval = setInterval(() => {
-      if (Date.now() >= deadline) {
-        if (room.timerInterval) clearInterval(room.timerInterval);
-        this.handleTurnTimeout(room);
-      }
-    }, 1000);
+    // Immediately sync state with all players so client countdown ring starts at 15s
+    this.broadcastState(room.publicState.roomId);
+
+    room.timerInterval = setTimeout(() => {
+      room.timerInterval = null;
+      this.handleTurnTimeout(room);
+    }, delayMs + timerSeconds * 1000);
   }
 
   private handleTurnTimeout(room: InternalRoomState) {
@@ -2210,8 +2313,68 @@ export class RoomManager {
     const activePlayer = room.publicState.players[room.publicState.activePlayerIndex];
     if (!activePlayer) return;
 
-    // Auto-draw or auto-pass
-    this.drawCard(room.publicState.roomId, activePlayer.id);
+    const roomId = room.publicState.roomId;
+
+    // Set Autoplay Bot status if not already a real bot
+    if (!activePlayer.isBot) {
+      activePlayer.isAutoplayBot = true;
+      this.broadcastToast(
+        roomId,
+        `🤖 Naubos ang oras ni ${activePlayer.name}! Nilalaro na ito ng Bot (Autoplay).`,
+        'turn_alert'
+      );
+    }
+
+    // 1. If waiting on Keep or Play: Bot automatically chooses to play the card if valid, otherwise keep/pass
+    if (room.publicState.pendingKeepOrPlay && room.publicState.pendingKeepOrPlay.playerId === activePlayer.id) {
+      const drawnCard = room.publicState.pendingKeepOrPlay.drawnCard;
+      room.publicState.pendingKeepOrPlay = null;
+      const validColors: CardColor[] = ['red', 'blue', 'green', 'yellow'];
+      const chosenColor = drawnCard.color === 'wild' ? validColors[Math.floor(Math.random() * validColors.length)] : undefined;
+      this.playCard(roomId, activePlayer.id, drawnCard.id, chosenColor);
+      return;
+    }
+
+    // 2. If waiting on Seven Swap choice
+    if (room.publicState.pendingSevenSwap && room.publicState.pendingSevenSwap.playerId === activePlayer.id) {
+      const opponents = room.publicState.players.filter(
+        (p) => p.id !== activePlayer.id && !p.isFinished && (room.playerHands.get(p.id)?.length || 0) > 0
+      );
+      if (opponents.length > 0) {
+        // Swap with player who has least cards
+        const target = opponents.reduce((prev, curr) => curr.cardCount < prev.cardCount ? curr : prev, opponents[0]);
+        this.executeSevenSwap(room, activePlayer.id, target.id);
+        room.publicState.lastActionText = `🤖 (Autoplay) ${activePlayer.name} swapped hands with ${target.name}!`;
+        room.publicState.activePlayerIndex = this.getNextActivePlayerIndex(room, room.publicState.activePlayerIndex, 1);
+        this.startTurnTimer(room);
+        this.broadcastState(roomId);
+        this.broadcastToast(roomId, room.publicState.lastActionText, 'power_swap');
+        this.checkTriggerBot(roomId);
+        return;
+      }
+    }
+
+    // 3. Normal turn move: Use Bot AI to automatically make the best move for this player
+    const hand = room.playerHands.get(activePlayer.id) || [];
+    const decision = makeBotMove(hand, room.publicState, room.publicState.houseRules);
+
+    console.log(`[AUTOPLAY] 15s Timeout for player ${activePlayer.name} (${activePlayer.id}). Hand size: ${hand.length}. Bot decision:`, decision);
+
+    let moveResult: { success: boolean; message?: string } = { success: false };
+    if (decision.action === 'play' && decision.cardId) {
+      moveResult = this.playCard(
+        roomId,
+        activePlayer.id,
+        decision.cardId,
+        decision.chosenColor,
+        decision.targetPlayerId
+      );
+    }
+
+    if (!moveResult.success) {
+      console.log(`[AUTOPLAY] Bot playCard not successful or action was draw. Falling back to drawCard.`);
+      this.drawCard(roomId, activePlayer.id);
+    }
   }
 
   /**
@@ -2222,7 +2385,7 @@ export class RoomManager {
     if (!room || room.publicState.phase !== 'playing') return;
 
     const activePlayer = room.publicState.players[room.publicState.activePlayerIndex];
-    if (!activePlayer || !activePlayer.isBot) return;
+    if (!activePlayer || (!activePlayer.isBot && !activePlayer.isAutoplayBot)) return;
 
     if (room.botTimeout) clearTimeout(room.botTimeout);
 
@@ -2234,21 +2397,29 @@ export class RoomManager {
     }
 
     room.botTimeout = setTimeout(() => {
+      // Clear turn timer interval if still pending
+      if (room.timerInterval) {
+        clearInterval(room.timerInterval);
+        room.timerInterval = null;
+      }
       const currentActive = room.publicState.players[room.publicState.activePlayerIndex];
       if (!currentActive || currentActive.id !== activePlayer.id) return;
 
       const botHand = room.playerHands.get(activePlayer.id) || [];
       const decision = makeBotMove(botHand, room.publicState, room.publicState.houseRules);
 
+      let res: { success: boolean; message?: string } = { success: false };
       if (decision.action === 'play' && decision.cardId) {
-        this.playCard(
+        res = this.playCard(
           roomId,
           activePlayer.id,
           decision.cardId,
           decision.chosenColor,
           decision.targetPlayerId
         );
-      } else {
+      }
+
+      if (!res.success) {
         this.drawCard(roomId, activePlayer.id);
       }
     }, baseDelay);
@@ -2382,6 +2553,22 @@ export class RoomManager {
         }, 180000); // 3 minutes cleanup grace period
       }
     }
+  }
+
+  /**
+   * Resume manual player control from autoplay bot.
+   */
+  public resumePlayerControl(roomId: string, playerId: string): { success: boolean; message?: string } {
+    const room = this.rooms.get(roomId);
+    if (!room) return { success: false, message: 'Room not found.' };
+
+    const player = room.publicState.players.find((p) => p.id === playerId);
+    if (!player) return { success: false, message: 'Player not found.' };
+
+    player.isAutoplayBot = false;
+    this.broadcastState(roomId);
+    this.broadcastToast(roomId, `👤 Nagbalik si ${player.name}! Manual control restored.`, 'turn_alert');
+    return { success: true };
   }
 
   private cleanupRoom(roomId: string) {
@@ -2764,6 +2951,7 @@ export class RoomManager {
       reverse: 'reverse',
       skip: 'skip',
       wild: 'wild',
+      punch: 'punch',
     };
 
     return {
@@ -2780,19 +2968,39 @@ export class RoomManager {
   public addPowerUpCardToHand(playerId: string, powerUpId: PowerUpId): boolean {
     for (const [roomId, room] of this.rooms.entries()) {
       if (room.publicState.phase === 'playing') {
-        const player = room.publicState.players.find((p) => p.id === playerId);
+        let player = room.publicState.players.find((p) => p.id === playerId);
+        // Fallback lookup: if only one human in room or match by name
+        if (!player) {
+          player = room.publicState.players.find((p) => !p.isBot);
+        }
         if (player) {
-          const hand = room.playerHands.get(playerId) || [];
+          const targetUid = player.id;
+          if (!room.publicState.matchPowerUpUses) {
+            room.publicState.matchPowerUpUses = {};
+          }
+          const currentUses = room.publicState.matchPowerUpUses[targetUid] || 0;
+          if (currentUses >= 2) {
+            this.broadcastToast(roomId, `⚠️ Naabot na ni ${player.name} ang limit na 2 Power-Ups para sa labang ito!`, 'turn_alert');
+            return false;
+          }
+
+          const hand = room.playerHands.get(targetUid) || [];
           const card = this.createPowerUpCard(powerUpId);
           hand.push(card);
-          room.playerHands.set(playerId, hand);
+          room.playerHands.set(targetUid, hand);
           player.cardCount = hand.length;
+
+          // Increment match uses count
+          room.publicState.matchPowerUpUses[targetUid] = currentUses + 1;
 
           // Consume inventory item since it became a card in hand
           economyManager.consumePowerUp(playerId, powerUpId);
+          if (targetUid !== playerId) {
+            economyManager.consumePowerUp(targetUid, powerUpId);
+          }
 
           const itemName = economyManager.getCatalog()[powerUpId]?.name || 'Power-Up';
-          const toastText = `🃏 ${player.name} bought and drew a ${itemName} card!`;
+          const toastText = `🃏 Nakakuha si ${player.name} ng ${itemName} card! (${currentUses + 1}/2)`;
           room.publicState.lastActionText = toastText;
 
           this.broadcastState(roomId);

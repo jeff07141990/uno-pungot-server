@@ -126,6 +126,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
     return () => window.removeEventListener('uno_skins_updated', handleUpdate);
   }, []);
 
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,58 +182,42 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
 
   const triggerUpload = (key: keyof CustomCardSkinMap) => {
     setSelectedUploadKey(key);
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedUploadKey) return;
+    const key = selectedUploadKey;
+    if (!file || !key) return;
+
+    setUploadStatus(`Ina-upload at ina-apply ang card skin...`);
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const result = reader.result as string;
-      if (result) {
-        // Automatically optimize & scale image with canvas to ensure fast load and fit within storage
-        const img = new window.Image();
-        img.onload = () => {
-          try {
-            const canvas = document.createElement('canvas');
-            // Standard Uno card aspect ratio ~ 2:3 (e.g. 360 x 540)
-            const maxW = 400;
-            const maxH = 600;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxW || height > maxH) {
-              const ratio = Math.min(maxW / width, maxH / height);
-              width = Math.round(width * ratio);
-              height = Math.round(height * ratio);
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, width, height);
-              const isPng = file.type === 'image/png';
-              const optimized = canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', isPng ? 0.9 : 0.85);
-              saveCustomCardSkin(selectedUploadKey, optimized);
-              setSkins(getCustomCardSkins());
-              return;
-            }
-            saveCustomCardSkin(selectedUploadKey, result);
-            setSkins(getCustomCardSkins());
-          } catch {
-            saveCustomCardSkin(selectedUploadKey, result);
-            setSkins(getCustomCardSkins());
-          }
-        };
-        img.onerror = () => {
-          saveCustomCardSkin(selectedUploadKey, result);
-          setSkins(getCustomCardSkins());
-        };
-        img.src = result;
+      if (!result) {
+        setUploadStatus('Hindi mabasa ang file.');
+        return;
       }
+
+      try {
+        const savedUrl = await saveCustomCardSkin(key, result);
+        setSkins((prev) => ({
+          ...prev,
+          [key]: savedUrl,
+        }));
+        setUploadStatus(`✅ Tagumpay na napalitan ang card!`);
+        setTimeout(() => setUploadStatus(null), 3000);
+      } catch (err) {
+        console.error('Error saving skin:', err);
+        setUploadStatus('Nagka-problema sa pag-save ng larawan.');
+      }
+    };
+    reader.onerror = () => {
+      setUploadStatus('Nabigong basahin ang file.');
     };
     reader.readAsDataURL(file);
     e.target.value = '';
@@ -378,6 +364,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                   <span>✓ Naka-unlock bilang Admin.</span>
                   <span className="text-slate-400">Pumili ng kategorya sa ibaba para mag-upload ng larawan:</span>
                 </p>
+
+                {uploadStatus && (
+                  <div className="mb-3 p-2 bg-amber-500/20 border border-amber-500/50 rounded-xl text-xs font-bold text-amber-200 animate-fadeIn text-center">
+                    {uploadStatus}
+                  </div>
+                )}
 
                 {/* Color Navigation Tabs */}
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 border-b border-slate-800">
@@ -660,6 +652,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, i
                   {[
                     { key: 'wild', label: 'Wild Card (🌈)', count: '4x piraso sa deck', defaultSrc: '' },
                     { key: 'wild4', label: 'Wild Draw 4 (+4)', count: '4x piraso sa deck', defaultSrc: '/cards/wild4.png' },
+                    { key: 'discard_all', label: 'Wild Discard All (🎴)', count: '2x piraso sa deck', defaultSrc: '/cards/discard_all.png' },
                   ].map((item) => {
                     const currentImg = skins[item.key] || item.defaultSrc;
                     return (

@@ -114,6 +114,7 @@ export const PowerUpDock: React.FC<PowerUpDockProps> = ({
                     reverse: 'reverse',
                     skip: 'skip',
                     wild: 'wild',
+                    punch: 'punch',
                   };
                   const previewCard: Card = {
                     id: `dock-${item.id}`,

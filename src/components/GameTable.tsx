@@ -127,11 +127,11 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
 
-  // Pick the matching video file: 15s, 30s, or 60s
+  // Pick the matching video file: 15 sec.mp4, 30 sec.mp4, or 60 sec.mp4
   const videoSrc = useMemo(() => {
-    if (totalDuration <= 15) return '/turn timer ring/15 seconds.mp4';
-    if (totalDuration >= 60) return '/turn timer ring/60 seconds.mp4';
-    return '/turn timer ring/30 seconds.mp4';
+    if (totalDuration <= 15) return '/turn timer ring/15 sec.mp4';
+    if (totalDuration >= 60) return '/turn timer ring/60 sec.mp4';
+    return '/turn timer ring/30 sec.mp4';
   }, [totalDuration]);
 
   // Keep video playback smoothly synchronized with actual game time
@@ -151,7 +151,7 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
     }
   }, [progressFraction, totalDuration]);
 
-  // Continuously remove black background pixel-by-pixel onto canvas
+  // Continuously remove black background pixel-by-pixel onto canvas and keep center hollow
   useEffect(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -166,16 +166,8 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
       if (!isSubscribed) return;
 
       if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-        // The new video is a square 1:1 format with a crisp outer square frame
-        // crop to the outer perimeter of the square ring
         const vw = video.videoWidth;
         const vh = video.videoHeight;
-
-        // The ring starts near 8% margin and extends to 92%
-        const cropX = vw * 0.08;
-        const cropY = vh * 0.08;
-        const cropW = vw * 0.84;
-        const cropH = vh * 0.84;
 
         if (canvas.width !== 300 || canvas.height !== 300) {
           canvas.width = 300;
@@ -183,7 +175,7 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+        ctx.drawImage(video, 0, 0, vw, vh, 0, 0, canvas.width, canvas.height);
 
         try {
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -196,10 +188,10 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
             const g = data[i + 1];
             const b = data[i + 2];
             const maxVal = Math.max(r, g, b);
-            if (maxVal < 25) {
+            if (maxVal < 30) {
               data[i + 3] = 0; // completely transparent background
-            } else if (maxVal < 55) {
-              data[i + 3] = Math.round(((maxVal - 25) / 30) * data[i + 3]);
+            } else if (maxVal < 60) {
+              data[i + 3] = Math.round(((maxVal - 30) / 30) * data[i + 3]);
             }
           }
           ctx.putImageData(imgData, 0, 0);
@@ -222,7 +214,7 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
   }, [videoSrc]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none z-30 select-none overflow-hidden rounded-xl flex items-center justify-center">
+    <div className="absolute -inset-2.5 sm:-inset-3.5 pointer-events-none z-30 select-none overflow-visible flex items-center justify-center">
       {/* Hidden source video */}
       <video
         ref={videoRef}
@@ -233,12 +225,12 @@ const AvatarTurnTimerRing: React.FC<{ progressFraction: number; totalDuration?: 
         loop={false}
         className="hidden"
       />
-      {/* Canvas rendering new turn timer ring fitted exactly on avatar square */}
+      {/* Canvas rendering new turn timer ring fitted along the outer edge/frame of avatar */}
       <canvas
         ref={canvasRef}
-        className="w-full h-full object-fill pointer-events-none"
+        className="w-full h-full object-contain pointer-events-none"
         style={{
-          filter: 'drop-shadow(0 0 6px rgba(250, 204, 21, 0.95)) contrast(1.15) brightness(1.1)',
+          filter: 'drop-shadow(0 0 8px rgba(250, 204, 21, 0.95)) contrast(1.15) brightness(1.1)',
         }}
       />
     </div>
@@ -584,6 +576,23 @@ export const GameTable: React.FC<GameTableProps> = ({
     }, 600);
   };
 
+  const handleOpponentProfileClick = (targetPlayer: PublicPlayer, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    // Check if hammer is currently active on this player (target has 1 card and did not call UNO)
+    const isHammerActive = !targetPlayer.isFinished && targetPlayer.cardCount === 1 && !targetPlayer.calledUno;
+
+    if (isHammerActive) {
+      handleHitHammer(targetPlayer.id, e);
+    } else {
+      // Player clicked the profile when there is NO hammer button!
+      // Trigger false accusation penalty: +1 penalty card to the clicker
+      soundManager.play('uno_penalty');
+      onCatchUno(targetPlayer.id);
+    }
+  };
+
   const triggerUnoCallout = (playerId: string) => {
     const shoutId = `${playerId}_${Date.now()}`;
     setActiveUnoShouts((prev) => [
@@ -794,7 +803,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
-    const totalDurationMs = (houseRules.turnTimer || 30) * 1000;
+    const totalDurationMs = 15000; // Always 15 seconds max turn timer
 
     const interval = setInterval(() => {
       const msRemaining = Math.max(0, turnDeadline - Date.now());
@@ -807,10 +816,35 @@ export const GameTable: React.FC<GameTableProps> = ({
       if (remainingSec <= 5 && remainingSec > 0 && isYourTurn && msRemaining % 1000 < 200) {
         soundManager.play('timer_tick');
       }
+
+      // If timer has reached 0 and it is your turn, automatically play or draw immediately
+      if (msRemaining === 0 && isYourTurn) {
+        clearInterval(interval);
+        // Find first playable card
+        const playableCard = yourHand.find((card) =>
+          isCardPlayable(
+            card,
+            topDiscard,
+            currentColor,
+            pendingDrawPenalty,
+            houseRules.stacking,
+            gameState.variant
+          )
+        );
+
+        if (playableCard) {
+          // Auto play card
+          const randomColor: CardColor = ['red', 'blue', 'green', 'yellow'][Math.floor(Math.random() * 4)] as CardColor;
+          onPlayCard(playableCard.id, playableCard.color === 'wild' ? randomColor : undefined);
+        } else {
+          // Auto draw card
+          onDrawCard();
+        }
+      }
     }, 200);
 
     return () => clearInterval(interval);
-  }, [turnDeadline, houseRules.turnTimer, isYourTurn]);
+  }, [turnDeadline, isYourTurn, yourHand, topDiscard, currentColor, pendingDrawPenalty, houseRules.stacking, gameState.variant, onPlayCard, onDrawCard]);
 
   // Recalculate docking offsets on resize
   useEffect(() => {
@@ -889,7 +923,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       let currentDealStep = 0;
       const totalDeals = initialCardsCount * allPlayers.length;
 
-      // Stagger dealing cards one by one to each player
+      // Stagger dealing cards one by one to each player with crisp, natural card dealer timing (125ms per card)
       const dealInterval = setInterval(() => {
         if (currentDealStep >= totalDeals) {
           clearInterval(dealInterval);
@@ -904,26 +938,26 @@ export const GameTable: React.FC<GameTableProps> = ({
         setDealtCount(round);
 
         currentDealStep++;
-      }, 120);
+      }, 125);
 
       introTimersRef.current.push(dealInterval as unknown as NodeJS.Timeout);
-    }, 2250);
+    }, 2000);
 
     // Initial total dealing animation duration based on card count & players
-    const dealTotalDurationMs = (gameState.players.length * (gameState.houseRules.startingHandSize || 7) * 120) + 700;
+    const dealTotalDurationMs = (gameState.players.length * (gameState.houseRules.startingHandSize || 7) * 125) + 350;
 
     // Phase 4: Deck is at Draw Pile; deals first card into center discard pile
     const dealFirstCardTimer = setTimeout(() => {
       setStartIntroPhase('dealing');
       soundManager.play('card_deal');
-    }, 2250 + dealTotalDurationMs);
+    }, 2000 + dealTotalDurationMs);
 
     // Phase 5: First card lands in center; live gameplay starts!
     const doneTimer = setTimeout(() => {
       setStartIntroPhase('done');
       setIsDiscardLanding(true);
-      setTimeout(() => setIsDiscardLanding(false), 450);
-    }, 2250 + dealTotalDurationMs + 700);
+      setTimeout(() => setIsDiscardLanding(false), 350);
+    }, 2000 + dealTotalDurationMs + 450);
 
     introTimersRef.current = [moveTimer, dealingHandsTimer, dealFirstCardTimer, doneTimer];
   }, [gameState.phase, gameState.turnCount, gameState.startedAt, isVsIntroActive]);
@@ -1119,10 +1153,22 @@ export const GameTable: React.FC<GameTableProps> = ({
       // Visual Pop-up announcement banner with glowing effects (guaranteed on all power cards)
       triggerPowerAnnouncement(topDiscard, actorName);
 
-      if (!isLocalPlay && actorPlayer && actorPlayer.id !== currentUserId) {
-        const opponentEl = document.getElementById(`opponent-${actorPlayer.id}`);
-        const startRect = opponentEl?.getBoundingClientRect();
-        triggerFlyToTable(topDiscard, startRect);
+      if (!isLocalPlay) {
+        if (actorPlayer && actorPlayer.id === currentUserId) {
+          // Play by bot executed for the current user! Animate card sliding from player's hand to table
+          const handEl = document.getElementById('player-hand-container') || document.getElementById(`player-card-${topDiscard.id}`);
+          const startRect = handEl?.getBoundingClientRect() || {
+            left: window.innerWidth / 2 - 40,
+            top: window.innerHeight - 140,
+            width: 80,
+            height: 110,
+          };
+          triggerFlyToTable(topDiscard, startRect);
+        } else if (actorPlayer && actorPlayer.id !== currentUserId) {
+          const opponentEl = document.getElementById(`opponent-${actorPlayer.id}`);
+          const startRect = opponentEl?.getBoundingClientRect();
+          triggerFlyToTable(topDiscard, startRect);
+        }
       }
     }
     prevTurnPlayerIdRef.current = activePlayer?.id || null;
@@ -1230,6 +1276,8 @@ export const GameTable: React.FC<GameTableProps> = ({
         (card.color === 'wild' ||
           card.type === 'wild' ||
           card.type === 'wild4' ||
+          card.type === 'discard_all' ||
+          card.type === 'punch' ||
           card.type === 'wild_draw_color' ||
           card.type === 'wild_dare'))
     ) {
@@ -1721,10 +1769,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                         <CardView card={topDiscard} size="md" className="rotate-[-2deg] transition-all shadow-xl sm:scale-110 md:scale-125" />
                       </div>
 
-                      {/* Pending Penalty Badge (Stacking) */}
+                      {/* Total Accumulated Draw Penalty Badge positioned cleanly on the SIDE (right) of the played card */}
                       {pendingDrawPenalty > 0 && (
-                        <div className="absolute -top-4 -right-4 bg-red-600 text-white font-black text-xs sm:text-sm px-2.5 py-1 rounded-full border-2 border-yellow-300 shadow-2xl animate-bounce z-20">
-                          +{pendingDrawPenalty}!
+                        <div className="absolute top-1/2 -translate-y-1/2 -right-14 sm:-right-20 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-black text-xs sm:text-base px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border-2 border-yellow-300 shadow-[0_0_20px_rgba(239,68,68,0.9)] animate-bounce z-30 flex items-center gap-1 select-none pointer-events-none">
+                          <span>+{pendingDrawPenalty}!</span>
                         </div>
                       )}
 
@@ -1759,14 +1807,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                       )}
 
                       {/* Live Action Ticker directly below the played/discard card */}
-                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 whitespace-nowrap z-20 pointer-events-none flex flex-col items-center">
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-20 pointer-events-none flex flex-col items-center max-w-[90vw] sm:max-w-lg md:max-w-xl text-center">
                         {lastActionText ? (
-                          <div className="text-[9px] sm:text-[10px] font-bold text-amber-300 bg-slate-950/90 px-3 py-0.5 rounded-full border border-amber-400/50 shadow-lg truncate max-w-[200px] sm:max-w-xs animate-fadeIn">
+                          <div className="text-[9.5px] sm:text-xs font-bold text-amber-300 bg-slate-950/95 px-3 py-1 rounded-full border border-amber-400/60 shadow-[0_0_12px_rgba(0,0,0,0.8)] whitespace-normal sm:whitespace-nowrap animate-fadeIn leading-tight">
                             {lastActionText}
                           </div>
                         ) : (
                           <div
-                            className={`text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                            className={`text-[9px] sm:text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap ${
                               isYourTurn
                                 ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.6)] animate-pulse'
                                 : 'bg-slate-950/80 text-slate-300 border border-slate-800'
@@ -1833,7 +1881,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                         />
                       )}
                       <div
-                        className={`rounded-xl flex items-center justify-center shadow-xl transition-all duration-300 overflow-hidden relative ${
+                        onClick={(e) => handleOpponentProfileClick(opp, e)}
+                        className={`rounded-xl flex items-center justify-center shadow-xl transition-all duration-300 overflow-hidden relative cursor-pointer hover:scale-105 active:scale-95 ${
                           isTurn
                             ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                             : activeUnoShouts.some((s) => s.playerId === opp.id)
@@ -1937,6 +1986,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                   >
                     {opp.name}
                   </span>
+                  {opp.isAutoplayBot && (
+                    <span className="text-[8px] sm:text-[9px] font-black text-purple-300 bg-purple-900/80 border border-purple-400/60 px-1.5 py-0.2 rounded-full shadow animate-pulse mt-0.5 flex items-center gap-0.5">
+                      <span>🤖</span>
+                      <span>Played by Bot</span>
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -1973,7 +2028,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                       />
                     )}
                     <div
-                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden ${
+                      onClick={(e) => handleOpponentProfileClick(opp, e)}
+                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden cursor-pointer hover:scale-105 active:scale-95 ${
                         isTurn
                           ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
@@ -2014,6 +2070,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                   >
                     {opp.name}
                   </span>
+                  {opp.isAutoplayBot && (
+                    <span className="text-[7.5px] font-black text-purple-300 bg-purple-900/80 border border-purple-400/60 px-1 py-0.2 rounded-full shadow animate-pulse mt-0.5 flex items-center gap-0.5">
+                      <span>🤖</span>
+                      <span>Played by Bot</span>
+                    </span>
+                  )}
 
                     {/* Compact 3D Diagonal Fan Style Cards for Left Opponents */}
                     {opp.isFinished ? (
@@ -2113,7 +2175,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                       />
                     )}
                     <div
-                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden ${
+                      onClick={(e) => handleOpponentProfileClick(opp, e)}
+                      className={`rounded-xl flex items-center justify-center text-lg sm:text-2xl shadow-xl border-2 transition-all duration-300 relative overflow-hidden cursor-pointer hover:scale-105 active:scale-95 ${
                         isTurn
                           ? 'w-10 h-10 sm:w-14 sm:h-14 z-20 bg-gradient-to-tr from-amber-400/20 via-yellow-300/20 to-amber-200/20 border-2 sm:border-3 border-yellow-300 ring-2 ring-yellow-400/80 shadow-[0_0_20px_rgba(250,204,21,0.95)]'
                           : activeUnoShouts.some((s) => s.playerId === opp.id)
@@ -2154,6 +2217,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                   >
                     {opp.name}
                   </span>
+                  {opp.isAutoplayBot && (
+                    <span className="text-[7.5px] font-black text-purple-300 bg-purple-900/80 border border-purple-400/60 px-1 py-0.2 rounded-full shadow animate-pulse mt-0.5 flex items-center gap-0.5">
+                      <span>🤖</span>
+                      <span>Played by Bot</span>
+                    </span>
+                  )}
 
                     {/* Compact 3D Diagonal Fan Style Cards for Right Opponents */}
                     {opp.isFinished ? (
@@ -2343,6 +2412,20 @@ export const GameTable: React.FC<GameTableProps> = ({
                 >
                   {selfPlayer.name}
                 </span>
+                {selfPlayer.isAutoplayBot && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      networkManager.resumeControl(gameState.roomId, currentUserId);
+                    }}
+                    title="I-click para bawiin ang kontrol mula sa Bot"
+                    className="text-[8px] sm:text-[9px] font-black text-amber-200 bg-purple-900/95 hover:bg-emerald-700 hover:text-white border border-purple-400 hover:border-emerald-300 px-2 py-0.5 rounded-full shadow-lg animate-pulse mt-0.5 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
+                  >
+                    <span>🤖</span>
+                    <span>Played by Bot</span>
+                    <span className="text-[7px] text-yellow-300 bg-purple-950/80 px-1 py-0.2 rounded border border-yellow-300/40">BAWIIN ✋</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2547,12 +2630,18 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       {/* Color Picker for Wild Cards - High z-index (z-[70]) so nothing can cover or overlap it */}
       {selectedWildCard && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fadeIn pointer-events-auto">
-          <div className="relative bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-6 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.9)]">
+        <div
+          onClick={() => setSelectedWildCard(null)}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fadeIn pointer-events-auto overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-slate-900 border-2 border-amber-400/80 rounded-2xl p-5 sm:p-6 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.9)] my-auto max-h-[92vh] flex flex-col"
+          >
             {/* Top-right X button */}
             <button
               onClick={() => setSelectedWildCard(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition z-10"
               title="Isara (Cancel)"
             >
               ✕
@@ -2596,7 +2685,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             {/* Cancel Button if player wants to change their mind */}
             <button
               onClick={() => setSelectedWildCard(null)}
-              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700 shrink-0 self-center"
             >
               ✕ Huwag Muna (Cancel)
             </button>
@@ -2604,96 +2693,128 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
       )}
 
-      {/* Seven Hand Swap Target Selection */}
+      {/* Seven Hand Swap Target Selection - 2 Columns (Sides) for mobile responsiveness */}
       {selectedSevenCard && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
-          <div className="relative bg-slate-900 border-2 border-amber-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-            {/* Top-right X button */}
+        <div
+          onClick={() => setSelectedSevenCard(null)}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4 animate-fadeIn pointer-events-auto overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-slate-900 border-2 border-amber-500 rounded-2xl p-4 sm:p-5 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[92vh] my-auto"
+          >
+            {/* Top-right X button: Always visible & prominent */}
             <button
               onClick={() => setSelectedSevenCard(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition z-10 shadow"
               title="Isara (Cancel)"
+              aria-label="Cancel"
             >
               ✕
             </button>
 
-            <h3 className="text-lg font-black text-white mb-1">SEVEN RULE (SWAP)</h3>
-            <p className="text-xs text-slate-400 mb-4">Pumili ng kalaro na ipagpapalit ang baraha</p>
-            <div className="space-y-2 mb-4">
+            <div className="shrink-0 mb-3 pr-8">
+              <h3 className="text-base sm:text-lg font-black text-white mb-0.5 tracking-wide">SEVEN RULE: SWAP HANDS</h3>
+              <p className="text-[11px] sm:text-xs text-slate-400">Pumili ng kalaro na ipagpapalit ang baraha</p>
+            </div>
+
+            {/* 2-Side Grid of Players for Mobile Devices */}
+            <div className="grid grid-cols-2 gap-2 mb-3 overflow-y-auto max-h-[58vh] pr-1 flex-1">
               {activeOpponents.map((opp) => (
                 <button
                   key={opp.id}
                   onClick={() => handleSelectSevenTarget(opp.id)}
-                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition cursor-pointer"
+                  className="p-2 sm:p-2.5 bg-slate-800/90 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 hover:border-amber-400 transition cursor-pointer active:scale-95 shadow-sm text-left"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 pr-1">
                     <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                       <AvatarDisplay avatar={opp.avatar} />
                     </div>
-                    <span className="text-white">{opp.name}</span>
+                    <span className="text-white truncate text-[11px] sm:text-xs font-bold">{opp.name}</span>
                   </div>
-                  <span className="text-amber-400">{opp.cardCount} cards</span>
+                  <span className="text-amber-400 text-[10px] sm:text-xs shrink-0 font-semibold">{opp.cardCount} cards</span>
                 </button>
               ))}
             </div>
 
             {/* Cancel Button */}
-            <button
-              onClick={() => setSelectedSevenCard(null)}
-              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
-            >
-              ✕ Huwag Muna (Cancel)
-            </button>
+            <div className="shrink-0 pt-1">
+              <button
+                onClick={() => setSelectedSevenCard(null)}
+                className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+              >
+                ✕ Huwag Muna (Cancel)
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Targeted Action Modal (Targeted Draw 2 & Forced Swap for Uno All Wild) */}
+      {/* Targeted Action Modal (Targeted Draw 2, Forced Swap, Power Swap, Power Peek) - 2 Columns (Sides) */}
       {selectedTargetCard && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn pointer-events-auto">
-          <div className="relative bg-slate-900 border-2 border-purple-500 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl">
-            {/* Top-right X button */}
+        <div
+          onClick={() => setSelectedTargetCard(null)}
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-4 animate-fadeIn pointer-events-auto overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-slate-900 border-2 border-purple-500 rounded-2xl p-4 sm:p-5 max-w-lg w-full text-center shadow-2xl flex flex-col max-h-[92vh] my-auto"
+          >
+            {/* Top-right X button: Always visible & prominent */}
             <button
               onClick={() => setSelectedTargetCard(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition"
+              className="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center font-black text-sm cursor-pointer border border-slate-700 transition z-10 shadow"
               title="Isara (Cancel)"
+              aria-label="Cancel"
             >
               ✕
             </button>
 
-            <h3 className="text-lg font-black text-white mb-1">
-              {selectedTargetCard.type === 'forced_swap' ? 'FORCED HAND SWAP' : 'TARGETED DRAW 2'}
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              {selectedTargetCard.type === 'forced_swap'
-                ? 'Pumili ng kalaro na ipagpapalit ang iyong baraha'
-                : 'Pumili ng kalaro na papabunutin ng 2 baraha'}
-            </p>
-            <div className="space-y-2 mb-4">
+            <div className="shrink-0 mb-3 pr-8">
+              <h3 className="text-base sm:text-lg font-black text-white mb-0.5 tracking-wide">
+                {selectedTargetCard.type === 'forced_swap' || selectedTargetCard.type === 'power_swap'
+                  ? 'FORCED HAND SWAP'
+                  : selectedTargetCard.type === 'power_peek'
+                  ? 'PEEK OPPONENT HAND'
+                  : 'TARGETED DRAW 2'}
+              </h3>
+              <p className="text-[11px] sm:text-xs text-slate-400">
+                {selectedTargetCard.type === 'forced_swap' || selectedTargetCard.type === 'power_swap'
+                  ? 'Pumili ng kalaro na ipagpapalit ang iyong baraha'
+                  : selectedTargetCard.type === 'power_peek'
+                  ? 'Pumili ng kalaro na sisilipin ang isang baraha'
+                  : 'Pumili ng kalaro na papabunutin ng 2 baraha'}
+              </p>
+            </div>
+
+            {/* 2-Side Grid of Players for Mobile Devices */}
+            <div className="grid grid-cols-2 gap-2 mb-3 overflow-y-auto max-h-[58vh] pr-1 flex-1">
               {activeOpponents.map((opp) => (
                 <button
                   key={opp.id}
                   onClick={() => handleSelectActionTarget(opp.id)}
-                  className="w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 transition cursor-pointer"
+                  className="p-2 sm:p-2.5 bg-slate-800/90 hover:bg-slate-700 rounded-xl flex items-center justify-between text-xs font-bold border border-slate-700 hover:border-purple-400 transition cursor-pointer active:scale-95 shadow-sm text-left"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 pr-1">
                     <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                       <AvatarDisplay avatar={opp.avatar} />
                     </div>
-                    <span className="text-white">{opp.name}</span>
+                    <span className="text-white truncate text-[11px] sm:text-xs font-bold">{opp.name}</span>
                   </div>
-                  <span className="text-purple-400 font-bold">{opp.cardCount} cards</span>
+                  <span className="text-purple-400 font-bold text-[10px] sm:text-xs shrink-0">{opp.cardCount} cards</span>
                 </button>
               ))}
             </div>
 
             {/* Cancel Button */}
-            <button
-              onClick={() => setSelectedTargetCard(null)}
-              className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
-            >
-              ✕ Huwag Muna (Cancel)
-            </button>
+            <div className="shrink-0 pt-1">
+              <button
+                onClick={() => setSelectedTargetCard(null)}
+                className="text-xs text-slate-400 hover:text-white px-4 py-1.5 rounded-full hover:bg-slate-800 transition cursor-pointer font-bold border border-slate-700"
+              >
+                ✕ Huwag Muna (Cancel)
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -48,14 +48,15 @@ app.post('/api/rooms', (req, res) => {
 // App version and automatic update check endpoint
 app.get('/api/app-version', (_req, res) => {
   res.json({
-    latestVersion: '1.0.11',
-    latestVersionCode: 12,
+    latestVersion: '1.0.12',
+    latestVersionCode: 13,
     minSupportedVersion: '1.0.10',
-    title: 'Bagong Update: UNO Pungot Edition v1.0.11',
+    title: 'Bagong Update: UNO Pungot Edition v1.0.12',
     releaseNotes: [
-      '⚡ Online Update System activated',
-      '🌐 Cloud Server connection retry & wake-up optimizations',
-      '🔧 Mas maayos at mabilis na multiplayer matchmaking'
+      '🃏 Bagong Action Cards: Wild Discard All & Wild Punch',
+      '✨ Enhanced UI: Turn timer video ring sa gilid ng avatar frame',
+      '🔊 Crisp & realistic paper card distribution sound effect',
+      '🤖 Play-by-bot timeout logic & penalty card balance updates'
     ],
     downloadUrl: 'https://uno-pungot-server.onrender.com/download/uno-latest.apk'
   });
@@ -295,7 +296,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         case 'PLAY_CARD': {
           const { roomId, playerId, cardId, chosenColor, targetPlayerId } = data;
-          const result = roomManager.playCard(roomId, playerId, cardId, chosenColor, targetPlayerId);
+          const result = roomManager.playCard(roomId, playerId, cardId, chosenColor, targetPlayerId, true);
           if (!result.success) {
             ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
           }
@@ -304,7 +305,7 @@ wss.on('connection', (ws: WebSocket) => {
 
         case 'DRAW_CARD': {
           const { roomId, playerId, targetCardIndex } = data;
-          const result = roomManager.drawCard(roomId, playerId, typeof targetCardIndex === 'number' ? targetCardIndex : undefined);
+          const result = roomManager.drawCard(roomId, playerId, typeof targetCardIndex === 'number' ? targetCardIndex : undefined, true);
           if (!result.success) {
             ws.send(JSON.stringify({ type: 'ERROR', message: result.message }));
           }
@@ -392,6 +393,12 @@ wss.on('connection', (ws: WebSocket) => {
         case 'RESTART_GAME': {
           const { roomId, hostId } = data;
           roomManager.restartGame(roomId, hostId);
+          break;
+        }
+
+        case 'RESUME_CONTROL': {
+          const { roomId, playerId } = data;
+          roomManager.resumePlayerControl(roomId, playerId);
           break;
         }
 

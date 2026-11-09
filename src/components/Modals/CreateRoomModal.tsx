@@ -19,6 +19,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   onClose,
   onCreate,
 }) => {
+  const [roomName, setRoomName] = useState<string>('Custom Match');
   const [variant, setVariant] = useState<GameVariant>('classic');
   const [entryFee, setEntryFee] = useState<EntryFeeAmount>(100);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -36,7 +37,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     onCreate({
-      roomName: 'Custom Match',
+      roomName: roomName.trim() || 'Custom Match',
       isPrivate,
       variant,
       entryFee,
@@ -80,14 +81,22 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({
       {/* Main Container - Authentic "Play Online" Style, 100% fits on screen */}
       <div className="relative z-10 w-full max-w-5xl h-full max-h-[98vh] flex flex-col justify-between overflow-hidden py-1 px-1 sm:px-2">
         
-        {/* Top Header Controls: Close Button */}
-        <div className="flex items-center justify-between shrink-0 px-1 py-0.5">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-300/90 drop-shadow">
-              UNO ONLINE LOBBY
+        {/* Top Header Controls: Room Name Input, House Rules, Privacy, Close */}
+        <div className="flex items-center justify-between shrink-0 px-1 py-1 gap-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-300/90 drop-shadow whitespace-nowrap">
+              MATCH:
             </span>
+            <input
+              type="text"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              placeholder="Name ng Match (e.g. Barkada UNO)"
+              maxLength={24}
+              className="px-2.5 py-1 rounded-xl bg-slate-900/80 border border-amber-400/60 focus:border-amber-300 text-xs sm:text-sm font-black text-amber-300 placeholder-slate-500 focus:outline-none shadow-[inset_0_1px_3px_rgba(0,0,0,0.6)] w-full max-w-[240px]"
+            />
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* House Rules & Privacy Pill */}
             <button
               type="button"

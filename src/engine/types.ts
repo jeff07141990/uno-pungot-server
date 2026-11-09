@@ -18,6 +18,8 @@ export type CardType =
   | 'draw2' 
   | 'wild' 
   | 'wild4'
+  | 'discard_all'
+  | 'punch'
   | 'flip' 
   | 'draw1' 
   | 'draw5' 
@@ -65,6 +67,7 @@ export interface PublicPlayer {
   isReady: boolean;
   isHost: boolean;
   isBot: boolean;
+  isAutoplayBot?: boolean; // Set when timer expires and user is temporarily played by bot
   isDisconnected: boolean;
   calledUno: boolean;
   score: number;
@@ -159,7 +162,8 @@ export type PowerUpId =
   | 'draw2'
   | 'reverse'
   | 'skip'
-  | 'wild';
+  | 'wild'
+  | 'punch';
 
 export interface PowerUpItem {
   id: PowerUpId;
@@ -282,5 +286,6 @@ export type SoundEffectType =
   | 'color_green'
   | 'vs_impact'
   | 'countdown_tick'
-  | 'match_start';
+  | 'match_start'
+  | 'discard_all';
 

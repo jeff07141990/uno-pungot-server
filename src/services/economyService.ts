@@ -95,7 +95,7 @@ class EconomyService {
         if (stored) {
           const parsed = JSON.parse(stored);
           // Purge old legacy keys if present
-          const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild'];
+          const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild', 'punch'];
           const cleaned: Record<string, PowerUpItem> = {};
           for (const k of validKeys) {
             if (parsed[k]) cleaned[k] = parsed[k];
@@ -126,7 +126,7 @@ class EconomyService {
     let localWallet = this.getCachedWallet(playerId);
     let firestoreWallet: PlayerWallet | null = null;
     try {
-      firestoreWallet = await firestoreStorage.getWallet(playerId);
+      firestoreWallet = await firestoreStorage.getWallet(playerId, playerName);
     } catch {}
 
     // Combine local & firestore: pick whichever has higher progress
@@ -206,7 +206,7 @@ class EconomyService {
 
       this.cachedWallet = walletToUse;
       // Sanitize catalog so only valid All Wild items are kept
-      const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild'];
+      const validKeys = ['skip2', 'targeted_draw2', 'forced_swap', 'wild4', 'draw2', 'reverse', 'skip', 'wild', 'punch'];
       const cleanedCatalog: Record<string, PowerUpItem> = {};
       if (data.catalog) {
         for (const k of validKeys) {

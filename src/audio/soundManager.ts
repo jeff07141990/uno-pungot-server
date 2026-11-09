@@ -241,6 +241,9 @@ class SoundManager {
         case 'match_start':
           this.playMatchStart(ctx);
           break;
+        case 'discard_all':
+          this.playDiscardAll(ctx);
+          break;
       }
     } catch (e) {
       console.warn('Audio playback error', e);
@@ -555,60 +558,67 @@ class SoundManager {
   }
 
   /**
-   * Realistic Casino Card Flick & Distribution sound (authentic card sliding and snapping onto felt)
+   * Play voiced Discard All audio file
+   */
+  public playDiscardAll(ctx: AudioContext) {
+    const played = this.playAudioFile('/sound effects/discard all.mp3', 1.0);
+    if (played) return;
+    this.playPowerGeneral(ctx);
+  }
+
+  /**
+   * Authentic Crisp Paper Card Dealing Sound
+   * Produces an ultra-crisp paper flick, textured sliding cardstock friction, and snap on each dealt card.
    */
   public playCardDeal(ctx: AudioContext, variation: number = 0) {
-    // 1. Play original card deal audio file
-    const played = this.playAudioFile('/sound effects/card deal.mp3', 0.85);
-    if (played) return;
-
     const now = ctx.currentTime;
 
     try {
-      // 2. Multi-layer High-fidelity Card Distribution Physics:
-      // A. Card slide/friction off paper deck (white noise through dual resonant bandpass)
-      const bufferSize = Math.floor(ctx.sampleRate * 0.09); // 90ms
+      // 1. High-frequency paper friction / crisp cardstock slide (white noise with bandpass + highpass)
+      const bufferSize = Math.floor(ctx.sampleRate * 0.08); // 80ms crisp paper glide
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
+
+      // Fine-grained papery grain texture with rapid organic decay
       for (let i = 0; i < bufferSize; i++) {
-        // Organic decayed card slide texture
-        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 1.6);
+        const decay = Math.pow(1 - i / bufferSize, 2.2);
+        data[i] = (Math.random() * 2 - 1) * decay;
       }
 
       const noiseSource = ctx.createBufferSource();
       noiseSource.buffer = buffer;
 
-      // Resonant filter tuned to casino plastic/cardstock friction
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      const baseFreq = 2600 + ((variation % 6) * 180) + (Math.random() * 90);
-      filter.frequency.setValueAtTime(baseFreq, now);
-      filter.Q.setValueAtTime(3.0, now);
+      // Bandpass tuned to authentic crisp paper frequency range (3,200Hz - 4,800Hz)
+      const paperFilter = ctx.createBiquadFilter();
+      paperFilter.type = 'bandpass';
+      const baseFreq = 3600 + ((variation % 7) * 140) + (Math.random() * 80);
+      paperFilter.frequency.setValueAtTime(baseFreq, now);
+      paperFilter.Q.setValueAtTime(2.2, now);
 
-      const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.55 * this.volume, now);
-      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.085);
+      const paperGain = ctx.createGain();
+      paperGain.gain.setValueAtTime(0.65 * this.volume, now);
+      paperGain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
 
-      noiseSource.connect(filter);
-      filter.connect(noiseGain);
-      noiseGain.connect(ctx.destination);
+      noiseSource.connect(paperFilter);
+      paperFilter.connect(paperGain);
+      paperGain.connect(ctx.destination);
       noiseSource.start(now);
 
-      // B. Crisp card snap & felt contact thud
+      // 2. Crisp card flick/whip pop (sharp paper snap when card departs the deck)
       const snapOsc = ctx.createOscillator();
       const snapGain = ctx.createGain();
-      snapOsc.type = 'triangle';
-      const snapFreq = 520 + ((variation % 5) * 50);
-      snapOsc.frequency.setValueAtTime(snapFreq, now);
-      snapOsc.frequency.exponentialRampToValueAtTime(110, now + 0.038);
+      snapOsc.type = 'sine';
+      const snapStart = 1100 + ((variation % 5) * 80);
+      snapOsc.frequency.setValueAtTime(snapStart, now);
+      snapOsc.frequency.exponentialRampToValueAtTime(220, now + 0.028);
 
-      snapGain.gain.setValueAtTime(0.48 * this.volume, now);
-      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+      snapGain.gain.setValueAtTime(0.55 * this.volume, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
 
       snapOsc.connect(snapGain);
       snapGain.connect(ctx.destination);
       snapOsc.start(now);
-      snapOsc.stop(now + 0.042);
+      snapOsc.stop(now + 0.032);
     } catch {
       // Graceful fallback
     }

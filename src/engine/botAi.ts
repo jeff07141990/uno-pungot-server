@@ -110,6 +110,7 @@ export function makeBotMove(
     chosenCard.color === 'wild' ||
     chosenCard.type === 'wild' ||
     chosenCard.type === 'wild4' ||
+    chosenCard.type === 'discard_all' ||
     chosenCard.type === 'wild_draw_color' ||
     chosenCard.type === 'wild_dare'
   ) {

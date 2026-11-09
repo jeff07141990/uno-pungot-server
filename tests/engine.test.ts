@@ -11,14 +11,16 @@ import { makeBotMove, getMostFrequentColor } from '../src/engine/botAi';
 import { RoomManager } from '../server/roomManager';
 
 describe('Deck and Card Generation', () => {
-  it('creates standard 108-card Uno deck with correct distribution', () => {
+  it('creates standard Uno deck with correct distribution including Wild Discard All', () => {
     const deck = createStandardDeck();
-    expect(deck.length).toBe(108);
+    expect(deck.length).toBe(110);
 
     const wilds = deck.filter((c) => c.type === 'wild');
     const wild4s = deck.filter((c) => c.type === 'wild4');
+    const discardAlls = deck.filter((c) => c.type === 'discard_all');
     expect(wilds.length).toBe(4);
     expect(wild4s.length).toBe(4);
+    expect(discardAlls.length).toBe(2);
 
     const colors: CardColor[] = ['red', 'blue', 'green', 'yellow'];
     for (const color of colors) {
@@ -45,10 +47,10 @@ describe('Deck and Card Generation', () => {
   it('shuffles deck properly without losing cards', () => {
     const deck = createStandardDeck();
     const shuffled = shuffleDeck(deck);
-    expect(shuffled.length).toBe(108);
+    expect(shuffled.length).toBe(110);
     // Unique card IDs preserved
     const uniqueIds = new Set(shuffled.map((c) => c.id));
-    expect(uniqueIds.size).toBe(108);
+    expect(uniqueIds.size).toBe(110);
   });
 
   it('reshuffles discard pile while preserving top discard', () => {

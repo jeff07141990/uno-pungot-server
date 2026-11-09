@@ -612,10 +612,7 @@ export const App: React.FC = () => {
           name: userName,
           avatar: userAvatar,
         });
-
-        setTimeout(() => {
-          networkManager.startGame(data.roomId, activeUid);
-        }, 150);
+        // Stay in lobby view so the player can view bots and start when ready!
       } else {
         startOfflineBotGame();
       }
@@ -718,8 +715,9 @@ export const App: React.FC = () => {
           wallet={wallet}
           updateInfo={updateInfo}
           onOpenUpdate={() => {
-            const gdriveUrl = updateInfo?.downloadUrl || 'https://drive.google.com/file/d/1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY/view?usp=sharing';
-            window.open(gdriveUrl, '_system');
+            const downloadUrl = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
+            window.open(downloadUrl, '_system');
+            showToast('📥 Sinimulan na ang pag-download ng bagong APK sa background!', 'turn_alert');
           }}
           onOpenShop={() => setIsShopOpen(true)}
           onOpenMissions={() => setIsMissionsOpen(true)}
@@ -771,6 +769,7 @@ export const App: React.FC = () => {
           onConfirmPayment={() => networkManager.confirmEntryPayment(publicState.roomId, userId)}
           onUpdateEntryFee={(fee) => networkManager.updateEntryFee(publicState.roomId, userId, fee)}
           onUpdateRules={(rules, variant) => networkManager.updateRules(publicState.roomId, userId, rules, variant)}
+          onRefresh={handleReconnectRoom}
         />
       ) : (
         <>
@@ -1019,13 +1018,15 @@ export const App: React.FC = () => {
           if (res.success && res.wallet) {
             setWallet(res.wallet);
             showToast(res.message, 'turn_alert');
-            // If playing in a match, immediately inject the power-up card into the player's active hand!
             const activeUid = userIdRef.current || userId;
             if (view === 'game') {
               if (localGameEngine.isActive()) {
                 localGameEngine.addPowerUpCardToHand(activeUid, powerUpId);
               } else if (publicState?.roomId) {
-                networkManager.spawnPowerUpCard(publicState.roomId, activeUid, powerUpId);
+                // If offline fallback purchase was used, spawn via socket, otherwise server endpoint already added 1 card
+                if (res.wallet && (res as any).fromFallback) {
+                  networkManager.spawnPowerUpCard(publicState.roomId, activeUid, powerUpId);
+                }
               }
             }
           } else {

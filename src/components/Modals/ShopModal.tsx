@@ -115,6 +115,15 @@ export const DEFAULT_CATALOG: Record<PowerUpId, PowerUpItem> = {
     badge: 'Universal',
     enabled: true,
   },
+  punch: {
+    id: 'punch',
+    name: 'Wild Punch 🥊',
+    description: 'Magagamit kapag ang natambak na draw penalty sa iyo ay umabot sa +8 o higit pa! Papaluin pabalik ang buong penalty sa umatake at makakapili ka ng bagong kulay.',
+    price: 300,
+    icon: '🥊',
+    badge: 'Counter +8+',
+    enabled: true,
+  },
 };
 
 export const ShopModal: React.FC<ShopModalProps> = ({
@@ -503,6 +512,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                     reverse: 'reverse',
                     skip: 'skip',
                     wild: 'wild',
+                    punch: 'punch',
                   };
                   const previewCard: Card = {
                     id: `shop-${item.id}`,
@@ -662,6 +672,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                           reverse: 'reverse',
                           skip: 'skip',
                           wild: 'wild',
+                          punch: 'punch',
                         };
                         const previewCard: Card = {
                           id: `inv-${item.id}`,
@@ -739,6 +750,7 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                   reverse: 'reverse',
                   skip: 'skip',
                   wild: 'wild',
+                  punch: 'punch',
                 };
                 return (
                   <CardView

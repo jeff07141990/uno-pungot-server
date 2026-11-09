@@ -351,7 +351,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 <Award className="w-3.5 h-3.5 text-amber-400" />
                 <span>Player Standings & Rewards</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Cards • Result</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Rewards • Cards • Result</span>
             </div>
 
             {/* Scrollable list fitting remaining space */}
@@ -415,8 +415,37 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                       </div>
                     </div>
 
-                    {/* Right: XP gained & Standing Pill */}
+                    {/* Right: Coins won, XP gained, Cards & Standing Pill */}
                     <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
+                      {(() => {
+                        let coinsWon = 0;
+                        if (gameState.payoutResults && gameState.payoutResults.length > 0) {
+                          const payout = gameState.payoutResults.find((p) => p.playerId === player.id);
+                          coinsWon = payout?.prize ?? 0;
+                        } else if (isWinner) {
+                          coinsWon = 200; // Default casual/offline victory reward
+                        }
+
+                        if (coinsWon > 0) {
+                          return (
+                            <span className="text-[10px] sm:text-[11px] font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-400/60 shadow-[0_0_8px_rgba(250,204,21,0.25)] flex items-center gap-1">
+                              <img
+                                src="/play online modal and buttons/icon_coins.png"
+                                alt="Coins"
+                                className="w-3.5 h-3.5 object-contain inline-block drop-shadow"
+                              />
+                              <span>+₱{coinsWon.toLocaleString()}</span>
+                            </span>
+                          );
+                        } else {
+                          return (
+                            <span className="text-[9px] sm:text-[10px] font-mono font-bold text-slate-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
+                              ₱0
+                            </span>
+                          );
+                        }
+                      })()}
+
                       {player.xpGained !== undefined && (
                         <span className="text-[10px] font-mono font-bold text-cyan-300 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/30">
                           +{player.xpGained} XP

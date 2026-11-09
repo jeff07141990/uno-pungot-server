@@ -43,6 +43,7 @@ export class LocalGameEngine {
   } | null = null;
   private botTimer: NodeJS.Timeout | null = null;
   private unoWindowTimer: NodeJS.Timeout | null = null;
+  private turnTimer: NodeJS.Timeout | null = null;
 
   public setCallbacks(cbs: LocalEngineCallbacks) {
     this.callbacks = cbs;
@@ -111,6 +112,7 @@ export class LocalGameEngine {
       isReady: true,
       isHost: true,
       isBot: false,
+      isAutoplayBot: false,
       isDisconnected: false,
       calledUno: false,
       score: 0,
@@ -225,9 +227,13 @@ export class LocalGameEngine {
     this.discardPile.push(card);
     activePlayer.cardCount = hand.length;
 
-    // Reset unoWindow if called
-    if (this.publicState.unoCallWindow?.targetPlayerId === playerId) {
-      this.publicState.unoCallWindow = null;
+    // Clear turn timer on play
+    if (this.turnTimer) clearTimeout(this.turnTimer);
+
+    // If human had autoplay bot active, restore manual control upon playing
+    if (!activePlayer.isBot && activePlayer.isAutoplayBot) {
+      activePlayer.isAutoplayBot = false;
+      this.callbacks?.onToast(`👤 Nagbalik si ${activePlayer.name}! Manual control restored.`, 'turn_alert');
     }
 
     // Award XP locally to human player for playing card
@@ -334,6 +340,54 @@ export class LocalGameEngine {
       this.publicState.pendingDrawPenalty += 2;
     } else if (card.type === 'wild4') {
       this.publicState.pendingDrawPenalty += 4;
+    } else if (card.type === 'discard_all') {
+      const activeColor = chosenColor || this.publicState.currentColor;
+      const discardedCards: Card[] = [];
+      const remainingCards: Card[] = [];
+
+      for (const c of hand) {
+        if (c.color === activeColor) {
+          discardedCards.push(c);
+        } else {
+          remainingCards.push(c);
+        }
+      }
+
+      if (discardedCards.length > 0) {
+        this.discardPile.push(...discardedCards);
+        this.playerHands.set(playerId, remainingCards);
+        activePlayer.cardCount = remainingCards.length;
+        this.callbacks?.onToast(`🎴 WILD DISCARD ALL! Nagtapon si ${activePlayer.name} ng ${discardedCards.length} ${activeColor.toUpperCase()} cards!`, 'discard_all');
+      }
+
+      if (remainingCards.length === 0) {
+        this.handleGameOver(activePlayer);
+        return;
+      }
+    } else if (card.type === 'punch') {
+      const penalty = this.publicState.pendingDrawPenalty;
+      if (penalty > 0) {
+        const total = this.publicState.players.length;
+        const prevIdx = (this.publicState.activePlayerIndex - this.publicState.direction + total) % total;
+        const attacker = this.publicState.players[prevIdx];
+        const attackerHand = this.playerHands.get(attacker.id) || [];
+
+        for (let i = 0; i < penalty; i++) {
+          if (this.drawPile.length === 0) {
+            const reshuffled = reshuffleDiscards(this.drawPile, this.discardPile);
+            this.drawPile = reshuffled.newDrawPile;
+            this.discardPile = reshuffled.newDiscardPile;
+          }
+          const c = this.drawPile.pop();
+          if (c) attackerHand.push(c);
+        }
+        attacker.cardCount = attackerHand.length;
+        this.publicState.drawPileCount = this.drawPile.length;
+        this.publicState.pendingDrawPenalty = 0;
+        this.callbacks?.onToast(`🥊 WILD PUNCH! Pinalo pabalik ni ${activePlayer.name} ang +${penalty} penalty kay ${attacker.name}!`, 'vs_impact');
+      } else {
+        this.callbacks?.onToast(`🥊 WILD PUNCH! Pinalitan ang kulay!`, 'turn_alert');
+      }
     }
 
     this.advanceTurn(nextStep);
@@ -447,6 +501,22 @@ export class LocalGameEngine {
       }
       this.callbacks?.onToast(`🔨 HULI! Nahuli ni ${catcher.name} si ${target.name}! (+1 Penalty Card)`, 'uno_call');
       this.broadcast();
+    } else {
+      // False accusation penalty!
+      const callerHand = this.playerHands.get(catcherId);
+      if (callerHand) {
+        if (this.drawPile.length === 0) {
+          const reshuffled = reshuffleDiscards(this.drawPile, this.discardPile);
+          this.drawPile = reshuffled.newDrawPile;
+          this.discardPile = reshuffled.newDiscardPile;
+        }
+        const penaltyCard = this.drawPile.pop();
+        if (penaltyCard) callerHand.push(penaltyCard);
+        catcher.cardCount = callerHand.length;
+        this.publicState.drawPileCount = this.drawPile.length;
+      }
+      this.callbacks?.onToast(`⚠️ Maling akusasyon! Hindi pa pwedeng pukpukin si ${target.name}. Si ${catcher.name} ay nakatanggap ng +1 Penalty Card!`, 'uno_penalty');
+      this.broadcast();
     }
   }
 
@@ -459,12 +529,36 @@ export class LocalGameEngine {
     }
 
     this.publicState.activePlayerIndex = nextIdx;
-    this.broadcast();
 
-    // Trigger Bot Move if next is Bot
+    if (this.turnTimer) clearTimeout(this.turnTimer);
+
+    // Turn timer: 15 seconds deadline for active player
     const nextPlayer = this.publicState.players[nextIdx];
-    if (nextPlayer.isBot && this.publicState.phase === 'playing') {
-      this.scheduleBotMove(nextPlayer.id);
+    if (this.publicState.phase === 'playing') {
+      const timerSec = 15;
+      this.publicState.turnDeadline = Date.now() + timerSec * 1000;
+      this.broadcast();
+
+      if (nextPlayer.isBot || nextPlayer.isAutoplayBot) {
+        this.scheduleBotMove(nextPlayer.id);
+      } else {
+        // Human player turn: set 15s timeout before Bot AI takes over and automatically plays
+        this.turnTimer = setTimeout(() => {
+          if (!this.active || this.publicState.phase !== 'playing') return;
+          const current = this.publicState.players[this.publicState.activePlayerIndex];
+          if (!current || current.id !== nextPlayer.id) return;
+
+          current.isAutoplayBot = true;
+          this.callbacks?.onToast(`🤖 Naubos ang 15s ni ${current.name}! Nilalaro na ito ng Bot (Autoplay).`, 'turn_alert');
+          this.broadcast();
+
+          // Immediately execute bot move for the human player
+          this.scheduleBotMove(current.id);
+        }, timerSec * 1000);
+      }
+    } else {
+      this.publicState.turnDeadline = null;
+      this.broadcast();
     }
   }
 
@@ -580,6 +674,16 @@ export class LocalGameEngine {
     }
     if (!hand) return false;
 
+    // Strict check: Maximum 2 Power-Ups per match
+    if (!this.publicState.matchPowerUpUses) {
+      this.publicState.matchPowerUpUses = {};
+    }
+    const currentUses = this.publicState.matchPowerUpUses[targetPlayerId] || 0;
+    if (currentUses >= 2) {
+      this.callbacks?.onToast('⚠️ Naabot mo na ang limit na 2 Power-Ups para sa labang ito!', 'turn_alert');
+      return false;
+    }
+
     const typeMap: Record<PowerUpId, CardType> = {
       skip2: 'skip2',
       targeted_draw2: 'targeted_draw2',
@@ -589,6 +693,7 @@ export class LocalGameEngine {
       reverse: 'reverse',
       skip: 'skip',
       wild: 'wild',
+      punch: 'punch',
     };
 
     const card: Card = {

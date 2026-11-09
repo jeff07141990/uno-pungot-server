@@ -83,6 +83,15 @@ export const DEFAULT_POWER_UP_CATALOG: Record<PowerUpId, PowerUpItem> = {
     badge: 'Universal',
     enabled: true,
   },
+  punch: {
+    id: 'punch',
+    name: 'Wild Punch 🥊',
+    description: 'Magagamit kapag ang natambak na draw penalty sa iyo ay umabot sa +8 o higit pa! Papaluin pabalik ang buong penalty sa umatake at makakapili ka ng bagong kulay.',
+    price: 300,
+    icon: '🥊',
+    badge: 'Counter +8+',
+    enabled: true,
+  },
 };
 
 export const MISSION_DEFINITIONS = [

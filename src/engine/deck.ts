@@ -54,6 +54,11 @@ export function createStandardDeck(): Card[] {
     deck.push({ id: `card-${idCounter++}`, color: 'wild', type: 'wild4' });
   }
 
+  // 2 Wild Discard All cards
+  for (let i = 0; i < 2; i++) {
+    deck.push({ id: `card-${idCounter++}`, color: 'wild', type: 'discard_all' });
+  }
+
   return deck;
 }
 

@@ -64,12 +64,20 @@ export const AdminModal: React.FC<AdminModalProps> = ({
       return;
     }
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const base64 = event.target?.result as string;
       if (base64) {
-        saveCustomCardSkin('power_' + powerUpId, base64);
-        setCustomSkins(getCustomCardSkins());
-        setStatusMsg({ text: `Na-update ang PNG icon para sa ${powerUpId}!`, isError: false });
+        try {
+          const skinKey = 'power_' + powerUpId;
+          const savedUrl = await saveCustomCardSkin(skinKey, base64);
+          setCustomSkins((prev) => ({
+            ...prev,
+            [skinKey]: savedUrl,
+          }));
+          setStatusMsg({ text: `Na-update ang PNG icon para sa ${powerUpId}!`, isError: false });
+        } catch {
+          setStatusMsg({ text: 'Nagka-problema sa pag-save ng icon.', isError: true });
+        }
       }
     };
     reader.readAsDataURL(file);

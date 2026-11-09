@@ -427,6 +427,10 @@ class NetworkManager {
     this.send({ type: 'SEND_REACTION', roomId, senderId, emoji });
   }
 
+  public resumeControl(roomId: string, playerId: string) {
+    this.send({ type: 'RESUME_CONTROL', roomId, playerId });
+  }
+
   public declareDeadlock(roomId: string, playerId: string) {
     this.send({ type: 'DECLARE_DEADLOCK', roomId, playerId });
   }

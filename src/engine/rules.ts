@@ -16,7 +16,12 @@ export function isCardPlayable(
 
   // 1. Stacking logic when penalty is pending (enforced across ALL variants when stacking is enabled)
   if (pendingDrawPenalty > 0) {
-    // Defensive Power-Up Cards: Shield and Reflect can always counter incoming pending draw penalty!
+    // Wild Punch: magagamit kung ang natambak na draw penalty ay umabot sa +8 o higit pa!
+    if (card.type === 'punch') {
+      return pendingDrawPenalty >= 8;
+    }
+
+    // Defensive Power-Up Cards: Shield & Reflect
     if (card.type === 'power_shield' || card.type === 'power_reflect') {
       return true;
     }
@@ -54,6 +59,8 @@ export function isCardPlayable(
     card.color === 'wild' ||
     card.type === 'wild' ||
     card.type === 'wild4' ||
+    card.type === 'discard_all' ||
+    card.type === 'punch' ||
     card.type === 'wild_draw_color' ||
     card.type === 'wild_dare'
   ) {
@@ -113,6 +120,8 @@ export function calculateHandScore(cards: Card[]): number {
     if (
       card.type === 'wild' ||
       card.type === 'wild4' ||
+      card.type === 'discard_all' ||
+      card.type === 'punch' ||
       card.type === 'wild_draw_color' ||
       card.type === 'wild_dare' ||
       card.type === 'forced_swap'
