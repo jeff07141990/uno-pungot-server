@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { DownloadCloud, Sparkles, X, CheckCircle2, AlertCircle, RefreshCw, ExternalLink } from 'lucide-react';
+import React from 'react';
+import { DownloadCloud, Sparkles, X, CheckCircle2 } from 'lucide-react';
 import { AppVersionInfo, CURRENT_APP_VERSION } from '../../services/versionService';
 
 interface UpdateModalProps {
@@ -9,96 +9,11 @@ interface UpdateModalProps {
 }
 
 export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, onClose }) => {
-  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-  const [downloadStatus, setDownloadStatus] = useState<string>('');
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
   if (!isOpen || !updateInfo) return null;
 
-  const handleStartDownload = async () => {
-    setIsDownloading(true);
-    setDownloadProgress(0);
-    setDownloadStatus('Nagsisimula ang download mula sa Google Drive...');
-    setDownloadError(null);
-
-    const targetUrl = updateInfo.downloadUrl || 'https://uno-pungot-server.onrender.com/download/uno-latest.apk';
-
-    try {
-      abortControllerRef.current = new AbortController();
-
-      const response = await fetch(targetUrl, {
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
-      }
-
-      // Check total size if provided by headers (approx 888 MB / 931 MB fallback)
-      const contentLength = response.headers.get('content-length');
-      const totalBytes = contentLength ? parseInt(contentLength, 10) : 931163738;
-
-      if (!response.body) {
-        // Fallback: direct window open if body stream is not available
-        window.open(targetUrl, '_system');
-        setIsDownloading(false);
-        setDownloadProgress(null);
-        return;
-      }
-
-      const reader = response.body.getReader();
-      let receivedBytes = 0;
-      const chunks: Uint8Array[] = [];
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        chunks.push(value);
-        receivedBytes += value.length;
-
-        const percent = Math.min(99, Math.round((receivedBytes / totalBytes) * 100));
-        const receivedMb = (receivedBytes / (1024 * 1024)).toFixed(1);
-        const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
-
-        setDownloadProgress(percent);
-        setDownloadStatus(`Dina-download: ${receivedMb} MB / ${totalMb} MB (${percent}%)`);
-      }
-
-      setDownloadProgress(100);
-      setDownloadStatus('Tapos na ang download! Binubuksan ang APK installer...');
-
-      // Combine chunks and trigger file save/installation
-      const blob = new Blob(chunks as any[], { type: 'application/vnd.android.package-archive' });
-      const blobUrl = URL.createObjectURL(blob);
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.href = blobUrl;
-      downloadAnchor.download = `UNO-Pungot-v${updateInfo.latestVersion}.apk`;
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      document.body.removeChild(downloadAnchor);
-
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 30000);
-
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setDownloadStatus('Kinansela ang pag-download.');
-      } else {
-        console.error('Download stream error:', err);
-        setDownloadError('Maaaring i-block ng browser ang cross-origin background streaming. Pindutin ang "Buksan sa Browser" upang i-download nang direkta.');
-      }
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  const handleOpenDirectInBrowser = () => {
-    const directUrl = updateInfo.downloadUrl || 'https://uno-pungot-server.onrender.com/download/uno-latest.apk';
-    window.open(directUrl, '_system');
+  const handleUpdate = () => {
+    const targetUrl = updateInfo.downloadUrl || 'https://drive.google.com/file/d/1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY/view?usp=sharing';
+    window.open(targetUrl, '_system');
   };
 
   return (
@@ -107,21 +22,16 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
         
         {/* Dismiss Button */}
         <button
-          onClick={() => {
-            if (isDownloading && abortControllerRef.current) {
-              abortControllerRef.current.abort();
-            }
-            onClose();
-          }}
+          onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer z-10 shadow"
-          title="Isara"
+          title="Mamaya na"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center shadow-lg border-2 border-white/90 shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-300 flex items-center justify-center shadow-lg border-2 border-white/90 shrink-0 animate-bounce">
             <DownloadCloud className="w-7 h-7 text-slate-950" />
           </div>
           <div>
@@ -149,7 +59,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
         </div>
 
         {/* Release Notes */}
-        <div className="space-y-2 bg-slate-950/50 p-4 rounded-2xl border border-slate-800 max-h-36 overflow-y-auto">
+        <div className="space-y-2 bg-slate-950/50 p-4 rounded-2xl border border-slate-800">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Mga Bagong Pagbabago:</p>
           <div className="space-y-2 text-sm text-slate-200">
             {updateInfo.releaseNotes.map((note, idx) => (
@@ -161,83 +71,17 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
           </div>
         </div>
 
-        {/* Live Download Progress Section */}
-        {downloadProgress !== null && (
-          <div className="p-4 rounded-2xl bg-slate-950/70 border border-emerald-500/40 space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-emerald-300 font-bold flex items-center gap-1.5">
-                {downloadProgress < 100 ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                )}
-                {downloadStatus}
-              </span>
-              <span className="text-white font-mono font-black text-sm">{downloadProgress}%</span>
-            </div>
-
-            <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700 p-0.5">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-200"
-                style={{ width: `${downloadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Error Fallback Notice */}
-        {downloadError && (
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-start gap-2 text-xs text-amber-200">
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <span>{downloadError}</span>
-          </div>
-        )}
-
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
-          {!isDownloading && downloadProgress !== 100 ? (
-            <button
-              onClick={handleStartDownload}
-              className="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-            >
-              <DownloadCloud className="w-5 h-5 text-slate-950" />
-              <span>I-Download Ngayon (May Progress)</span>
-            </button>
-          ) : downloadProgress === 100 ? (
-            <button
-              onClick={handleStartDownload}
-              className="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-            >
-              <RefreshCw className="w-4 h-4 text-slate-950" />
-              <span>I-Download Ulit</span>
-            </button>
-          ) : (
-            <button
-              disabled
-              className="flex-1 py-3 px-5 rounded-2xl bg-slate-800 text-emerald-400 font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
-            >
-              <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
-              <span>Dina-download sa App...</span>
-            </button>
-          )}
-
-          {/* Direct External Browser Fallback */}
           <button
-            onClick={handleOpenDirectInBrowser}
-            className="py-3 px-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition cursor-pointer"
-            title="Buksan ang download link sa browser"
+            onClick={handleUpdate}
+            className="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
           >
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline">Buksan sa Browser</span>
+            <DownloadCloud className="w-5 h-5 text-slate-950" />
+            <span>I-Download & I-Update Ngayon</span>
           </button>
-
           <button
-            onClick={() => {
-              if (isDownloading && abortControllerRef.current) {
-                abortControllerRef.current.abort();
-              }
-              onClose();
-            }}
+            onClick={onClose}
             className="py-3 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs uppercase tracking-wider transition cursor-pointer"
           >
             Mamaya Na
