@@ -215,10 +215,10 @@ export const App: React.FC = () => {
         checkAppUpdate(candidateHosts).then((info) => {
           if (info) {
             setUpdateInfo(info);
-            setIsUpdateOpen(true);
+            // Do NOT auto open modal; user can click the Update button in HomeScreen
           }
         });
-      }, 2500);
+      }, 2000);
     });
 
     historyService.getPlayerStats(userId).then(setPlayerStats);
@@ -716,6 +716,8 @@ export const App: React.FC = () => {
           onToggleVoiceMic={handleToggleVoiceMic}
           onExitGame={handleExitGame}
           wallet={wallet}
+          updateInfo={updateInfo}
+          onOpenUpdate={() => setIsUpdateOpen(true)}
           onOpenShop={() => setIsShopOpen(true)}
           onOpenMissions={() => setIsMissionsOpen(true)}
           onOpenLeaderboard={() => setIsLeaderboardOpen(true)}

@@ -23,9 +23,11 @@ import {
   Gift,
   Trophy,
   ShieldAlert,
+  DownloadCloud,
 } from 'lucide-react';
 import { ConnectionStatus } from '../services/networkManager';
 import { GameVariant, PlayerWallet } from '../engine/types';
+import { AppVersionInfo } from '../services/versionService';
 import { PlayWithBotsModal } from './Modals/PlayWithBotsModal';
 import { LiveAvailableRooms } from './LiveAvailableRooms';
 
@@ -42,6 +44,8 @@ interface HomeScreenProps {
   onToggleVoiceMic: () => void;
   // Virtual Coin & Power-Up Economy props
   wallet: PlayerWallet | null;
+  updateInfo?: AppVersionInfo | null;
+  onOpenUpdate?: () => void;
   onOpenShop: () => void;
   onOpenMissions: () => void;
   onOpenLeaderboard: () => void;
@@ -74,6 +78,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   isSpeaking,
   onToggleVoiceMic,
   wallet,
+  updateInfo,
+  onOpenUpdate,
   onOpenShop,
   onOpenMissions,
   onOpenLeaderboard,
@@ -370,6 +376,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </span>
             </div>
           </button>
+
+          {/* Update Available Button - Sleek Pulsing Alert Badge */}
+          {updateInfo && (
+            <button
+              onClick={onOpenUpdate}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 text-slate-950 font-black px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full border-2 border-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.7)] animate-bounce hover:animate-none hover:scale-105 active:scale-95 transition-all cursor-pointer shrink-0"
+              title={`May bagong update! v${updateInfo.latestVersion}`}
+            >
+              <DownloadCloud className="w-4 h-4 text-slate-950 animate-pulse shrink-0" />
+              <span className="text-[10px] sm:text-xs uppercase tracking-wider font-extrabold whitespace-nowrap">
+                Update v{updateInfo.latestVersion}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
