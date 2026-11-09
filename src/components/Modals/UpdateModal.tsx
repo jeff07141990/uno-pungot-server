@@ -36,9 +36,9 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
         throw new Error(`Server returned HTTP ${response.status}`);
       }
 
-      // Check total size if provided by headers (approx 447 MB fallback)
+      // Check total size if provided by headers (approx 888 MB / 931 MB fallback)
       const contentLength = response.headers.get('content-length');
-      const totalBytes = contentLength ? parseInt(contentLength, 10) : 469266556;
+      const totalBytes = contentLength ? parseInt(contentLength, 10) : 931163738;
 
       if (!response.body) {
         // Fallback: direct window open if body stream is not available

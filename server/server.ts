@@ -62,7 +62,7 @@ app.get('/api/app-version', (_req, res) => {
 });
 
 // Direct APK download route - redirects to Google Drive host
-const GOOGLE_DRIVE_APK_URL = 'https://drive.google.com/uc?export=download&id=1iWeyxymDybPrKgHS7EvpiXRN89Faf8ad';
+const GOOGLE_DRIVE_APK_URL = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
 
 app.get('/download/uno-latest.apk', (_req, res) => {
   const localApk = path.resolve(__dirname, '../UNO-Pungot-Updated.apk');
