@@ -715,7 +715,7 @@ export const App: React.FC = () => {
           wallet={wallet}
           updateInfo={updateInfo}
           onOpenUpdate={() => {
-            const downloadUrl = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
+            const downloadUrl = 'https://drive.google.com/uc?export=download&id=19GnR9qJ17DcFMGZWBZyaOtEuHDBYLGJP';
             window.open(downloadUrl, '_system');
             showToast('📥 Sinimulan na ang pag-download ng bagong APK sa background!', 'turn_alert');
           }}

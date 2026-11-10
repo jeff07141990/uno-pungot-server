@@ -14,7 +14,7 @@ export const UpdateModal: React.FC<UpdateModalProps> = ({ isOpen, updateInfo, on
   const handleUpdate = () => {
     let targetUrl = updateInfo.downloadUrl;
     if (!targetUrl || targetUrl.includes('/file/d/')) {
-      targetUrl = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
+      targetUrl = 'https://drive.google.com/uc?export=download&id=19GnR9qJ17DcFMGZWBZyaOtEuHDBYLGJP';
     }
     // Open system downloader/external browser
     window.open(targetUrl, '_system');

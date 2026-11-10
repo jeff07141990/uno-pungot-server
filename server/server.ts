@@ -63,12 +63,12 @@ app.get('/api/app-version', (_req, res) => {
 });
 
 // Direct APK download route - redirects to Google Drive host
-const GOOGLE_DRIVE_APK_URL = 'https://drive.google.com/uc?export=download&id=1NDHjlsaWgAIBnjlSUgYMidJ8LzR89JMY';
+const GOOGLE_DRIVE_APK_URL = 'https://drive.google.com/uc?export=download&id=19GnR9qJ17DcFMGZWBZyaOtEuHDBYLGJP';
 
 app.get('/download/uno-latest.apk', (_req, res) => {
   const localApk = path.resolve(__dirname, '../UNO-Pungot-Updated.apk');
   if (fs.existsSync(localApk)) {
-    res.download(localApk, 'UNO-Pungot-Edition-v1.0.11.apk');
+    res.download(localApk, 'UNO-Pungot-Edition-v1.0.13.apk');
   } else {
     res.redirect(GOOGLE_DRIVE_APK_URL);
   }
