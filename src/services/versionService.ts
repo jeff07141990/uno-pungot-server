@@ -1,5 +1,5 @@
-export const CURRENT_APP_VERSION = '1.0.12';
-export const CURRENT_VERSION_CODE = 13;
+export const CURRENT_APP_VERSION = '1.0.13';
+export const CURRENT_VERSION_CODE = 14;
 
 export interface AppVersionInfo {
   latestVersion: string;

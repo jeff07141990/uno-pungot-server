@@ -48,15 +48,15 @@ app.post('/api/rooms', (req, res) => {
 // App version and automatic update check endpoint
 app.get('/api/app-version', (_req, res) => {
   res.json({
-    latestVersion: '1.0.12',
-    latestVersionCode: 13,
+    latestVersion: '1.0.13',
+    latestVersionCode: 14,
     minSupportedVersion: '1.0.10',
-    title: 'Bagong Update: UNO Pungot Edition v1.0.12',
+    title: 'Bagong Update: UNO Pungot Edition v1.0.13',
     releaseNotes: [
-      '🃏 Bagong Action Cards: Wild Discard All & Wild Punch',
-      '✨ Enhanced UI: Turn timer video ring sa gilid ng avatar frame',
-      '🔊 Crisp & realistic paper card distribution sound effect',
-      '🤖 Play-by-bot timeout logic & penalty card balance updates'
+      '⏱️ Fixed Turn Timer: Ganap nang sumusunod sa 30s at 60s settings',
+      '🤖 Play-by-Bot on Mobile: Gumagana na ang bot autoplay at bawiin control',
+      '🎵 Card Distribution Audio: Inalis ang nagpapatong at putol-putol na tunog',
+      '✨ General gameplay & stability enhancements'
     ],
     downloadUrl: 'https://uno-pungot-server.onrender.com/download/uno-latest.apk'
   });

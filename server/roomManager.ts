@@ -2290,15 +2290,21 @@ export class RoomManager {
       room.timerInterval = null;
     }
 
-    // Always enforce maximum 15s turn timer for smooth flow and autoplay
+    // Respect configured turn timer (15s, 30s, 60s). Defaults to 30s if not specified, 0 means disabled.
+    if (room.publicState.houseRules?.turnTimer === 0) {
+      room.publicState.turnDeadline = null;
+      this.broadcastState(room.publicState.roomId);
+      return;
+    }
+
     const timerSeconds = room.publicState.houseRules?.turnTimer && room.publicState.houseRules.turnTimer > 0
-      ? Math.min(15, room.publicState.houseRules.turnTimer)
-      : 15;
+      ? room.publicState.houseRules.turnTimer
+      : 30;
 
     const deadline = Date.now() + delayMs + timerSeconds * 1000;
     room.publicState.turnDeadline = deadline;
 
-    // Immediately sync state with all players so client countdown ring starts at 15s
+    // Immediately sync state with all players so client countdown ring starts accurately
     this.broadcastState(room.publicState.roomId);
 
     room.timerInterval = setTimeout(() => {
@@ -2358,7 +2364,7 @@ export class RoomManager {
     const hand = room.playerHands.get(activePlayer.id) || [];
     const decision = makeBotMove(hand, room.publicState, room.publicState.houseRules);
 
-    console.log(`[AUTOPLAY] 15s Timeout for player ${activePlayer.name} (${activePlayer.id}). Hand size: ${hand.length}. Bot decision:`, decision);
+    console.log(`[AUTOPLAY] Turn Timeout for player ${activePlayer.name} (${activePlayer.id}). Hand size: ${hand.length}. Bot decision:`, decision);
 
     let moveResult: { success: boolean; message?: string } = { success: false };
     if (decision.action === 'play' && decision.cardId) {

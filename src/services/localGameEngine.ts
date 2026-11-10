@@ -197,6 +197,38 @@ export class LocalGameEngine {
       isEntryFeeLocked: true,
     };
 
+    // Initialize turn timer for first player (Turn 1)
+    const firstPlayer = this.publicState.players[0];
+    const timerSeconds = this.publicState.houseRules?.turnTimer !== undefined
+      ? this.publicState.houseRules.turnTimer
+      : 30;
+
+    if (timerSeconds > 0) {
+      this.publicState.turnDeadline = Date.now() + timerSeconds * 1000;
+      if (!firstPlayer.isBot) {
+        this.turnTimer = setTimeout(() => {
+          if (!this.active || this.publicState.phase !== 'playing') return;
+          const current = this.publicState.players[this.publicState.activePlayerIndex];
+          if (!current || current.id !== firstPlayer.id) return;
+
+          current.isAutoplayBot = true;
+          this.callbacks?.onToast(`🤖 Naubos ang oras ni ${current.name}! Nilalaro na ito ng Bot (Autoplay).`, 'turn_alert');
+          this.broadcast();
+          this.scheduleBotMove(current.id);
+        }, timerSeconds * 1000);
+      }
+    }
+
+    this.broadcast();
+  }
+
+  public resumeControl(playerId: string) {
+    if (!this.active) return;
+    const player = this.publicState.players.find((p) => p.id === playerId);
+    if (!player) return;
+
+    player.isAutoplayBot = false;
+    this.callbacks?.onToast(`👤 Nagbalik si ${player.name}! Manual control restored.`, 'turn_alert');
     this.broadcast();
   }
 
@@ -532,29 +564,40 @@ export class LocalGameEngine {
 
     if (this.turnTimer) clearTimeout(this.turnTimer);
 
-    // Turn timer: 15 seconds deadline for active player
+    // Turn timer: deadline for active player based on houseRules
     const nextPlayer = this.publicState.players[nextIdx];
     if (this.publicState.phase === 'playing') {
-      const timerSec = 15;
-      this.publicState.turnDeadline = Date.now() + timerSec * 1000;
-      this.broadcast();
+      const timerSec = this.publicState.houseRules?.turnTimer !== undefined
+        ? this.publicState.houseRules.turnTimer
+        : 30;
 
-      if (nextPlayer.isBot || nextPlayer.isAutoplayBot) {
-        this.scheduleBotMove(nextPlayer.id);
+      if (timerSec > 0) {
+        this.publicState.turnDeadline = Date.now() + timerSec * 1000;
+        this.broadcast();
+
+        if (nextPlayer.isBot || nextPlayer.isAutoplayBot) {
+          this.scheduleBotMove(nextPlayer.id);
+        } else {
+          // Human player turn: set timeout before Bot AI takes over and automatically plays
+          this.turnTimer = setTimeout(() => {
+            if (!this.active || this.publicState.phase !== 'playing') return;
+            const current = this.publicState.players[this.publicState.activePlayerIndex];
+            if (!current || current.id !== nextPlayer.id) return;
+
+            current.isAutoplayBot = true;
+            this.callbacks?.onToast(`🤖 Naubos ang oras ni ${current.name}! Nilalaro na ito ng Bot (Autoplay).`, 'turn_alert');
+            this.broadcast();
+
+            // Immediately execute bot move for the human player
+            this.scheduleBotMove(current.id);
+          }, timerSec * 1000);
+        }
       } else {
-        // Human player turn: set 15s timeout before Bot AI takes over and automatically plays
-        this.turnTimer = setTimeout(() => {
-          if (!this.active || this.publicState.phase !== 'playing') return;
-          const current = this.publicState.players[this.publicState.activePlayerIndex];
-          if (!current || current.id !== nextPlayer.id) return;
-
-          current.isAutoplayBot = true;
-          this.callbacks?.onToast(`🤖 Naubos ang 15s ni ${current.name}! Nilalaro na ito ng Bot (Autoplay).`, 'turn_alert');
-          this.broadcast();
-
-          // Immediately execute bot move for the human player
-          this.scheduleBotMove(current.id);
-        }, timerSec * 1000);
+        this.publicState.turnDeadline = null;
+        this.broadcast();
+        if (nextPlayer.isBot || nextPlayer.isAutoplayBot) {
+          this.scheduleBotMove(nextPlayer.id);
+        }
       }
     } else {
       this.publicState.turnDeadline = null;

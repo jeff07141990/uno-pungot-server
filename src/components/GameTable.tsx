@@ -32,6 +32,7 @@ import { isCardPlayable } from '../engine/rules';
 import { soundManager } from '../audio/soundManager';
 import { voiceManager } from '../services/voiceManager';
 import { networkManager } from '../services/networkManager';
+import { localGameEngine } from '../services/localGameEngine';
 import { PowerUpDock } from './PowerUpDock';
 import { PlayerWallet, PowerUpId, PowerUpItem } from '../engine/types';
 
@@ -803,7 +804,8 @@ export const GameTable: React.FC<GameTableProps> = ({
       return;
     }
 
-    const totalDurationMs = 15000; // Always 15 seconds max turn timer
+    const timerSeconds = houseRules?.turnTimer !== undefined ? houseRules.turnTimer : 30;
+    const totalDurationMs = (timerSeconds > 0 ? timerSeconds : 30) * 1000;
 
     const interval = setInterval(() => {
       const msRemaining = Math.max(0, turnDeadline - Date.now());
@@ -911,7 +913,6 @@ export const GameTable: React.FC<GameTableProps> = ({
     const moveTimer = setTimeout(() => {
       calculateDockDelta();
       setStartIntroPhase('moving_to_side');
-      soundManager.play('card_deal');
     }, 1550);
 
     // Phase 3: Dealing hands to all players (Round-robin card dealing simulation from deck)
@@ -2416,7 +2417,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      networkManager.resumeControl(gameState.roomId, currentUserId);
+                      if (localGameEngine.isRunning()) {
+                        localGameEngine.resumeControl(currentUserId);
+                      } else {
+                        networkManager.resumeControl(gameState.roomId, currentUserId);
+                      }
                     }}
                     title="I-click para bawiin ang kontrol mula sa Bot"
                     className="text-[8px] sm:text-[9px] font-black text-amber-200 bg-purple-900/95 hover:bg-emerald-700 hover:text-white border border-purple-400 hover:border-emerald-300 px-2 py-0.5 rounded-full shadow-lg animate-pulse mt-0.5 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
